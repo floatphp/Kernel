@@ -1,7 +1,7 @@
 {
   "name": "floatphp/kernel",
   "type": "library",
-  "description": "Kernel lib for floatPHP",
+  "description": "Kernel libs for floatPHP",
   "keywords": ["php","micro-framework","framework","PSR","ORM","jakiboy"],
   "homepage": "https://www.floatphp.com/",
   "license": "MIT",
