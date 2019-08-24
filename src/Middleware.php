@@ -10,12 +10,12 @@
  * @license   : MIT License
  */
 
-namespace floatphp\Kernel;
+namespace floatPHP\Kernel;
 
-use floatphp\Kernel\Module;
-use floatphp\Kernel\Exceptions\MiddlewareException;
-use App\System\Classes\Http\Router;
-use App\System\Classes\Auth\Session;
+use floatPHP\Kernel\Module;
+use floatPHP\Kernel\Exceptions\MiddlewareException;
+use floatPHP\Classes\Http\Router;
+use floatPHP\Classes\Auth\Session;
 
 final class Middleware
 {

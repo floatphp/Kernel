@@ -10,9 +10,9 @@
  * @license   : MIT License
  */
 
-namespace floatphp\Kernel;
+namespace floatPHP\Kernel;
 
-use App\System\Classes\Connection\Db;
+use floatPHP\Classes\Connection\Db;
 
 class Model
 {

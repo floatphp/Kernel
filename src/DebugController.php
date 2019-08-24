@@ -10,7 +10,7 @@
  * @license   : MIT License
  */
 
-namespace floatphp\Kernel;
+namespace floatPHP\Kernel;
 
 class DebugController extends FrontController
 {

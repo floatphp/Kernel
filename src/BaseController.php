@@ -12,8 +12,8 @@
 
 namespace floatphp\Kernel;
 
-use floatphp\Kernel\View;
-use App\System\Classes\Html\Hooks;
+use floatPHP\Kernel\View;
+use floatPHP\Classes\Html\Hooks;
 
 class BaseController
 {

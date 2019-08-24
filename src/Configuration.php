@@ -10,9 +10,9 @@
  * @license   : MIT License
  */
 
-namespace floatphp\Kernel;
+namespace floatPHP\Kernel;
 
-use App\System\Classes\Storage\Json;
+use floatPHP\Classes\Storage\Json;
 
 final class Configuration
 {

@@ -10,10 +10,10 @@
  * @license   : MIT License
  */
 
-namespace floatphp\Kernel;
+namespace floatPHP\Kernel;
 
-use App\System\Interfaces\Kernel\ViewInterface;
-use App\System\Classes\Html\Hooks;
+use floatPHP\Interfaces\Kernel\ViewInterface;
+use floatPHP\Classes\Html\Hooks;
 use Twig_Loader_Filesystem as Loader;
 use Twig_Environment as Environment;
 use Twig_SimpleFunction as Plugin;
