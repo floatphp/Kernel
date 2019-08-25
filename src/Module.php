@@ -42,7 +42,7 @@ class Module extends BaseController
 	public static function router()
 	{
 		// load module router list
-		// $wrapper = [];
+		$wrapper = [];
 		if (static::$dir)
 		{
 			foreach ( static::$dir as $key => $name )

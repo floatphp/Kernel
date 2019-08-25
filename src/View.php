@@ -14,8 +14,8 @@ namespace floatPHP\Kernel;
 
 use floatPHP\Interfaces\Kernel\ViewInterface;
 use floatPHP\Classes\Html\Hooks;
-use Twig_Loader_Filesystem as Loader;
-use Twig_Environment as Environment;
+// use Twig_Loader_Filesystem as Loader;
+// use Twig_Environment as Environment;
 use Twig_SimpleFunction as Plugin;
 
 class View implements ViewInterface
@@ -97,8 +97,8 @@ class View implements ViewInterface
 		  	'debug' => static::$debug
 		];
 
-		$loader = new Loader(static::$path);
-		static::$env = new Environment($loader, static::$config);
+		$loader = new \Twig_Loader_Filesystem(static::$path);
+		static::$env = new \Twig_Environment($loader, static::$config);
 	}
 
 	/**
@@ -110,13 +110,13 @@ class View implements ViewInterface
 	protected static function setFunction()
 	{
         static::$env->addFunction(
-        	new Plugin('doAction', function ($action){
+        	new \Twig_SimpleFunction('doAction', function ($action){
             	$hooks = Hooks::getInstance();
             	$hooks->doAction($action);
         	}
     	));
         static::$env->addFunction(
-        	new Plugin('applyFilter', function ($action){
+        	new \Twig_SimpleFunction('applyFilter', function ($action){
             	// $hooks = Hooks::getInstance();
             	// $hooks->applyFilter($action);
         	}
