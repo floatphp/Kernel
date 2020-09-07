@@ -3,11 +3,13 @@
  * @author    : JIHAD SINNAOUR
  * @package   : FloatPHP
  * @subpackage: Kernel Component
- * @version   : 1.0.0
+ * @version   : 1.1.0
  * @category  : PHP framework
  * @copyright : (c) JIHAD SINNAOUR <mail@jihadsinnaour.com>
  * @link      : https://www.floatphp.com
  * @license   : MIT License
+ *
+ * This file if a part of FloatPHP Framework
  */
 
 namespace floatPHP\Kernel;
@@ -16,36 +18,69 @@ use floatPHP\Classes\Storage\Json;
 
 class Module extends BaseController
 {
-	protected static $dir;
-	protected static $config;
-	protected $router;
-	protected $content = [];
+	/**
+	 * @access protected
+	 * string $dir modules directory
+	 */
+	protected static $dir;	
 
+	/**
+	 * @access private
+	 * string $url Asset url
+	 */
+	private $url;
+
+	/**
+	 * Load modules
+	 * @param void
+	 * @param void
+	 */
 	public function __construct()
 	{
-		static::$dir = glob('App/Modules/*',GLOB_ONLYDIR);
+		self::$dir = $this->getModuleDir();
 		$this->autoload();
 	}
 
+	/**
+	 * Autoload modules
+	 * @param void
+	 * @param array
+	 */
+	protected function getModuleDir()
+	{
+		return glob('App/Modules/*', 1073741824);
+	}
+
+	/**
+	 * Autoload modules
+	 * @param void
+	 * @param void
+	 */
 	private function autoload()
 	{
 		// load module list
-		foreach ( static::$dir as $name )
+		foreach ( self::$dir as $name )
 		{
-			$json = new Json("{$name}/module"); // module.json
-			$config = $json->parseObject();
+			$json = new Json("{$name}/module.json"); // module.json
+			$config = $json->parse();
+			var_dump($config);die();
 			$module = "\App\Modules\\{$config->namespace}\\{$config->namespace}Module";
 			new $module;
 		}
 	}
 
-	public static function router()
+	/**
+	 * Set router
+	 * @param void
+	 * @param void
+	 */
+	public static function setRouter()
 	{
 		// load module router list
 		$wrapper = [];
-		if (static::$dir)
+		if (self::$dir)
 		{
-			foreach ( static::$dir as $key => $name )
+			foreach ( self::$dir as $key => $name )
 			{
 				$json = new Json("{$name}/module"); // module.json
 				$config = $json->parse();
@@ -59,28 +94,32 @@ class Module extends BaseController
 
 	protected function addJS($url)
 	{
-		$this->debug = $url;
-		self::hook('action', 'add-js', function(){
-			self::render(['src' => $this->debug],'system/script');
+		self::hook('action', 'add-js', function() use ($url) {
+			parent::render(['src' => $url],'system/script');
 		});
 	}
 
 	protected function addCSS($url)
 	{
-		$this->debug = $url;
-		self::hook('action', 'add-css', function(){
-			self::render(['src' => $this->debug],'system/style');
+		self::hook('action', 'add-css', function() use ($url) {
+			parent::render(['href' => $url],'system/style');
 		});
 	}
 
-	protected function render($data = [] , $template = null)
-	{
-		echo $this->assign($data,$template);
-	}
-
-	protected function assign($data = [] , $template = null)
-	{
-		View::setConfig(['path' => 'App/Modules/']);
-		return View::assign($data,$template);
-	}
+    /**
+     * Get view path
+     *
+     * @access protected
+     * @param string $template
+     * @return string
+     */
+    protected function getPath($template)
+    {
+        // Set overriding path
+        $override = "{$this->getThemeDir()}/{$this->getNameSpace()}/";
+        if ( file_exists("{$override}{$template}{$this->getViewExtension()}") ) {
+            return $override;
+        }
+        return $this->getViewPath();
+    }
 }

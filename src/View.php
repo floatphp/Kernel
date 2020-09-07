@@ -3,152 +3,130 @@
  * @author    : JIHAD SINNAOUR
  * @package   : FloatPHP
  * @subpackage: Kernel Component
- * @version   : 1.0.0
+ * @version   : 1.1.0
  * @category  : PHP framework
  * @copyright : (c) JIHAD SINNAOUR <mail@jihadsinnaour.com>
  * @link      : https://www.floatphp.com
  * @license   : MIT License
+ *
+ * This file if a part of FloatPHP Framework
  */
 
 namespace floatPHP\Kernel;
 
-use floatPHP\Interfaces\Kernel\ViewInterface;
+// use VanillePlugin\inc\Json;
+// use VanillePlugin\inc\Data;
 use floatPHP\Classes\Html\Hooks;
-// use Twig_Loader_Filesystem as Loader;
-// use Twig_Environment as Environment;
-use Twig_SimpleFunction as Plugin;
+use floatPHP\Interfaces\Kernel\ViewInterface;
 
-class View implements ViewInterface
+class View // implements ViewInterface
 {
-	/**
-	 * @access private
-	 */
-	private static $env;
-	private static $config;
+    use Configuration;
+    
+    /**
+     * @access private
+     * @var array $callables
+     */
+    private $callables = false;
 
 	/**
-	 * @access protected
-	 */
-	protected static $path;
-	protected static $cache;
-	protected static $debug = false;
-	protected static $extension;
-
-	const EXTENSION = '.tpl';
-
-	/**
-	 * Set config
+	 * Define custom callables
 	 *
-	 * @param array $data
+	 * @access public
+     * @param array $callables
 	 * @return void
 	 */
-	public static function setConfig($config = []): void
+	public function setCallables($callables = [])
 	{
-		extract($config);
-		$setting = new Configuration();
-		
-		static::$extension = isset($extension)
-		? $extension : self::EXTENSION;
-
-		static::$path = isset($path)
-		? $path : (string)$setting->global->dir->view;
-
-		static::$cache = isset($cache)
-		? $cache : (string)$setting->global->dir->cache;
-
-		static::$debug = isset($debug)
-		? $debug : $setting->global->system->debug;
-
-		static::$config = [
-		  	'cache' => static::$cache,
-		  	'debug' => static::$debug
-		];
+		$this->callables = $callables;
 	}
 
-	/**
-	 * Init View
-	 *
-	 * @access protected
-	 * @param void
-	 * @return void
-	 */
-	protected static function init(): void
-	{
-		$setting = new Configuration();
-
-		if (!static::$extension) {
-			static::$extension = self::EXTENSION;
-		}
-
-		if (!static::$path) {
-			static::$path = (string)$setting->global->dir->view;
-		}
-
-		if (!static::$cache) {
-			static::$cache = (string)$setting->global->dir->cache;
-		}
-
-		if (!static::$debug) {
-			static::$debug = $setting->global->system->debug;
-		}
-
-		static::$config = [
-		  	'cache' => static::$cache,
-		  	'debug' => static::$debug
-		];
-
-		$loader = new \Twig_Loader_Filesystem(static::$path);
-		static::$env = new \Twig_Environment($loader, static::$config);
-	}
+    /**
+     * Render view
+     *
+     * @access protected
+     * @param {inherit}
+     * @return void
+     */
+    protected function render($content = [], $template = 'default')
+    {
+        echo $this->assign($content, $template);
+    }
 
 	/**
-	 * Assign data to view
+	 * Aassign content to view
 	 *
-	 * @param array $data, string $view
-	 * @return {inherit}
-	 */
-	protected static function setFunction()
-	{
-        static::$env->addFunction(
-        	new \Twig_SimpleFunction('doAction', function ($action){
-            	$hooks = Hooks::getInstance();
-            	$hooks->doAction($action);
-        	}
-    	));
-        static::$env->addFunction(
-        	new \Twig_SimpleFunction('applyFilter', function ($action){
-            	// $hooks = Hooks::getInstance();
-            	// $hooks->applyFilter($action);
-        	}
-    	));
-	}
-
-	/**
-	 * Assign data to view
-	 *
-	 * @param array $data
-	 * @param string $view
-	 * @return void
-	 */
-	public static function render($data, $view): void
-	{
-		echo self::assign($data, $view);
-	}
-
-	/**
-	 * Render view
-	 *
-	 * @param array $data
-	 * @param string $view
+     * @access protected
+	 * @param array $content
+     * @param string $template
 	 * @return string
 	 */
-	public static function assign($data = [], $view = 'system/default'): string
+	protected function assign($content = [], $template = 'default')
 	{
-		self::init();
-		self::setFunction();
+        // Set View environment
+        $env = Template::getEnvironment($this->getViewPath(), [
+            'cache' => $this->getCachePath(),
+            'debug' => $this->isDebug()
+        ]);
 
-		// Reurn rendered view
-		$view = static::$env->load($view.static::$extension);
-		return $view->render($data);
+        // Set custom callables
+        if ($this->callables) {
+            foreach ($this->callables as $name => $callable) {
+                $env->addFunction(Template::extend($name, $callable));
+            }
+        }
+    
+		// Add view global functions
+        $env->addFunction(Template::extend('dump', function ($var){
+            var_dump($var);
+        }));
+        $env->addFunction(Template::extend('isDebug', function (){
+            return $this->isDebug();
+        }));
+        $env->addFunction(Template::extend('getConfig', function ($config){
+            return $this->getConfig($config);
+        }));
+        $env->addFunction(Template::extend('getRoot', function (){
+            return $this->getRoot();
+        }));
+        $env->addFunction(Template::extend('getBaseUri', function (){
+            return $this->getBaseUri();
+        }));
+        $env->addFunction(Template::extend('getAssetUri', function (){
+            return $this->getAssetUri();
+        }));
+        $env->addFunction(Template::extend('translate', function ($string){
+            return $this->translateString($string);
+        }));
+        $env->addFunction(Template::extend('JSONdecode', function ($json){
+            return Json::decode($json);
+        }));
+        $env->addFunction(Template::extend('JSONencode', function ($array){
+            return Json::encode($array);
+        }));
+        $env->addFunction(Template::extend('exit', function (){
+            exit;
+        }));
+        $env->addFunction(Template::extend('serialize', function ($data){
+            return Data::serialize($data);
+        }));
+        $env->addFunction(Template::extend('unserialize', function ($string){
+            return Data::unserialize($string);
+        }));
+        $env->addFunction(Template::extend('hasFilter', function ($hook){
+            return $this->hasFilter($hook);
+        }));
+        $env->addFunction(Template::extend('applyFilter', function ($hook, $value){
+            $hooks = Hooks::getInstance();
+            return $hooks->applyFilter($action);
+        }));
+        $env->addFunction(Template::extend('doAction', function ($hook, $args = null){
+            $hooks = Hooks::getInstance();
+            return $hooks->doAction($action);
+        }));
+
+        // Return rendered view
+		$view = $env->load("{$template}{$this->getViewExtension()}");
+		return $view->render($content);
 	}
 }

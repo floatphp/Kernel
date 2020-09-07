@@ -3,33 +3,40 @@
  * @author    : JIHAD SINNAOUR
  * @package   : FloatPHP
  * @subpackage: Kernel Component
- * @version   : 1.0.0
+ * @version   : 1.1.0
  * @category  : PHP framework
  * @copyright : (c) JIHAD SINNAOUR <mail@jihadsinnaour.com>
  * @link      : https://www.floatphp.com
  * @license   : MIT License
+ *
+ * This file if a part of FloatPHP Framework
  */
 
-namespace floatphp\Kernel;
+namespace floatPHP\Kernel;
 
-use floatPHP\Kernel\View;
 use floatPHP\Classes\Html\Hooks;
 
-class BaseController
+class BaseController extends View
 {
+	/**
+	 * @param void
+	 * @return object
+	 */
 	protected $hook;
-	protected $content;
+
+	/**
+	 * @param void
+	 * @return object
+	 */
+	public function __construct()
+	{
+		$this->initConfig();
+	}
 	
-	protected function assign($data = [] , $template = null)
-	{
-		View::assign($data,$template);
-	}
-
-	protected function render($data = [] , $template = null)
-	{
-		echo View::render($data,$template);
-	}
-
+	/**
+	 * @param void
+	 * @return object
+	 */
 	protected function hook($type = 'action', $name, $callbakck = [])
 	{
 		$hook = Hooks::getInstance();
@@ -44,12 +51,20 @@ class BaseController
 		}
 	}
 
-	protected function applyFilterr($filter, $callbakck = [])
+	/**
+	 * @param void
+	 * @return object
+	 */
+	protected function applyFilter($filter, $callbakck = [])
 	{
 		$this->hook = Hooks::getInstance();
-		$this->applyFilterr($filter, $callbakck);
+		$this->applyFilter($filter, $callbakck);
 	}
 
+	/**
+	 * @param void
+	 * @return object
+	 */
 	protected function exception($code = null,$message = null)
 	{
 		return new ErrorController($code,$message);
