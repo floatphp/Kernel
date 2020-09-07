@@ -1,6 +1,6 @@
 {
   "name": "floatphp/kernel",
-  "version" : "1.0.0-beta",
+  "version" : "1.0.0",
   "type": "library",
   "description": "Kernel lib for floatPHP Framework",
   "keywords": ["php","micro-framework","framework","PSR","ORM","jakiboy","composer"],
@@ -19,7 +19,7 @@
     }
   ],
   "require": {
-    "php": ">=7.3",
+    "php": ">=5.6",
     "guzzlehttp/guzzle": "6.5.5"
   },
   "autoload": {
