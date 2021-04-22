@@ -3,42 +3,43 @@
  * @author    : JIHAD SINNAOUR
  * @package   : FloatPHP
  * @subpackage: Kernel Component
- * @version   : 1.1.0
+ * @version   : 1.0.0
  * @category  : PHP framework
- * @copyright : (c) JIHAD SINNAOUR <mail@jihadsinnaour.com>
+ * @copyright : (c) 2017 - 2021 JIHAD SINNAOUR <mail@jihadsinnaour.com>
  * @link      : https://www.floatphp.com
  * @license   : MIT License
  *
  * This file if a part of FloatPHP Framework
  */
 
-namespace floatPHP\Kernel;
+namespace FloatPHP\Kernel;
 
-use floatPHP\Classes\Http\Status;
+use FloatPHP\Classes\Http\Response;
 
 class ErrorController extends FrontController
 {
 	/**
-	 * @access private
+	 * @access public
 	 */
-	private const CODE = 404;
+	const CODE = 404;
 
 	/**
-	 * @param string $code 404
-	 * @param string $message null
+	 * @param int $code
+	 * @param string $message
+	 * @param string $error
 	 * @return void
 	 */
-	public function __construct($code = self::CODE, $message = null)
+	public function __construct($code = self::CODE, $error = null)
 	{
+		// Init configuration
 		$this->initConfig();
-		if (!$message) {
-			$message = Status::getMessage($code);
-		}
-		header("HTTP/1.1 {$code} {$message}");
+		
+		Response::setHttpHeaders($code,'text/html; charset=utf-8');
 		$this->render([
-			'code'    => $code,
-			'message' => $message
-		],'/system/error');
-		exit();
+			'status' => Response::getMessage($code),
+			'code'   => $code,
+			'error'  => $error
+		], '/system/error');
+		die();
 	}
 }

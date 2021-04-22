@@ -3,36 +3,36 @@
  * @author    : JIHAD SINNAOUR
  * @package   : FloatPHP
  * @subpackage: Kernel Component
- * @version   : 1.1.0
+ * @version   : 1.0.0
  * @category  : PHP framework
- * @copyright : (c) JIHAD SINNAOUR <mail@jihadsinnaour.com>
+ * @copyright : (c) 2017 - 2021 JIHAD SINNAOUR <mail@jihadsinnaour.com>
  * @link      : https://www.floatphp.com
  * @license   : MIT License
  *
  * This file if a part of FloatPHP Framework
  */
 
-namespace floatPHP\Kernel;
+namespace FloatPHP\Kernel;
 
-class ApiController
+use FloatPHP\Classes\Http\Server;
+
+class ApiController extends BaseOptions
 {
 	/**
-	 * @access protected
-	 */
-	protected $api;
-	/**
-	 * @access public
-	 */
-	public $name = 'GeneratorAPI';
-	public $version = '0.1';
-	/**
+	 * Is HTTP Authenticated
 	 *
 	 * @param void
-	 * @return json
+	 * @return boolean
 	 */
-	protected function info()
+	protected function isHttpAuthenticated()
 	{
-		header('Content-Type: application/json');
-		echo json_encode($this->version);
+		if ( Server::isBasicAuth() ) {
+			$username = Server::getBasicAuthUser();
+			$password = Server::getBasicAuthPassword();
+		    if ( $username == $this->getApiUsername() && $password == $this->getApiPassword() ){
+			    return true;
+		    }
+		}
+		return false;
 	}
 }

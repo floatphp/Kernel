@@ -3,21 +3,21 @@
  * @author    : JIHAD SINNAOUR
  * @package   : FloatPHP
  * @subpackage: Kernel Component
- * @version   : 1.1.0
+ * @version   : 1.0.0
  * @category  : PHP framework
- * @copyright : (c) JIHAD SINNAOUR <mail@jihadsinnaour.com>
+ * @copyright : (c) 2017 - 2021 JIHAD SINNAOUR <mail@jihadsinnaour.com>
  * @link      : https://www.floatphp.com
  * @license   : MIT License
  *
  * This file if a part of FloatPHP Framework
  */
 
-namespace floatPHP\Kernel;
+namespace FloatPHP\Kernel;
 
-use floatPHP\Kernel\Module;
-use floatPHP\Kernel\Exceptions\MiddlewareException;
-use floatPHP\Classes\Http\Router;
-use floatPHP\Classes\Auth\Session;
+use FloatPHP\Kernel\Module;
+use FloatPHP\Kernel\Exceptions\MiddlewareException;
+use FloatPHP\Classes\Http\Router;
+use FloatPHP\Classes\Auth\Session;
 
 final class Middleware
 {
@@ -55,10 +55,10 @@ final class Middleware
 	{
 		// prepare router from config
 		$this->router = new Router();
-		$this->router->setBasePath( $this->getRoot() );
+		$this->router->setBasePath($this->getBaseRoute());
 
 		// set global router
-		$this->router->addRoutes( $this->getRoutes() );
+		$this->router->addRoutes($this->getRoutes());
 
 		// set modules router
 		// $this->router->addRoutes( Module::setRouter() );
@@ -206,13 +206,13 @@ final class Middleware
 					$instance->$method($var);
 
 				} else {
-					$login = $this->getLoginLocation();
+					$login = $this->getLoginUrl();
 					header("Location: $login");
 				}
 
 			} elseif ( $this->isAuthMiddleware($class) ) {
 				if ( $this->isAuthenticated() ) {
-					$admin = $this->getAdminLocation();
+					$admin = $this->getAdminUrl();
 					header("Location: $admin");
 
 				} else {
@@ -240,13 +240,13 @@ final class Middleware
 					$instance->$method();
 
 				} else {
-					$login = $this->getLoginLocation();
+					$login = $this->getLoginUrl();
 					header("Location: $login");
 				}
 
 			} elseif ( $this->isAuthMiddleware($class) ) {
 				if ( $this->isAuthenticated() ) {
-					$admin = $this->getAdminLocation();
+					$admin = $this->getAdminUrl();
 					header("Location: $admin");
 
 				} else {
@@ -308,7 +308,7 @@ final class Middleware
 	 */
 	private function do404()
 	{
-		new \floatPHP\Kernel\ErrorController(404);
+		new \FloatPHP\Kernel\ErrorController(404);
 	}
 
 	/**
@@ -320,7 +320,7 @@ final class Middleware
 	 */
 	private function isAuthenticated()
 	{
-		if ( isset($_SESSION[$this->getSessionID()]) ) {
+		if ( isset($_SESSION[$this->getSession()]) ) {
 			return true;
 		}
 		return false;
@@ -379,7 +379,7 @@ final class Middleware
 	 */
 	private function isFrontSubClass($class)
 	{
-		if ( is_subclass_of($class,'\floatPHP\Kernel\FrontController') ) {
+		if ( is_subclass_of($class,'\FloatPHP\Kernel\FrontController') ) {
 			return true;
 		}
 		return false;
@@ -394,7 +394,7 @@ final class Middleware
 	 */
 	private function isBackendSubClass($class)
 	{
-		if ( is_subclass_of($class,'\floatPHP\Kernel\BackendController') ) {
+		if ( is_subclass_of($class,'\FloatPHP\Kernel\BackendController') ) {
 			return true;
 		}
 	}
@@ -408,7 +408,7 @@ final class Middleware
 	 */
 	private function isApiSubClass($class)
 	{
-		if ( is_subclass_of($class,'\floatPHP\Kernel\ApiController') ) return true;
+		if ( is_subclass_of($class,'\FloatPHP\Kernel\ApiController') ) return true;
 	}
 
 	/**
@@ -420,7 +420,7 @@ final class Middleware
 	 */
 	private function isModuleSubClass($class)
 	{
-		if ( is_subclass_of($class,'\floatPHP\Kernel\Module') ) return true;
+		if ( is_subclass_of($class,'\FloatPHP\Kernel\Module') ) return true;
 	}
 
 	/**

@@ -3,73 +3,62 @@
  * @author    : JIHAD SINNAOUR
  * @package   : FloatPHP
  * @subpackage: Kernel Component
- * @version   : 1.1.0
+ * @version   : 1.0.0
  * @category  : PHP framework
- * @copyright : (c) JIHAD SINNAOUR <mail@jihadsinnaour.com>
+ * @copyright : (c) 2017 - 2021 JIHAD SINNAOUR <mail@jihadsinnaour.com>
  * @link      : https://www.floatphp.com
  * @license   : MIT License
  *
  * This file if a part of FloatPHP Framework
  */
 
-namespace floatPHP\Kernel;
+namespace FloatPHP\Kernel;
 
-use floatPHP\Classes\Filesystem\Json;
-use floatPHP\Classes\Filesystem\File;
+use FloatPHP\Classes\Filesystem\File;
+use FloatPHP\Classes\Filesystem\Json;
+use FloatPHP\Classes\Filesystem\Stringify;
 
 trait Configuration
 {
 	/**
 	 * @access private
-	 * @var string $configPath
-	 * @var string $routesPath
 	 * @var object $global
-	 * @var object $routes
+	 * @var object $global
+	 * @var array $routes
 	 */
-	private $configPath = 'App/Storage/config/global.json';
-	private $routesPath = 'App/Storage/config/routes.json';
+	private $path = '/Storage/config/global.json';
 	private $global = false;
-	private $routes = false;
+	private $routes = [];
 
-	/**
-	 * Get static instance
-	 *
-	 * @access public
-	 * @param void
-	 * @return object
-	 */
-	public static function getStatic()
-	{
-		return new static;
-	}
-	
 	/**
 	 * Set Config Json File
 	 * Allow Parent Config Access
 	 *
+	 * @access protected
 	 * @param void
 	 * @return void
 	 */
 	protected function initConfig()
 	{
 		// Parse Config file
-		$config = new Json($this->configPath);
-		$this->global = $config->parse();
-		// Parse Routes file
-		$routes = new Json($this->routesPath);
-		$this->routes = $routes->parse(true);
+		$json = new Json("{$this->getAppDir()}{$this->path}");
+		$this->global = $json->parse();
+
+		// Set routes config
+		$routes = new Json("{$this->global->path->routes}");
+		$this->routes = $routes->parse(1);
 	}
 
 	/**
 	 * Get global
 	 *
-	 * @access public
-	 * @param void
+	 * @access protected
+	 * @param string $var null
 	 * @return mixed
 	 */
-	public function getConfig($var = null)
+	protected function getConfig($var = null)
 	{
-		if ($var) {
+		if ( $var ) {
 			return isset($this->global->$var)
 			? $this->global->$var : false;
 		}
@@ -79,163 +68,249 @@ trait Configuration
 	/**
 	 * Update Custom Options
 	 *
-	 * @access public
+	 * @access protected
 	 * @param array $options
+	 * @param int $args
 	 * @return void
 	 */
-	public function updateConfig($options = [])
+	protected function updateConfig($options = [], $args = 64|128|256)
 	{
-		$json = new Json("{$this->getRoot()}{$this->configPath}");
+		$json = new Json("{$this->getRoot()}{$this->path}");
 		$config = $json->parse(true);
 		foreach ($options as $option => $value) {
 			if ( isset($config['options'][$option]) ) {
 				$config['options'][$option] = $value;
 			}
 		}
-		$config = Json::format($config);
-		File::write("{$this->getRoot()}{$this->configPath}",$config);
+		$config = Json::format($config, $args);
+		File::w("{$this->getRoot()}{$this->path}",$config);
 	}
 
 	/**
-	 * Get Routes
+	 * Get static app dir (root)
 	 *
-	 * @access public
+	 * @access protected
+	 * @param void
+	 * @return string
+	 */
+	protected function getAppDir() : string
+	{
+		global $appDir;
+		return Stringify::formatPath($appDir);
+	}
+
+	/**
+	 * Get static base routes path
+	 *
+	 * @access protected
+	 * @param void
+	 * @return string
+	 */
+	protected function getBaseRoute() : string
+	{
+		return "{$this->global->path->base}";
+	}
+
+	/**
+	 * Get static routes
+	 *
+	 * @access protected
 	 * @param void
 	 * @return array
 	 */
-	public function getRoutes()
+	protected function getRoutes() : array
 	{
 		return $this->routes;
 	}
 
 	/**
-	 * Get View Extension
+	 * Get static cache path
 	 *
-	 * @access public
+	 * @access protected
 	 * @param void
 	 * @return string
 	 */
-	public function getViewExtension()
+	protected function getCachePath() : string
 	{
-		return $this->global->view->extension;
+		return "{$this->getAppDir()}{$this->global->path->cache}";
 	}
 
 	/**
-	 * Get View Path
+	 * Get static temp path
 	 *
-	 * @access public
+	 * @access protected
 	 * @param void
 	 * @return string
 	 */
-	public function getViewPath()
+	protected function getTempPath() : string
 	{
-		return $this->global->path->view;
+		return "{$this->getAppDir()}{$this->global->path->temp}";
 	}
 
 	/**
-	 * Get Cache Path
+	 * Get static view path
 	 *
-	 * @access public
+	 * @access protected
 	 * @param void
 	 * @return string
 	 */
-	public function getCachePath()
+	protected function getViewPath() : string
 	{
-		return $this->global->path->cache;
+		return "{$this->getAppDir()}{$this->global->path->view}";
 	}
 
 	/**
-	 * Get Base Uri
+	 * Get static logs path
 	 *
-	 * @access public
+	 * @access protected
 	 * @param void
 	 * @return string
 	 */
-	public function getBaseUri()
+	protected function getLoggerPath() : string
 	{
-		return $this->global->baseUri;
+		return "{$this->getAppDir()}{$this->global->path->logs}";
 	}
 
 	/**
-	 * Get root
+	 * Get static expire
 	 *
-	 * @access public
+	 * @access protected
+	 * @param void
+	 * @return int
+	 */
+	protected function getExpireIn() : int
+	{
+		return intval($this->global->options->ttl);
+	}
+
+	/**
+	 * Get static view extension
+	 *
+	 * @access protected
 	 * @param void
 	 * @return string
 	 */
-	public function getRoot()
+	protected function getViewExtension() : string
 	{
-		return $this->global->root;
+		return "{$this->global->options->view->extension}";
 	}
 
 	/**
-	 * Get Session ID
+	 * Get static base url
 	 *
-	 * @access public
+	 * @access protected
 	 * @param void
 	 * @return string
 	 */
-	public function getSessionID()
+	protected function getBaseUrl() : string
 	{
-		return $this->global->options->sessionID;
+		return "{$this->global->url->base}";
 	}
 
 	/**
-	 * Get Login Location
+	 * Get static assets url
 	 *
-	 * @access public
+	 * @access protected
 	 * @param void
 	 * @return string
 	 */
-	public function getLoginLocation()
+	protected function getAssetUrl() : string
 	{
-		return $this->global->options->login;
+		return "{$this->getBaseUrl()}{$this->global->url->assets}";
 	}
 
 	/**
-	 * Get Admin Location
+	 * Get static admin url
 	 *
-	 * @access public
+	 * @access protected
 	 * @param void
 	 * @return string
 	 */
-	public function getAdminLocation()
+	protected function getAdminUrl() : string
 	{
-		return $this->global->options->admin;
+		return "{$this->getBaseUrl()}{$this->global->url->admin}";
 	}
 
 	/**
-	 * Get static root
+	 * Get static login url
 	 *
-	 * @access public
+	 * @access protected
 	 * @param void
 	 * @return string
 	 */
-	public function getApiUsername()
+	protected function getLoginUrl() : string
 	{
-		return $this->global->api->username;
+		return "{$this->getBaseUrl()}{$this->global->url->login}";
 	}
 
 	/**
-	 * Get static root
+	 * Get static API username
 	 *
-	 * @access public
+	 * @access protected
 	 * @param void
 	 * @return string
 	 */
-	public function getApiPassword()
+	protected function getApiUsername() : string
 	{
-		return $this->global->api->password;
+		return "{$this->global->api->username}";
 	}
 
 	/**
-	 * Get Debug
+	 * Get static API password
 	 *
-	 * @access public
+	 * @access protected
 	 * @param void
-	 * @return boolean
+	 * @return string
 	 */
-	public function isDebug()
+	protected function getApiPassword() : string
+	{
+		return "{$this->global->api->password}";
+	}
+
+	/**
+	 * Get static allowed Access
+	 *
+	 * @access protected
+	 * @param void
+	 * @return array
+	 */
+	protected function getAllowedAccess() : array
+	{
+		return $this->global->access->allowed->ip;
+	}
+
+	/**
+	 * Get static denied Access
+	 *
+	 * @access protected
+	 * @param void
+	 * @return array
+	 */
+	protected function getDeniedAccess() : array
+	{
+		return $this->global->access->denied->ip;
+	}
+
+	/**
+	 * Get static session ID
+	 *
+	 * @access protected
+	 * @param void
+	 * @return string
+	 */
+	protected function getSessionID() : string
+	{
+		return "{$this->global->access->session}";
+	}
+
+	/**
+	 * Get static debug status
+	 *
+	 * @access protected
+	 * @param void
+	 * @return bool
+	 */
+	protected function isDebug() : bool
 	{
 		return $this->global->options->debug;
 	}

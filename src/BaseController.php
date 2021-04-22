@@ -3,70 +3,40 @@
  * @author    : JIHAD SINNAOUR
  * @package   : FloatPHP
  * @subpackage: Kernel Component
- * @version   : 1.1.0
+ * @version   : 1.0.0
  * @category  : PHP framework
- * @copyright : (c) JIHAD SINNAOUR <mail@jihadsinnaour.com>
+ * @copyright : (c) 2017 - 2021 JIHAD SINNAOUR <mail@jihadsinnaour.com>
  * @link      : https://www.floatphp.com
  * @license   : MIT License
  *
  * This file if a part of FloatPHP Framework
  */
 
-namespace floatPHP\Kernel;
-
-use floatPHP\Classes\Html\Hooks;
+namespace FloatPHP\Kernel;
 
 class BaseController extends View
 {
 	/**
-	 * @param void
-	 * @return object
+	 * @access protected
+	 * @param string $src
+	 * @return void
 	 */
-	protected $hook;
-
-	/**
-	 * @param void
-	 * @return object
-	 */
-	public function __construct()
+	protected function addJS($src)
 	{
-		$this->initConfig();
-	}
-	
-	/**
-	 * @param void
-	 * @return object
-	 */
-	protected function hook($type = 'action', $name, $callbakck = [])
-	{
-		$hook = Hooks::getInstance();
-		switch ($type)
-		{
-			case 'action':
-				$hook->addAction($name,$callbakck);
-				break;
-			case 'filter':
-				$hook->addFilter($name,$callbakck);
-				break;
-		}
+		$this->hook('action', 'add-script', function() use($src) {
+			$this->assign(['src' => $src],'inc/script');
+		});
 	}
 
 	/**
-	 * @param void
-	 * @return object
+	 * @access protected
+	 * @param string $href
+	 * @return void
 	 */
-	protected function applyFilter($filter, $callbakck = [])
+	protected function addCSS($href)
 	{
-		$this->hook = Hooks::getInstance();
-		$this->applyFilter($filter, $callbakck);
-	}
-
-	/**
-	 * @param void
-	 * @return object
-	 */
-	protected function exception($code = null,$message = null)
-	{
-		return new ErrorController($code,$message);
+		$this->hook('action', 'add-style', function() use($href){
+			$this->assign(['href' => $href],'inc/style');
+		});
 	}
 }

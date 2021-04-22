@@ -3,27 +3,27 @@
  * @author    : JIHAD SINNAOUR
  * @package   : FloatPHP
  * @subpackage: Kernel Component
- * @version   : 1.1.0
+ * @version   : 1.0.0
  * @category  : PHP framework
- * @copyright : (c) JIHAD SINNAOUR <mail@jihadsinnaour.com>
+ * @copyright : (c) 2017 - 2021 JIHAD SINNAOUR <mail@jihadsinnaour.com>
  * @link      : https://www.floatphp.com
  * @license   : MIT License
  *
  * This file if a part of FloatPHP Framework
  */
 
-namespace floatPHP\Kernel;
+namespace FloatPHP\Kernel;
 
-use Twig_Loader_Filesystem as Loader;
-use Twig_Environment as Environment;
-use Twig_SimpleFunction as BuiltInFunction;
+use Twig\Loader\FilesystemLoader as Loader;
+use Twig\Environment as Environment;
+use Twig\TwigFunction as Module;
 
 class Template
 {
     /**
      * @param string $path
      * @param array $settings
-     * @return object Environment
+     * @return object
      */
     public static function getEnvironment($path, $settings = [])
     {
@@ -32,11 +32,11 @@ class Template
 
     /**
      * @param string $name
-     * @param string|array $function
-     * @return object BuiltInFunction
+     * @param callable $function
+     * @return object
      */
     public static function extend($name, $function)
     {
-        return new BuiltInFunction($name, $function);
+        return new Module($name, $function);
     }
 }

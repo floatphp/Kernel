@@ -14,15 +14,13 @@
 
 namespace FloatPHP\Kernel;
 
-use FloatPHP\Classes\Connection\Db;
-
-class Model extends Orm
+class Core
 {
 	/**
-	 * @param array $data
+	 * @param void
 	 */
-	public function __construct($data = [])
+	public function __construct()
 	{
-		$this->init($data);
+		new Middleware();
 	}
 }
