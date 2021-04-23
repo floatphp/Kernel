@@ -18,7 +18,7 @@ use FloatPHP\Classes\Connection\Db;
 use FloatPHP\Interfaces\Kernel\OrmQueryInterface;
 use FloatPHP\Interfaces\Kernel\OrmInterface;
 
-class Orm implements OrmInterface
+class Orm extends BaseOptions implements OrmInterface
 {
 	/**
 	 * @access public
@@ -36,14 +36,14 @@ class Orm implements OrmInterface
 	/**
 	 * @param string $name
 	 * @param string $value
-	 * @return object
 	 */
 	public function __set($name, $value)
 	{
-		if (strtolower($name) === $this->key) {
+		if ( strtolower($name) === $this->key ) {
 			$this->data[$this->key] = $value;
+		} else {
+			$this->data[$name] = $value;
 		}
-		else $this->data[$name] = $value;
 	}
 
 	/**
@@ -53,7 +53,7 @@ class Orm implements OrmInterface
 	public function __get($name)
 	{
 		if ( is_array($this->data) ) {
-			if (array_key_exists($name,$this->data)) {
+			if ( array_key_exists($name,$this->data) ) {
 				return $this->data[$name];
 			}
 		}
@@ -61,14 +61,19 @@ class Orm implements OrmInterface
 	}
 	
 	/**
-	 * init Db object
+	 * Init Db object
 	 *
+	 * @access protected
 	 * @param array $data
 	 * @return void
 	 */
 	protected function init($data = [], $config = [])
 	{
-		$this->db = new Db();
+		// Init configuration
+		$this->initConfig();
+		// Init db configuration
+		$this->db = new Db($this->getDatabaseAccess());
+		// Set data
 		$this->data = $data;
 	}
 
@@ -82,7 +87,7 @@ class Orm implements OrmInterface
 	public function select(OrmQueryInterface $data)
 	{
 		extract($data->query);
-		$sql = "SELECT {$column} FROM {$table} {$where} {$orderby} {$limit}";
+		$sql = "SELECT `{$column}` FROM `{$table}` {$where} {$orderby} {$limit};";
 		return $this->query($sql,$isSingle,$isRow);
 	}
 
@@ -95,18 +100,21 @@ class Orm implements OrmInterface
 	 */
 	public function query($sql, $isSingle = false, $isRow = false)
 	{
-		if ($isSingle) {
+		if ( $isSingle ) {
 			return $this->db->single($sql);
 
 		} elseif ($isRow) {
 			$result = $this->db->query($sql);
 			return array_shift($result);
-			
-		} else return $this->db->query($sql);
+		}
+		return $this->db->query($sql);
 	}
 
 	/**
-	 * @param string|int $id
+	 * Save query
+	 *
+	 * @access public
+	 * @param string $id
 	 * @return array|null
 	 */
 	public function save($id = '0')

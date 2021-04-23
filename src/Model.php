@@ -14,8 +14,6 @@
 
 namespace FloatPHP\Kernel;
 
-use FloatPHP\Classes\Connection\Db;
-
 class Model extends Orm
 {
 	/**

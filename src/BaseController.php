@@ -23,7 +23,7 @@ class BaseController extends View
 	 */
 	protected function addJS($src)
 	{
-		$this->hook('action', 'add-script', function() use($src) {
+		$this->addAction('add-script', function() use($src) {
 			$this->assign(['src' => $src],'inc/script');
 		});
 	}
@@ -35,7 +35,7 @@ class BaseController extends View
 	 */
 	protected function addCSS($href)
 	{
-		$this->hook('action', 'add-style', function() use($href){
+		$this->addAction('add-style', function() use($href){
 			$this->assign(['href' => $href],'inc/style');
 		});
 	}

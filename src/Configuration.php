@@ -23,12 +23,22 @@ trait Configuration
 	/**
 	 * @access private
 	 * @var object $global
-	 * @var object $global
 	 * @var array $routes
 	 */
-	private $path = '/Storage/config/global.json';
 	private $global = false;
 	private $routes = [];
+
+	/**
+	 * Get static instance
+	 *
+	 * @access protected
+	 * @param void
+	 * @return object
+	 */
+	protected static function getStatic()
+	{
+		return new static;
+	}
 
 	/**
 	 * Set Config Json File
@@ -41,19 +51,19 @@ trait Configuration
 	protected function initConfig()
 	{
 		// Parse Config file
-		$json = new Json("{$this->getAppDir()}{$this->path}");
+		$json = new Json($this->getConfigFile());
 		$this->global = $json->parse();
 
 		// Set routes config
-		$routes = new Json("{$this->global->path->routes}");
-		$this->routes = $routes->parse(1);
+		$routes = new Json($this->getRoutesFile());
+		$this->routes = $routes->parse(true);
 	}
 
 	/**
-	 * Get global
+	 * Get config
 	 *
 	 * @access protected
-	 * @param string $var null
+	 * @param string $var
 	 * @return mixed
 	 */
 	protected function getConfig($var = null)
@@ -66,28 +76,28 @@ trait Configuration
 	}
 
 	/**
-	 * Update Custom Options
+	 * Update config
 	 *
 	 * @access protected
 	 * @param array $options
 	 * @param int $args
 	 * @return void
 	 */
-	protected function updateConfig($options = [], $args = 64|128|256)
+	protected function updateConfig($options = [], $section = 'options', $args = 64|128|256)
 	{
-		$json = new Json("{$this->getRoot()}{$this->path}");
+		$json = new Json($this->getConfigFile());
 		$config = $json->parse(true);
 		foreach ($options as $option => $value) {
-			if ( isset($config['options'][$option]) ) {
-				$config['options'][$option] = $value;
+			if ( isset($config[$section][$option]) ) {
+				$config[$section][$option] = $value;
 			}
 		}
-		$config = Json::format($config, $args);
-		File::w("{$this->getRoot()}{$this->path}",$config);
+		$config = Json::format($config,$args);
+		File::w($this->getConfigFile(),$config);
 	}
 
 	/**
-	 * Get static app dir (root)
+	 * Get static app dir
 	 *
 	 * @access protected
 	 * @param void
@@ -96,7 +106,19 @@ trait Configuration
 	protected function getAppDir() : string
 	{
 		global $appDir;
-		return Stringify::formatPath($appDir);
+		return Stringify::formatPath($appDir,1);
+	}
+
+	/**
+	 * Get static dir root
+	 *
+	 * @access protected
+	 * @param void
+	 * @return string
+	 */
+	protected function getRoot() : string
+	{
+		return dirname($this->getAppDir());
 	}
 
 	/**
@@ -108,7 +130,12 @@ trait Configuration
 	 */
 	protected function getBaseRoute() : string
 	{
-		return "{$this->global->path->base}";
+		$path = "{$this->global->path->base}";
+		if ( !empty($path) ) {
+			$path = ltrim($path,'/');
+			$path = Stringify::formatPath(Stringify::trailingSlash($path));
+		}
+		return $path;
 	}
 
 	/**
@@ -124,6 +151,44 @@ trait Configuration
 	}
 
 	/**
+	 * Get static controller path
+	 *
+	 * @access protected
+	 * @param void
+	 * @return string
+	 */
+	protected function getControllerNamespace() : string
+	{
+		$path = "{$this->global->path->controller}";
+		return Stringify::replace('/','\\',$path);
+	}
+
+	/**
+	 * Get static module path
+	 *
+	 * @access protected
+	 * @param void
+	 * @return string
+	 */
+	protected function getModuleNamespace() : string
+	{
+		$path = "{$this->global->path->module}";
+		return Stringify::replace('/','\\',$path);
+	}
+
+	/**
+	 * Get static database access
+	 *
+	 * @access protected
+	 * @param void
+	 * @return array
+	 */
+	protected function getDatabaseAccess() : array
+	{
+		return (array) File::parseIni($this->getDatabaseFile());
+	}
+
+	/**
 	 * Get static cache path
 	 *
 	 * @access protected
@@ -132,7 +197,8 @@ trait Configuration
 	 */
 	protected function getCachePath() : string
 	{
-		return "{$this->getAppDir()}{$this->global->path->cache}";
+		$path = "{$this->getRoot()}/{$this->global->path->cache}";
+		return Stringify::formatPath($path,1);
 	}
 
 	/**
@@ -144,7 +210,8 @@ trait Configuration
 	 */
 	protected function getTempPath() : string
 	{
-		return "{$this->getAppDir()}{$this->global->path->temp}";
+		$path = "{$this->getRoot()}/{$this->global->path->temp}";
+		return Stringify::formatPath($path,1);
 	}
 
 	/**
@@ -156,7 +223,8 @@ trait Configuration
 	 */
 	protected function getViewPath() : string
 	{
-		return "{$this->getAppDir()}{$this->global->path->view}";
+		$path = "{$this->getRoot()}/{$this->global->path->view}";
+		return Stringify::formatPath($path,1);
 	}
 
 	/**
@@ -168,7 +236,8 @@ trait Configuration
 	 */
 	protected function getLoggerPath() : string
 	{
-		return "{$this->getAppDir()}{$this->global->path->logs}";
+		$path = "{$this->getRoot()}/{$this->global->path->logs}";
+		return Stringify::formatPath($path,1);
 	}
 
 	/**
@@ -204,7 +273,8 @@ trait Configuration
 	 */
 	protected function getBaseUrl() : string
 	{
-		return "{$this->global->url->base}";
+		$url = "{$this->global->url->base}";
+		return Stringify::untrailingSlash($url);
 	}
 
 	/**
@@ -216,7 +286,8 @@ trait Configuration
 	 */
 	protected function getAssetUrl() : string
 	{
-		return "{$this->getBaseUrl()}{$this->global->url->assets}";
+		$url = "{$this->getBaseUrl()}{$this->global->url->assets}";
+		return Stringify::untrailingSlash($url);
 	}
 
 	/**
@@ -298,7 +369,7 @@ trait Configuration
 	 * @param void
 	 * @return string
 	 */
-	protected function getSessionID() : string
+	protected function getSessionId() : string
 	{
 		return "{$this->global->access->session}";
 	}
@@ -313,5 +384,41 @@ trait Configuration
 	protected function isDebug() : bool
 	{
 		return $this->global->options->debug;
+	}
+
+	/**
+	 * Get static config file path
+	 *
+	 * @access private
+	 * @param void
+	 * @return array
+	 */
+	private function getConfigFile() : string
+	{
+		return "{$this->getAppDir()}/Storage/config/global.json";
+	}
+
+	/**
+	 * Get static routes file path
+	 *
+	 * @access private
+	 * @param void
+	 * @return array
+	 */
+	private function getRoutesFile() : string
+	{
+		return "{$this->getRoot()}/{$this->global->path->routes}";
+	}
+
+	/**
+	 * Get static database file path
+	 *
+	 * @access private
+	 * @param void
+	 * @return array
+	 */
+	private function getDatabaseFile() : string
+	{
+		return "{$this->getRoot()}/{$this->global->path->db}";
 	}
 }

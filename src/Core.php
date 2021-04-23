@@ -14,6 +14,9 @@
 
 namespace FloatPHP\Kernel;
 
+use FloatPHP\Classes\Auth\Session;
+use FloatPHP\Classes\Http\Router;
+
 class Core
 {
 	/**
@@ -21,6 +24,8 @@ class Core
 	 */
 	public function __construct()
 	{
-		new Middleware();
+		header('X-Powered-By:FloatPHP');
+		new Session();
+		new Middleware(new Router());
 	}
 }

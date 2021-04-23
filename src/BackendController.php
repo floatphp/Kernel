@@ -22,7 +22,7 @@ class BackendController extends BaseController
 	/**
 	 * @access protected
 	 * @param void
-	 * @return boolean
+	 * @return bool
 	 */
 	protected function isAdmin()
 	{

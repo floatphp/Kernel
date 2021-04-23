@@ -22,13 +22,13 @@ class ApiController extends BaseOptions
 	 * Is HTTP Authenticated
 	 *
 	 * @param void
-	 * @return boolean
+	 * @return bool
 	 */
 	protected function isHttpAuthenticated()
 	{
 		if ( Server::isBasicAuth() ) {
 			$username = Server::getBasicAuthUser();
-			$password = Server::getBasicAuthPassword();
+			$password = Server::getBasicAuthPwd();
 		    if ( $username == $this->getApiUsername() && $password == $this->getApiPassword() ){
 			    return true;
 		    }
