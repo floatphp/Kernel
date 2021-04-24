@@ -14,7 +14,7 @@
 
 namespace FloatPHP\Kernel;
 
-use FloatPHP\Classes\Html\Hooks;
+use FloatPHP\Classes\Html\Template;
 use FloatPHP\Classes\Auth\Session;
 use FloatPHP\Classes\Security\Tokenizer;
 use FloatPHP\Classes\Filesystem\Json;
@@ -125,13 +125,17 @@ class View extends BaseOptions
         $env->addFunction(Template::extend('unserialize', function ($string){
             return Stringify::unserialize($string);
         }));
-        $env->addFunction(Template::extend('applyFilter', function ($tag, $args = []){
-            $hooks = Hooks::getInstance();
-            return $hooks->applyFilter($tag, $args);
-        }));
         $env->addFunction(Template::extend('doAction', function ($tag, $args = []){
-            $hooks = Hooks::getInstance();
-            $hooks->doAction($tag, $args);
+            $this->doAction($tag,$args);
+        }));
+        $env->addFunction(Template::extend('hasAction', function ($tag, $args = []){
+            $this->hasAction($tag,$args);
+        }));
+        $env->addFunction(Template::extend('applyFilter', function ($hook, $value, $args = []){
+            return $this->applyFilter($hook,$value,$args);
+        }));
+        $env->addFunction(Template::extend('doShortcode', function ($content, $ignoreHTML = false){
+            return $this->doShortcode($content,$ignoreHTML);
         }));
 
         // Return rendered view

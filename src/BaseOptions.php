@@ -17,6 +17,7 @@ namespace FloatPHP\Kernel;
 use FloatPHP\Classes\Auth\Session;
 use FloatPHP\Classes\Security\Tokenizer;
 use FloatPHP\Classes\Html\Hook;
+use FloatPHP\Classes\Html\Shortcode;
 
 class BaseOptions
 {
@@ -184,6 +185,83 @@ class BaseOptions
 	protected function hasFilter($hook, $method = false)
 	{
 		return Hook::getInstance()->hasFilter($hook,$method);
+	}
+
+	/**
+	 * Register a shortcode handler
+	 *
+	 * @access protected
+	 * @param string $tag
+	 * @param callable $callback
+	 * @return void
+	 */
+	protected function addShortcode($tag, $callback)
+	{
+		return Shortcode::getInstance()->addShortcode($tag,$callback);
+	}
+
+	/**
+	 * Search content for shortcodes 
+	 * and filter shortcodes through their hooks
+	 *
+	 * @access protected
+	 * @param string $content
+	 * @param bool $ignoreHTML
+	 * @return void
+	 */
+	protected function renderShortcode($content, $ignoreHTML = false)
+	{
+		echo $this->doShortcode($content,$ignoreHTML);
+	}
+
+	/**
+	 * Search content for shortcodes 
+	 * and filter shortcodes through their hooks
+	 *
+	 * @access protected
+	 * @param string $content
+	 * @param bool $ignoreHTML
+	 * @return string
+	 */
+	protected function doShortcode($content, $ignoreHTML = false)
+	{
+		return Shortcode::getInstance()->doShortcode($content,$ignoreHTML);
+	}
+
+	/**
+	 * Removes hook for shortcode
+	 *
+	 * @access protected
+	 * @param string $tag
+	 * @return bool
+	 */
+	protected function removeShortcode($tag)
+	{
+		return Shortcode::getInstance()->removeShortcode($tag);
+	}
+
+	/**
+	 * Checks Whether a registered shortcode exists named $tag
+	 *
+	 * @access protected
+	 * @param string $tag
+	 * @return bool
+	 */
+	protected function shortcodeExists($tag)
+	{
+		return Shortcode::getInstance()->shortcodeExists($tag);
+	}
+
+	/**
+	 * Checks Whether a registered shortcode exists named $tag
+	 *
+	 * @access protected
+	 * @param string $tag
+	 * @return bool
+	 */
+	protected function hasShortcode($tag)
+	{
+		return Shortcode::getInstance()->hasShortcode($tag);
 	}
 
 	/**
