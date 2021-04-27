@@ -60,8 +60,6 @@ class View extends BaseOptions
 	 * @param array $content
      * @param string $template
 	 * @return string
-	 * @todo translate function
-	 * @todo hook functions
 	 */
 	protected function assign($content = [], $template = 'system/default')
 	{
@@ -83,8 +81,7 @@ class View extends BaseOptions
             var_dump($var);
         }));
         $env->addFunction(Template::extend('isLoggedIn', function (){
-			$session = new Session();
-			return $session->isRegistered();
+			return $this->isLoggedIn();
         }));
         $env->addFunction(Template::extend('isDebug', function (){
             return $this->isDebug();
@@ -110,32 +107,35 @@ class View extends BaseOptions
         $env->addFunction(Template::extend('getToken', function (){
 			return $this->getToken();
         }));
-        $env->addFunction(Template::extend('JSONdecode', function ($json){
+        $env->addFunction(Template::extend('JSONdecode', function ($json = ''){
             return Json::decode($json);
         }));
-        $env->addFunction(Template::extend('JSONencode', function ($array){
+        $env->addFunction(Template::extend('JSONencode', function ($array = []){
             return Json::encode($array);
         }));
         $env->addFunction(Template::extend('exit', function (){
             exit;
         }));
-        $env->addFunction(Template::extend('serialize', function ($data){
+        $env->addFunction(Template::extend('serialize', function ($data = []){
             return Stringify::serialize($data);
         }));
-        $env->addFunction(Template::extend('unserialize', function ($string){
+        $env->addFunction(Template::extend('unserialize', function ($string = ''){
             return Stringify::unserialize($string);
         }));
-        $env->addFunction(Template::extend('doAction', function ($tag, $args = []){
-            $this->doAction($tag,$args);
+        $env->addFunction(Template::extend('doAction', function ($action = '', $args = []){
+            $this->doAction($action,$args);
         }));
-        $env->addFunction(Template::extend('hasAction', function ($tag, $args = []){
-            $this->hasAction($tag,$args);
+        $env->addFunction(Template::extend('hasAction', function ($action = '', $args = []){
+            $this->hasAction($action,$args);
         }));
-        $env->addFunction(Template::extend('applyFilter', function ($hook, $value, $args = []){
-            return $this->applyFilter($hook,$value,$args);
+        $env->addFunction(Template::extend('applyFilter', function ($filter = '', $value = ''){
+            return $this->applyFilter($filter,$value);
         }));
-        $env->addFunction(Template::extend('doShortcode', function ($content, $ignoreHTML = false){
+        $env->addFunction(Template::extend('doShortcode', function ($content = '', $ignoreHTML = false){
             return $this->doShortcode($content,$ignoreHTML);
+        }));
+        $env->addFunction(Template::extend('translate', function ($string){
+            return $this->translate($string);
         }));
 
         // Return rendered view

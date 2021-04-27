@@ -22,10 +22,22 @@ class Core
 	/**
 	 * @param void
 	 */
-	public function __construct()
+	public function __construct($config = [])
 	{
+		// FloatPHP header
 		header('X-Powered-By:FloatPHP');
+
+		// Set override config
+		if ( isset($config['default-lang']) ) {
+			Session::set('default-lang',$config['default-lang']);
+		} else {
+			Session::set('default-lang','en');
+		}
+		
+		// Start session
 		new Session();
+		
+		// Start routing
 		new Middleware(new Router());
 	}
 }

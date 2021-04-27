@@ -21,7 +21,7 @@ class ErrorController extends FrontController
 	/**
 	 * @access public
 	 */
-	const CODE = 404;
+	public const CODE = 404;
 
 	/**
 	 * @param int $code
@@ -35,11 +35,12 @@ class ErrorController extends FrontController
 		$this->initConfig();
 		
 		Response::setHttpHeaders($code,'text/html; charset=utf-8');
+		$template = $this->applyFilter('error-template','/system/error');
 		$this->render([
 			'status' => Response::getMessage($code),
 			'code'   => $code,
 			'error'  => $error
-		], '/system/error');
+		], $template);
 		die();
 	}
 }

@@ -15,9 +15,11 @@
 namespace FloatPHP\Kernel;
 
 use FloatPHP\Classes\Auth\Session;
+use FloatPHP\Classes\Http\Request;
 use FloatPHP\Classes\Security\Tokenizer;
 use FloatPHP\Classes\Html\Hook;
 use FloatPHP\Classes\Html\Shortcode;
+use FloatPHP\Classes\Filesystem\Translation;
 
 class BaseOptions
 {
@@ -58,7 +60,7 @@ class BaseOptions
     /**
      * @access protected
      * @param string $token
-     * @param boolean
+     * @param bool
      */
 	protected function verifyToken($token)
 	{
@@ -273,5 +275,76 @@ class BaseOptions
 	protected function exception($code = 404, $message = '')
 	{
 		return new ErrorController($code,$message);
+	}
+
+	/**
+	 * @access protected
+	 * @param void
+	 * @return string
+	 */
+	protected function getLanguage()
+	{
+		if ( array_key_exists('lang',Request::get()) ) {
+			$lang = Request::get('lang');
+		    Session::set('lang',$lang);
+
+		} elseif ( array_key_exists('lang',Session::get()) && $this->isLoggedIn() ) {
+		    $lang = Session::get('lang');
+
+		} else {
+		    $lang = Session::get('default-lang');
+		}
+		return $this->applyFilter('default-lang',$lang);
+	}
+
+	/**
+	 * @access protected
+	 * @param string $string
+	 * @return string
+	 */
+	protected function translate($string) : string
+	{
+		// Set cache filters
+		$path = $this->applyFilter('translation-cache-path',$this->getTranslateCachePath());
+		$ttl = $this->applyFilter('translation-cache-ttl',3600);
+
+		// Cache translation
+		Cache::setConfig(['path' => $path]);
+		Cache::expireIn($ttl);
+		$cache = new Cache();
+
+		$length = strlen($string);
+		$lang = $this->getLanguage();
+		$id = "translation-{$lang}-{$length}-{$string}";
+		$translation = $cache->get($id);
+		if ( !$cache->isCached() ) {
+			$path = $this->applyFilter('translation-path',$this->getTranslatePath());
+			$translator = new Translation($lang,$path);
+			$translation = $translator->translate($string);
+			$cache->set($translation,'translation');
+		}
+		return ($translation) ? $translation : $string;
+	}
+
+	/**
+	 * @access protected
+	 * @param string $string
+	 * @param string $vars
+	 * @return string
+	 */
+	protected function translateVars($string,...$vars) : string
+	{
+		return sprintf($this->translate($string), $vars);
+	}
+
+	/**
+	 * @access protected
+	 * @param void
+	 * @return bool
+	 */
+	protected function isLoggedIn() : bool
+	{
+		$session = new Session();
+		return $session->isRegistered();
 	}
 }

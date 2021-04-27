@@ -25,6 +25,7 @@
     "guzzlehttp/guzzle": "7.3.0",
     "twig/twig": "3.3.0",
     "phpfastcache/phpfastcache": "8.0.5",
+    "justinrainbow/json-schema": "5.2.10",
     "floatphp/classes": "1.0.0",
     "floatphp/interfaces": "1.0.0",
     "floatphp/exceptions": "1.0.0",

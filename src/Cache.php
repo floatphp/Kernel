@@ -25,9 +25,18 @@ class Cache extends FileCache
 	 */
 	public function __construct()
 	{
-		self::setConfig([
-			'path' => $this->getCachePath()
-		]);
+		// Init configuration
+		$this->initConfig();
+		// Set cache configuration
+		if ( !self::$config ) {
+			self::setConfig([
+				'path' => $this->getCachePath()
+			]);
+			if ( !self::$ttl ) {
+				self::expireIn($this->getExpireIn());
+			}
+		}
+		// Instance cache
 		parent::__construct();
 	}
 }

@@ -159,7 +159,7 @@ trait Configuration
 	 */
 	protected function getControllerNamespace() : string
 	{
-		$path = "{$this->global->path->controller}";
+		$path = "{$this->global->namespace->controller}";
 		return Stringify::replace('/','\\',$path);
 	}
 
@@ -172,7 +172,7 @@ trait Configuration
 	 */
 	protected function getModuleNamespace() : string
 	{
-		$path = "{$this->global->path->module}";
+		$path = "{$this->global->namespace->module}";
 		return Stringify::replace('/','\\',$path);
 	}
 
@@ -202,6 +202,19 @@ trait Configuration
 	}
 
 	/**
+	 * Get static translation cache path
+	 *
+	 * @access protected
+	 * @param void
+	 * @return string
+	 */
+	protected function getTranslateCachePath() : string
+	{
+		$path = "{$this->getRoot()}/{$this->global->path->cache}/translation";
+		return Stringify::formatPath($path,1);
+	}
+
+	/**
 	 * Get static temp path
 	 *
 	 * @access protected
@@ -224,6 +237,19 @@ trait Configuration
 	protected function getViewPath() : string
 	{
 		$path = "{$this->getRoot()}/{$this->global->path->view}";
+		return Stringify::formatPath($path,1);
+	}
+
+	/**
+	 * Get static translate path
+	 *
+	 * @access protected
+	 * @param void
+	 * @return string
+	 */
+	protected function getTranslatePath() : string
+	{
+		$path = "{$this->getRoot()}/{$this->global->path->translate}";
 		return Stringify::formatPath($path,1);
 	}
 

@@ -351,7 +351,7 @@ final class Middleware
 	 */
 	private function isFrontSubClass($class)
 	{
-		if ( is_subclass_of($class,'\FloatPHP\Kernel\FrontController') ) {
+		if ( TypeCheck::isSubClassOf($class,__NAMESPACE__ . '\FrontController') ) {
 			return true;
 		}
 		return false;
@@ -366,7 +366,7 @@ final class Middleware
 	 */
 	private function isBackendSubClass($class)
 	{
-		if ( is_subclass_of($class,'\FloatPHP\Kernel\BackendController') ) {
+		if ( TypeCheck::isSubClassOf($class,__NAMESPACE__ . '\BackendController') ) {
 			return true;
 		}
 	}
@@ -380,7 +380,7 @@ final class Middleware
 	 */
 	private function isApiSubClass($class)
 	{
-		if ( is_subclass_of($class,'\FloatPHP\Kernel\ApiController') ) {
+		if ( TypeCheck::isSubClassOf($class,__NAMESPACE__ . '\ApiController') ) {
 			return true;
 		}
 		return false;
@@ -395,7 +395,7 @@ final class Middleware
 	 */
 	private function isModuleSubClass($class)
 	{
-		if ( is_subclass_of($class,'\FloatPHP\Kernel\Module') ) {
+		if ( TypeCheck::isSubClassOf($class,__NAMESPACE__ . '\Module') ) {
 			return true;
 		}
 		return false;
