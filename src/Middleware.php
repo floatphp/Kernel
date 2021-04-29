@@ -19,6 +19,7 @@ use FloatPHP\Classes\Filesystem\TypeCheck;
 use FloatPHP\Classes\Filesystem\Stringify;
 use FloatPHP\Classes\Http\Server;
 use FloatPHP\Classes\Http\Response;
+use FloatPHP\Interfaces\Classes\RouterInterface;
 
 final class Middleware
 {
@@ -35,7 +36,7 @@ final class Middleware
 	 *
 	 * @param object $router
 	 */
-	public function __construct($router)
+	public function __construct(RouterInterface $router)
 	{
 		// Init configuration
 		$this->initConfig();
@@ -201,9 +202,11 @@ final class Middleware
 				}
 
 			} elseif ( $this->isApiController($class) ) {
-				if ( $this->isHttpAuthenticated() ) {
-					$instance = new $class();
+				$instance = new $class();
+				if ( $instance->isHttpAuthenticated() ) {
 					$instance->$method($var);
+				} else {
+					Response::set('Authorization Required',[],'error',401);
 				}
 			}
 		}
@@ -233,9 +236,11 @@ final class Middleware
 				}
 
 			} elseif ( $this->isApiController($class) ) {
-				if ( $this->isHttpAuthenticated() ) {
-					$instance = new $class();
+				$instance = new $class();
+				if ( $instance->isHttpAuthenticated() ) {
 					$instance->$method();
+				} else {
+					Response::set('Authorization Required',[],'error',401);
 				}
 			}
 		}
@@ -305,28 +310,6 @@ final class Middleware
 	}
 
 	/**
-	 * Is HTTP authenticated
-	 *
-	 * @access private
-	 * @param void
-	 * @return bool
-	 */
-	private function isHttpAuthenticated()
-	{
-		if ( Server::isBasicAuth() ) {
-			$username = Server::getBasicAuthUser();
-			$password = Server::getBasicAuthPwd();
-
-		    if ( $username !== $this->getApiUsername() || $password !== $this->getApiPassword() ) {
-		    	Response::set('Authorization Required.',[],'error',401);
-		    } else {
-		    	return true;
-		    }
-		}
-		Response::set('Authorization Required.',[],'error',401);
-	}
-
-	/**
 	 * Is AuthMiddleware class
 	 *
 	 * @access private
@@ -336,7 +319,7 @@ final class Middleware
 	 */
 	private function isAuthMiddleware($class)
 	{
-		if ( $class == $this->getControllerNamespace() . 'AuthController' ) {
+		if ( TypeCheck::isSubClassOf($class,__NAMESPACE__ . '\AbstractAuthController') ) {
 			return true;
 		}
 		return false;

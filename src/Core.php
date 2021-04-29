@@ -27,15 +27,15 @@ class Core
 		// FloatPHP header
 		header('X-Powered-By:FloatPHP');
 
+		// Start session
+		new Session();
+		
 		// Set override config
 		if ( isset($config['default-lang']) ) {
 			Session::set('default-lang',$config['default-lang']);
 		} else {
 			Session::set('default-lang','en');
 		}
-		
-		// Start session
-		new Session();
 		
 		// Start routing
 		new Middleware(new Router());

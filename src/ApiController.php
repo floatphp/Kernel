@@ -15,16 +15,18 @@
 namespace FloatPHP\Kernel;
 
 use FloatPHP\Classes\Http\Server;
+use FloatPHP\Classes\Security\Encryption;
 
 class ApiController extends BaseOptions
 {
 	/**
-	 * Is HTTP Authenticated
+	 * Is HTTP authenticated
 	 *
+	 * @access public
 	 * @param void
 	 * @return bool
 	 */
-	protected function isHttpAuthenticated()
+	public function isHttpAuthenticated() : bool
 	{
 		if ( Server::isBasicAuth() ) {
 			$username = Server::getBasicAuthUser();
@@ -32,7 +34,32 @@ class ApiController extends BaseOptions
 		    if ( $username == $this->getApiUsername() && $password == $this->getApiPassword() ){
 			    return true;
 		    }
+		} elseif ( ($token = Server::getBearerToken()) ) {
+			if ( $this->isGranted($token) ) {
+				return true;
+			}
 		}
+		return false;
+	}
+
+	/**
+	 * Is granted
+	 *
+	 * @access protected
+	 * @param string $token
+	 * @return bool
+	 */
+	protected function isGranted($token) : bool
+	{
+        $encryption = new Encryption($token,$this->getSecret());
+        $access = explode(':',$encryption->decrypt());
+        $username = isset($access[0]) ? $access[0] : false;
+        $password = isset($access[1]) ? $access[1] : false;
+        if ( $username && $password ) {
+			if ( $username == $this->getApiUsername() && $password == $this->getApiPassword() ){
+			    return true;
+			}
+        }
 		return false;
 	}
 }

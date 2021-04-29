@@ -51,12 +51,17 @@ trait Configuration
 	protected function initConfig()
 	{
 		// Parse Config file
-		$json = new Json($this->getConfigFile());
-		$this->global = $json->parse();
+		if ( File::exists(($path = $this->getConfigFile())) ) {
+			$json = new Json($path);
+			Validator::checkConfig($json);
+			$this->global = $json->parse();
+		};
 
 		// Set routes config
-		$routes = new Json($this->getRoutesFile());
-		$this->routes = $routes->parse(true);
+		if ( File::exists(($path = $this->getRoutesFile())) ) {
+			$routes = new Json($path);
+			$this->routes = $routes->parse(true);
+		}
 	}
 
 	/**
@@ -397,7 +402,31 @@ trait Configuration
 	 */
 	protected function getSessionId() : string
 	{
-		return "{$this->global->access->session}";
+		return "{$this->global->access->sessionId}";
+	}
+
+	/**
+	 * Get static access expire
+	 *
+	 * @access protected
+	 * @param void
+	 * @return int
+	 */
+	protected function getAccessExpire() : int
+	{
+		return "{$this->global->access->expire}";
+	}
+
+	/**
+	 * Get static secret
+	 *
+	 * @access protected
+	 * @param void
+	 * @return string
+	 */
+	protected function getSecret() : string
+	{
+		return "{$this->global->access->secret}";
 	}
 
 	/**

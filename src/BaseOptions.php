@@ -26,10 +26,7 @@ class BaseOptions
 	use Configuration;
 
 	/**
-	 * construct admin ORM
-	 *
 	 * @param void
-	 * @return object
 	 */
 	public function __construct()
 	{

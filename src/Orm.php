@@ -67,7 +67,7 @@ class Orm extends BaseOptions implements OrmInterface
 	 * @param array $data
 	 * @return void
 	 */
-	protected function init($data = [], $config = [])
+	protected function init($data = [])
 	{
 		// Init configuration
 		$this->initConfig();
@@ -298,7 +298,7 @@ class Orm extends BaseOptions implements OrmInterface
 	 */
 	private function execute($sql, $array = false)
 	{
-		if ($array) {
+		if ( $array ) {
 			$result = $this->db->query($sql, $array);
 		} else {
 			$result = $this->db->query($sql, $this->data);

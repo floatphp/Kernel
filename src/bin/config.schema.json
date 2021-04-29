@@ -1,30 +1,18 @@
 {
-  "$id": "plugin.config.schema.json",
+  "$id": "app.config.schema.json",
   "type": "object",
   "properties": {
-    "name": {
-      "type": "string"
-    },
-    "version": {
-      "type": "string"
-    },
-    "author": {
-      "type": "string"
-    },
-    "description": {
-      "type": "string"
-    },
     "path": {
       "type": "object",
-      "required": ["asset","view","migrate","logs","temp","cache"],
+      "required": ["base","modules","view","logs","temp","migrate","cache","upload","translate","db","routes"],
       "properties":{
-        "asset":{
+        "base":{
+          "type": "string"
+        },
+        "modules":{
           "type": "string"
         },
         "view":{
-          "type": "string"
-        },
-        "migrate":{
           "type": "string"
         },
         "logs":{
@@ -33,140 +21,117 @@
         "temp":{
           "type": "string"
         },
+        "migrate":{
+          "type": ["string","boolean"]
+        },
         "cache":{
+          "type": ["string","boolean"]
+        },
+        "upload":{
+          "type": "string"
+        },
+        "translate":{
+          "type": "string"
+        },
+        "db":{
+          "type": "string"
+        },
+        "routes":{
+          "type": "string"
+        }
+      }
+    },
+    "url": {
+      "type": "object",
+      "required": ["base","assets","admin","login"],
+      "properties":{
+        "base":{
+          "type": "string"
+        },
+        "assets":{
+          "type": "string"
+        },
+        "admin":{
+          "type": "string"
+        },
+        "login":{
+          "type": "string"
+        }
+      }
+    },
+    "namespace": {
+      "type": "object",
+      "required": ["controller","module"],
+      "properties":{
+        "controller":{
+          "type": "string"
+        },
+        "module":{
+          "type": "string"
+        }
+      }
+    },
+    "api": {
+      "type": "object",
+      "required": ["username","password"],
+      "properties":{
+        "username":{
+          "type": "string"
+        },
+        "password":{
           "type": "string"
         }
       }
     },
     "options": {
       "type": "object",
-      "required": ["ttl","multilingual","footprint","debug","view"],
+      "required": ["view","debug","ttl"],
       "properties":{
+        "view":{
+          "type": "object",
+          "required": ["extension"],
+          "properties":{
+            "extension":"string"
+          }
+        },
         "ttl":{
           "type": "integer"
         },
-        "multilingual":{
-          "type": "boolean"
-        },
-        "footprint":{
-          "type": "boolean"
-        },
         "debug":{
           "type": "boolean"
-        },
-        "view":{
-          "type": "object",
-          "properties":{
-            "extension":{
-              "type": "string"
-            }
-          }
         }
       }
     },
-    "ajax": {
-      "type": "array"
-    },
-    "requirement": {
+    "access": {
       "type": "object",
-      "required": ["plugins","options","templates","modules","php"],
+      "required": ["allowed","denied","sessionId","secret","expire"],
       "properties":{
-        "plugins":{
-          "type": "array",
-          "items": [
-            {
-              "type": "object",
-              "required": ["slug"],
-              "properties":{
-                "slug":{
-                  "type": "string"
-                },
-                "callable":{
-                  "type": "string"
-                },
-                "name":{
-                  "type": "string"
-                }
-              }
-            }
-          ]
+        "allowed":{
+          "type": "object",
+          "required": ["ip"],
+          "properties":{
+            "ip":"array"
+          }
         },
-        "options":{
-          "type": "array",
-          "items": [
-            {
-              "type": "object",
-              "required": ["slug","value"],
-              "properties":{
-                "slug":{
-                  "type": "string"
-                },
-                "value":{
-                  "type": "string"
-                },
-                "name":{
-                  "type": "string"
-                }
-              }
-            }
-          ]
+        "denied":{
+          "type": "object",
+          "required": ["ip"],
+          "properties":{
+            "ip":"array"
+          }
         },
-        "templates":{
-          "type": "array",
-          "items": [
-            {
-              "type": "object",
-              "required": ["slug"],
-              "properties":{
-                "slug":{
-                  "type": "string"
-                },
-                "name":{
-                  "type": "string"
-                }
-              }
-            }
-          ]
-        },
-        "modules":{
-          "type": "array",
-          "items": [
-            {
-              "type": "object",
-              "required": ["name","callable"],
-              "properties":{
-                "name":{
-                  "type": "string"
-                },
-                "callable":{
-                  "type": "string"
-                }
-              }
-            }
-          ]
-        },
-        "php":{
-          "type": "string"
-        }
+        "sessionId":"string",
+        "secret":"string",
+        "expire":"string"
       }
-    },
-    "routes": {
-      "type": "object"
-    },
-    "assets": {
-      "type": "object"
     }
   },
   "required": [
-    "name",
-    "version",
-    "author",
-    "description",
     "path",
+    "url",
+    "namespace",
+    "api",
     "options",
-    "ajax",
-    "requirement",
-    "routes",
-    "assets"
+    "access"
   ]
 }
