@@ -30,11 +30,12 @@ class Cache extends FileCache
 		// Set cache configuration
 		if ( !self::$config ) {
 			self::setConfig([
-				'path' => $this->getCachePath()
+				'path' => "{$this->getCachePath()}/temp"
 			]);
-			if ( !self::$ttl ) {
-				self::expireIn($this->getExpireIn());
-			}
+		}
+		// Set cache TTL
+		if ( !self::$ttl ) {
+			self::expireIn($this->getExpireIn());
 		}
 		// Instance cache
 		parent::__construct();

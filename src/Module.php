@@ -14,76 +14,42 @@
 
 namespace FloatPHP\Kernel;
 
-use FloatPHP\Classes\Storage\Json;
+use FloatPHP\Classes\Filesystem\Json;
 
 class Module extends BaseController
 {
 	/**
-	 * @access protected
-	 * string $dir modules directory
-	 */
-	protected static $dir;	
-
-	/**
-	 * @access private
-	 * string $url Asset url
-	 */
-	private $url;
-
-	/**
-	 * Load modules
-	 * @param void
 	 * @param void
 	 */
 	public function __construct()
 	{
-		self::$dir = $this->getModuleDir();
-		$this->autoload();
-	}
+		// Init configuration
+		$this->initConfig();
 
-	/**
-	 * Autoload modules
-	 * @param void
-	 * @param array
-	 */
-	protected function getModuleDir()
-	{
-		return glob('App/Modules/*', 1073741824);
-	}
-
-	/**
-	 * Autoload modules
-	 * @param void
-	 * @param void
-	 */
-	private function autoload()
-	{
-		// load module list
-		foreach ( self::$dir as $name )
-		{
-			$json = new Json("{$name}/module.json"); // module.json
+		// Load modules
+		foreach ( $this->getModules() as $name ) {
+			$json = new Json("{$name}/module.json");
 			$config = $json->parse();
-			var_dump($config);die();
-			$module = "\App\Modules\\{$config->namespace}\\{$config->namespace}Module";
+			$module = $this->getModuleNamespace();
+			$module .= "{$config->namespace}\\{$config->namespace}Module";
 			new $module;
 		}
 	}
 
 	/**
-	 * Set router
+	 * Get modules routes
+	 *
+	 * @access public
 	 * @param void
-	 * @param void
+	 * @param array
 	 */
-	public static function setRouter()
+	public function getModulesRoutes()
 	{
-		// load module router list
 		$wrapper = [];
-		if (self::$dir)
-		{
-			foreach ( self::$dir as $key => $name )
-			{
-				$json = new Json("{$name}/module"); // module.json
-				$config = $json->parse();
+		if ( $this->getModules() ) {
+			foreach ( $this->getModules() as $key => $name ) {
+				$json = new Json("{$name}/module.json");
+				$config = $json->parse(true);
 				foreach ($config['router'] as $route) {
 					$wrapper[] = $route;
 				}
@@ -92,34 +58,39 @@ class Module extends BaseController
 		return $wrapper;
 	}
 
-	protected function addJS($url)
+	/**
+	 * @access protected
+	 * @param string $js
+	 * @return void
+	 */
+	protected function addJS($js)
 	{
-		self::hook('action', 'add-js', function() use ($url) {
-			parent::render(['src' => $url],'system/script');
+		$this->addAction('add-js', function() use($js) {
+			parent::assign(['js' => "{$this->getModulesPath()}/{$js}"],'system/js');
 		});
 	}
 
-	protected function addCSS($url)
+	/**
+	 * @access protected
+	 * @param string $css
+	 * @return void
+	 */
+	protected function addCSS($css)
 	{
-		self::hook('action', 'add-css', function() use ($url) {
-			parent::render(['href' => $url],'system/style');
+		$this->addAction('add-css', function() use($css){
+			parent::assign(['css' => "{$this->getModulesPath()}/{$css}"],'system/css');
 		});
 	}
 
     /**
-     * Get view path
+     * Get overrided view path
      *
      * @access protected
-     * @param string $template
+     * @param void
      * @return string
      */
-    protected function getPath($template)
+    protected function getOverridedViewPath()
     {
-        // Set overriding path
-        $override = "{$this->getThemeDir()}/{$this->getNameSpace()}/";
-        if ( file_exists("{$override}{$template}{$this->getViewExtension()}") ) {
-            return $override;
-        }
-        return $this->getViewPath();
+        return $this->getModulesPath();
     }
 }

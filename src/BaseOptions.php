@@ -41,15 +41,15 @@ class BaseOptions
      */
 	protected function getToken()
 	{
+		new Session();
 		$token = new Tokenizer();
-		$session = new Session();
 		$generated = false;
-		if ( $session->isRegistered() ) {
+		if ( $this->isLoggedIn() ) {
 			$generated = $token->generate(10);
-			$session->set('private-token',$generated);
+			Session::set('--private-token',$generated);
 		} else {
 			$generated = $token->generate(10);
-			$session->set('public-token',$generated);
+			Session::set('--public-token',$generated);
 		}
 		return $generated;
 	}
@@ -61,13 +61,13 @@ class BaseOptions
      */
 	protected function verifyToken($token)
 	{
-		$session = new Session();
-		if ( $session->isRegistered() ) {
-			if ( $token === $session->get('private-token') ) {
+		new Session();
+		if ( $this->isLoggedIn() ) {
+			if ( $token === Session::get('--private-token') ) {
 				return true;
 			}
 		} else {
-			if ( $token === $session->get('public-token') ) {
+			if ( $token === Session::get('--public-token') ) {
 				return true;
 			}
 		}
@@ -122,7 +122,7 @@ class BaseOptions
 	 * @access protected
 	 * @param string $tag
 	 * @param mixed $args
-	 * @return true
+	 * @return bool
 	 */
 	protected function hasAction($tag, $args = null)
 	{
@@ -153,7 +153,7 @@ class BaseOptions
 	 * @param int $priority
 	 * @return bool
 	 */
-	protected function removeFilter($hook, $method, $priority = 10)
+	protected function removeFilter($hook, $method, $priority = 10) : bool
 	{
 		return Hook::getInstance()->removeFilter($hook,$method,$priority);
 	}
@@ -181,7 +181,7 @@ class BaseOptions
 	 * @param callable $method
 	 * @return bool
 	 */
-	protected function hasFilter($hook, $method = false)
+	protected function hasFilter($hook, $method = false) : bool
 	{
 		return Hook::getInstance()->hasFilter($hook,$method);
 	}
@@ -283,15 +283,15 @@ class BaseOptions
 	{
 		if ( array_key_exists('lang',Request::get()) ) {
 			$lang = Request::get('lang');
-		    Session::set('lang',$lang);
+		    Session::set('--lang',$lang);
 
 		} elseif ( array_key_exists('lang',Session::get()) && $this->isLoggedIn() ) {
-		    $lang = Session::get('lang');
+		    $lang = Session::get('--lang');
 
 		} else {
-		    $lang = Session::get('default-lang');
+		    $lang = Session::get('--default-lang');
 		}
-		return $this->applyFilter('default-lang',$lang);
+		return $this->applyFilter('--default-lang',$lang);
 	}
 
 	/**
@@ -341,7 +341,9 @@ class BaseOptions
 	 */
 	protected function isLoggedIn() : bool
 	{
-		$session = new Session();
-		return $session->isRegistered();
+		if ( Session::isRegistered() && !Session::isExpired() ) {
+			return true;
+		}
+		return false;
 	}
 }

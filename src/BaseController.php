@@ -18,25 +18,25 @@ class BaseController extends View
 {
 	/**
 	 * @access protected
-	 * @param string $src
+	 * @param string $js
 	 * @return void
 	 */
-	protected function addJS($src)
+	protected function addJS($js)
 	{
-		$this->addAction('add-script', function() use($src) {
-			$this->assign(['src' => $src],'inc/script');
+		$this->addAction('add-js', function() use($js) {
+			$this->assign(['js' => $js],'system/js');
 		});
 	}
 
 	/**
 	 * @access protected
-	 * @param string $href
+	 * @param string $css
 	 * @return void
 	 */
-	protected function addCSS($href)
+	protected function addCSS($css)
 	{
-		$this->addAction('add-style', function() use($href){
-			$this->assign(['href' => $href],'inc/style');
+		$this->addAction('add-css', function() use($css){
+			$this->assign(['css' => $css],'system/css');
 		});
 	}
 }

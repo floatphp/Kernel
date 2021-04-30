@@ -19,17 +19,12 @@ use FloatPHP\Classes\Http\Response;
 class ErrorController extends FrontController
 {
 	/**
-	 * @access public
-	 */
-	public const CODE = 404;
-
-	/**
 	 * @param int $code
 	 * @param string $message
 	 * @param string $error
 	 * @return void
 	 */
-	public function __construct($code = self::CODE, $error = null)
+	public function __construct($code = 404, $error = null)
 	{
 		// Init configuration
 		$this->initConfig();

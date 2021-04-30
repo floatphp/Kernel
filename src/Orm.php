@@ -63,11 +63,11 @@ class Orm extends BaseOptions implements OrmInterface
 	/**
 	 * Init Db object
 	 *
-	 * @access protected
+	 * @access public
 	 * @param array $data
 	 * @return void
 	 */
-	protected function init($data = [])
+	public function init($data = [])
 	{
 		// Init configuration
 		$this->initConfig();
@@ -96,18 +96,27 @@ class Orm extends BaseOptions implements OrmInterface
 	 *
 	 * @access public
 	 * @param string $sql
-	 * @return int
+	 * @param array $params
+	 * @param array $args
+	 * @return mixed
 	 */
-	public function query($sql, $isSingle = false, $isRow = false)
+	public function query($sql, $params = null, $args = [])
 	{
+		$isSingle  = isset($args['isSingle']) ? $args['isSingle'] : false;
+		$isColumn  = isset($args['isColumn']) ? $args['isColumn'] : false;
+		$isRow     = isset($args['isRow']) ? $args['isRow'] : false;
+		$fetchMode = isset($args['fetchMode']) ? $args['fetchMode'] : null;
+
 		if ( $isSingle ) {
-			return $this->db->single($sql);
+			return $this->db->single($sql,$params);
+
+		} elseif ($isColumn) {
+			return $this->db->column($sql,$params);
 
 		} elseif ($isRow) {
-			$result = $this->db->query($sql);
-			return array_shift($result);
+			return $this->db->row($sql,$params,$fetchMode);
 		}
-		return $this->db->query($sql);
+		return $this->db->query($sql,$params);
 	}
 
 	/**
@@ -121,19 +130,19 @@ class Orm extends BaseOptions implements OrmInterface
 	{
 		$this->data[$this->key] = (empty($this->data[$this->key])) 
 		? $id : $this->data[$this->key];
-		$fieldVal = '';
+		$field = '';
 		$columns = array_keys($this->data);
 		foreach($columns as $column) {
-			if ($column !== $this->key) {
-				$fieldVal .= $column . " = :". $column . ",";
+			if ( $column !== $this->key ) {
+				$field .= "{$column} = :{$column},";
 			}
 		}
-		$fieldVal = substr_replace($fieldVal , '', -1);
+		$field = substr_replace($field , '', -1);
 		if ( count($columns) > 1 ) {
-			$sql = "UPDATE " . $this->table .  " SET " . $fieldVal . " WHERE " . $this->key . "= :" . $this->key;
+			$sql = "UPDATE " . $this->table .  " SET " . $field . " WHERE " . $this->key . "= :" . $this->key;
 			if ($id === '0' && $this->data[$this->key] === '0' ) {
 				unset($this->data[$this->key]);
-				$sql = "UPDATE " . $this->table .  " SET " . $fieldVal;
+				$sql = "UPDATE " . $this->table .  " SET " . $field;
 			}
 			return $this->execute($sql);
 		}
@@ -149,8 +158,8 @@ class Orm extends BaseOptions implements OrmInterface
 		$bind = $this->data;
 		if( !empty($bind) ) {
 			$fields = array_keys($bind);
-			$fieldVal = [implode(",",$fields),":" . implode(",:",$fields)];
-			$sql = "INSERT INTO ".$this->table." (".$fieldVal[0].") VALUES (".$fieldVal[1].")";
+			$field = [implode(",",$fields),":" . implode(",:",$fields)];
+			$sql = "INSERT INTO ".$this->table." (".$field[0].") VALUES (".$field[1].")";
 		}
 		else {
 			$sql = "INSERT INTO ".$this->table." () VALUES ()";
@@ -199,12 +208,12 @@ class Orm extends BaseOptions implements OrmInterface
 		$bind = empty($fields) ? $this->data : $fields;
 		$sql = "SELECT * FROM " . $this->table;
 		if ( !empty($bind) ) {
-			$fieldVal = [];
+			$field = [];
 			$columns = array_keys($bind);
 			foreach($columns as $column) {
-				$fieldVal [] = $column . " = :". $column;
+				$field [] = $column . " = :". $column;
 			}
-			$sql .= " WHERE " . implode(" AND ", $fieldVal);
+			$sql .= " WHERE " . implode(" AND ", $field);
 		}
 		if ( !empty($sort) ) {
 			$sortvals = [];
@@ -217,16 +226,15 @@ class Orm extends BaseOptions implements OrmInterface
 	}
 
 	/**
-	 * @param void
+	 * @param bool $isRow
 	 * @return array
 	 */
-	public function all($row = false)
+	public function all($isRow = false)
 	{
-		if ($row) {
-			$r = $this->db->query("SELECT * FROM " . $this->table);
-			return array_shift($r);
+		if ( $isRow ) {
+			return $this->db->row("SELECT * FROM {$this->table}");
 		}
-		else return $this->db->query("SELECT * FROM " . $this->table);
+		return $this->db->query("SELECT * FROM {$this->table}");
 	}
 	
 	/**
@@ -235,8 +243,8 @@ class Orm extends BaseOptions implements OrmInterface
 	 */
 	public function min($field)
 	{
-		if ($field) {
-			return $this->db->single("SELECT min(" . $field . ")" . " FROM " . $this->table);
+		if ( $field ) {
+			return $this->db->single("SELECT min({$field}) FROM {$this->table}");
 		}
 		return null;
 	}
@@ -247,8 +255,8 @@ class Orm extends BaseOptions implements OrmInterface
 	 */
 	public function max($field)
 	{
-		if ($field) {
-			return $this->db->single("SELECT max(" . $field . ")" . " FROM " . $this->table);
+		if ( $field ) {
+			return $this->db->single("SELECT max({$field}) FROM {$this->table}");
 		}
 		return null;
 	}
@@ -259,8 +267,8 @@ class Orm extends BaseOptions implements OrmInterface
 	 */
 	public function avg($field)
 	{
-		if ($field) {
-			return $this->db->single("SELECT avg(" . $field . ")" . " FROM " . $this->table);
+		if ( $field ) {
+			return $this->db->single("SELECT avg({$field}) FROM {$this->table}");
 		}
 		return null;
 	}
@@ -272,7 +280,7 @@ class Orm extends BaseOptions implements OrmInterface
 	public function sum($field)
 	{
 		if ($field) {
-			return $this->db->single("SELECT sum(" . $field . ")" . " FROM " . $this->table);
+			return $this->db->single("SELECT sum({$field}) FROM {$this->table}");
 		}
 		return null;
 	}
@@ -309,7 +317,7 @@ class Orm extends BaseOptions implements OrmInterface
 	}
 
 	/**
-	 * Delete All Query
+	 * Delete all query
 	 *
 	 * @access public
 	 * @param string $table

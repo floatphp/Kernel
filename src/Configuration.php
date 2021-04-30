@@ -55,7 +55,11 @@ trait Configuration
 			$json = new Json($path);
 			Validator::checkConfig($json);
 			$this->global = $json->parse();
-		};
+		} else {
+			// Parse Default Config
+			$json = new Json(dirname(__FILE__).'/bin/config.default.json');
+			$this->global = $json->parse();
+		}
 
 		// Set routes config
 		if ( File::exists(($path = $this->getRoutesFile())) ) {
@@ -156,7 +160,7 @@ trait Configuration
 	}
 
 	/**
-	 * Get static controller path
+	 * Get static controller namespace
 	 *
 	 * @access protected
 	 * @param void
@@ -164,12 +168,12 @@ trait Configuration
 	 */
 	protected function getControllerNamespace() : string
 	{
-		$path = "{$this->global->namespace->controller}";
-		return Stringify::replace('/','\\',$path);
+		$namespace = "{$this->global->namespace->controller}";
+		return Stringify::replace('/','\\',$namespace);
 	}
 
 	/**
-	 * Get static module path
+	 * Get static module namespace
 	 *
 	 * @access protected
 	 * @param void
@@ -177,8 +181,8 @@ trait Configuration
 	 */
 	protected function getModuleNamespace() : string
 	{
-		$path = "{$this->global->namespace->module}";
-		return Stringify::replace('/','\\',$path);
+		$namespace = "{$this->global->namespace->module}";
+		return Stringify::replace('/','\\',$namespace);
 	}
 
 	/**
@@ -269,6 +273,44 @@ trait Configuration
 	{
 		$path = "{$this->getRoot()}/{$this->global->path->logs}";
 		return Stringify::formatPath($path,1);
+	}
+
+	/**
+	 * Get static migrate path
+	 *
+	 * @access protected
+	 * @param void
+	 * @return string
+	 */
+	protected function getMigratePath() : string
+	{
+		$path = "{$this->getRoot()}/{$this->global->path->migrate}";
+		return Stringify::formatPath($path,1);
+	}
+
+	/**
+	 * Get static modules path
+	 *
+	 * @access protected
+	 * @param void
+	 * @return string
+	 */
+	protected function getModulesPath() : string
+	{
+		$path = "{$this->getRoot()}/{$this->global->path->modules}";
+		return Stringify::formatPath($path,1);
+	}
+
+	/**
+	 * Get static modules
+	 *
+	 * @access protected
+	 * @param void
+	 * @return array
+	 */
+	protected function getModules() : array
+	{
+		return glob("{$this->getModulesPath()}/*",1073741824);
 	}
 
 	/**
@@ -444,11 +486,11 @@ trait Configuration
 	/**
 	 * Get static config file path
 	 *
-	 * @access private
+	 * @access protected
 	 * @param void
 	 * @return array
 	 */
-	private function getConfigFile() : string
+	protected function getConfigFile() : string
 	{
 		return "{$this->getAppDir()}/Storage/config/global.json";
 	}
@@ -456,11 +498,11 @@ trait Configuration
 	/**
 	 * Get static routes file path
 	 *
-	 * @access private
+	 * @access protected
 	 * @param void
 	 * @return array
 	 */
-	private function getRoutesFile() : string
+	protected function getRoutesFile() : string
 	{
 		return "{$this->getRoot()}/{$this->global->path->routes}";
 	}
@@ -468,11 +510,11 @@ trait Configuration
 	/**
 	 * Get static database file path
 	 *
-	 * @access private
+	 * @access protected
 	 * @param void
 	 * @return array
 	 */
-	private function getDatabaseFile() : string
+	protected function getDatabaseFile() : string
 	{
 		return "{$this->getRoot()}/{$this->global->path->db}";
 	}

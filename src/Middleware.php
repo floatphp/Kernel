@@ -34,7 +34,7 @@ final class Middleware
 	 * Middleware system
 	 * $router->addMatchTypes(['name'=>'regex']);
 	 *
-	 * @param object $router
+	 * @param RouterInterface $router
 	 */
 	public function __construct(RouterInterface $router)
 	{
@@ -43,10 +43,14 @@ final class Middleware
 
 		// prepare router from config
 		$router->setBasePath($this->getBaseRoute());
+
 		// set global router
 		$router->addRoutes($this->getRoutes());
+
 		// set modules router
-		// $router->addRoutes( Module::setRouter() );
+		$module = new Module();
+		$router->addRoutes($module->getModulesRoutes());
+
 		// match request
 		$this->match = $router->match();
 
@@ -64,28 +68,16 @@ final class Middleware
 	private function provide()
 	{
 		if ( $this->match ) {
-			// callable with paramater
-			if ( $this->isCallable() && $this->hasParameter() ) {
-				$this->doCallable(true);
-			}
-			// callable without paramater
-			elseif ( $this->isCallable() && !$this->hasParameter() ) {
+			// Callable
+			if ( $this->isCallable() ) {
 				$this->doCallable();
 			}
-			// class method with paramater
-			elseif ( $this->isClassMethod() && $this->hasParameter() ) {
-				$this->doInstance(true);
-			}
-			// class method without paramater
-			elseif ( $this->isClassMethod() && !$this->hasParameter() ) {
+			// Class method
+			elseif ( $this->isClassMethod() ) {
 				$this->doInstance();
 			}
-			// Module class method without paramater
-			elseif ( $this->isModule() && $this->hasParameter() ) {
-				$this->doModuleInstance(true);
-			}
-			// Module class method without paramater
-			elseif ( $this->isModule() && !$this->hasParameter() ) {
+			// Module class
+			elseif ( $this->isModule() ) {
 				$this->doModuleInstance();
 			}
 		} else {
@@ -142,13 +134,13 @@ final class Middleware
 	 * Execute Callable, with and without parameter
 	 *
 	 * @access private
-	 * @param boolean $param false
+	 * @param void
 	 * @return void
 	 */
-	private function doCallable($param = false)
+	private function doCallable()
 	{
-		if ( function_exists($this->match['target']) ) {
-			if ($param) {
+		if ( TypeCheck::isFunction($this->match['target']) ) {
+			if ( $this->hasParameter() ) {
 				$this->match['target']($this->match['params']);
 			} else {
 				$this->match['target']();
@@ -160,17 +152,16 @@ final class Middleware
 	 * Execute Controller, with and without parameter
 	 *
 	 * @access private
-	 * @param boolean $param
+	 * @param void
 	 * @return void
 	 */
-	private function doInstance($param = false)
+	private function doInstance()
 	{
-		$target = explode('@', $this->match['target']);
-		$class  = $this->getControllerNamespace() . $target[0];
-		$method = $target[1];
+		$class = $this->parseClass();
+		$method = $this->parseMethod();
 
 		// With parameter
-		if ( $param ) {
+		if ( $this->hasParameter() ) {
 			// handle parameters
 			if ( count($this->match['params']) > 1 ) {
 				$var = array_merge($this->match['params']);
@@ -250,40 +241,73 @@ final class Middleware
 	 * Execute Module, with and without parameter
 	 *
 	 * @access private
-	 * @param boolean $param
+	 * @param void
 	 * @return void
 	 */
-	private function doModuleInstance($param = false)
+	private function doModuleInstance()
 	{
-		$target = explode('@', $this->match['target']);
-		$module = Stringify::replace('Module','',$target[0]);
-		$class  = $this->getModuleNamespace() . "{$module}\\{$target[0]}";
-		$method = $target[1];
-
-		// handle parameters
-		if ( count($this->match['params']) > 1 ) {
-			$var = array_merge($this->match['params']);
-
-		} elseif ( count($this->match['params']) == 1 ) {
-			$key = key($this->match['params']);
-			$var = $this->match['params'][$key];
-		}
+		$class = $this->parseModuleClass();
+		$method = $this->parseMethod();
 
 		// With parameter
-		if ( $param ) {
-			$instance = new $class();
-			$instance->$method($var);
+		if ( $this->hasParameter() ) {
+			// handle parameters
+			if ( count($this->match['params']) > 1 ) {
+				$var = array_merge($this->match['params']);
+
+			} elseif ( count($this->match['params']) == 1 ) {
+				$key = key($this->match['params']);
+				$var = $this->match['params'][$key];
+			}
+			if ( $this->isFrontController($class) ) {
+				$instance = new $class();
+				$instance->$method($var);
+
+			} elseif ( $this->isApiController($class) ) {
+				$instance = new $class();
+				if ( $instance->isHttpAuthenticated() ) {
+					$instance->$method($var);
+				} else {
+					Response::set('Authorization Required',[],'error',401);
+				}
+			} else {
+				if ( $this->isAuthenticated() ) {
+					$instance = new $class();
+					$instance->$method($var);
+
+				} else {
+					header("Location: {$this->getLoginUrl()}");
+				}
+			}
 		}
 
 		// Without parameter
 		else {
-			$instance = new $class();
-			$instance->$method();
+			if ( $this->isFrontController($class) ) {
+				$instance = new $class();
+				$instance->$method();
+
+			} elseif ( $this->isApiController($class) ) {
+				$instance = new $class();
+				if ( $instance->isHttpAuthenticated() ) {
+					$instance->$method();
+				} else {
+					Response::set('Authorization Required',[],'error',401);
+				}
+			} else {
+				if ( $this->isAuthenticated() ) {
+					$instance = new $class();
+					$instance->$method();
+
+				} else {
+					header("Location: {$this->getLoginUrl()}");
+				}
+			}
 		}
 	}
 
 	/**
-	 * Return 404
+	 * 404
 	 *
 	 * @access private
 	 * @param void
@@ -304,13 +328,66 @@ final class Middleware
 	private function isAuthenticated()
 	{
 		if ( Session::isSetted($this->getSessionId()) ) {
-			return true;
+			if ( Session::isRegistered() && !Session::isExpired() ) {
+				return true;
+			}
 		}
 		return false;
 	}
 
 	/**
-	 * Is AuthMiddleware class
+	 * Is front controller
+	 *
+	 * @access private
+	 * @param string $class
+	 * @return bool
+	 */
+	private function isFrontController($class)
+	{
+		if ( !$this->isAuthMiddleware($class) ) {
+			if ( $this->isFrontClass($class) || $this->hasFrontInterface($class) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Is backend controller
+	 *
+	 * @access private
+	 * @param string $class
+	 * @return bool
+	 */
+	private function isBackendController($class)
+	{
+		if ( !$this->isAuthMiddleware($class) ) {
+			if ( $this->isBackendClass($class) || $this->hasBackendInterface($class) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Is API controller
+	 *
+	 * @access private
+	 * @param string $class
+	 * @return void
+	 */
+	private function isApiController($class)
+	{
+		if ( !$this->isAuthMiddleware($class) ) {
+			if ( $this->isApiClass($class) || $this->hasApiInterface($class) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Is auth middleware class
 	 *
 	 * @access private
 	 * @access private
@@ -319,20 +396,23 @@ final class Middleware
 	 */
 	private function isAuthMiddleware($class)
 	{
-		if ( TypeCheck::isSubClassOf($class,__NAMESPACE__ . '\AbstractAuthController') ) {
+		if ( TypeCheck::isSubClassOf($class,__NAMESPACE__ . '\AbstractAuthMiddleware') ) {
+			return true;
+
+		} elseif ( $this->hasAuthMiddlewareInterface($class) ) {
 			return true;
 		}
 		return false;
 	}
 
 	/**
-	 * Is AuthMiddleware class
+	 * Is front class
 	 *
 	 * @access private
 	 * @param string $class
 	 * @return bool
 	 */
-	private function isFrontSubClass($class)
+	private function isFrontClass($class)
 	{
 		if ( TypeCheck::isSubClassOf($class,__NAMESPACE__ . '\FrontController') ) {
 			return true;
@@ -341,27 +421,28 @@ final class Middleware
 	}
 
 	/**
-	 * Is AuthMiddleware class
+	 * Is backend class
 	 *
 	 * @access private
 	 * @param string $class
 	 * @return bool
 	 */
-	private function isBackendSubClass($class)
+	private function isBackendClass($class)
 	{
 		if ( TypeCheck::isSubClassOf($class,__NAMESPACE__ . '\BackendController') ) {
 			return true;
 		}
+		return false;
 	}
 
 	/**
-	 * Is AuthMiddleware class
+	 * Is API class
 	 *
 	 * @access private
 	 * @param string $class
 	 * @return bool
 	 */
-	private function isApiSubClass($class)
+	private function isApiClass($class)
 	{
 		if ( TypeCheck::isSubClassOf($class,__NAMESPACE__ . '\ApiController') ) {
 			return true;
@@ -370,67 +451,71 @@ final class Middleware
 	}
 
 	/**
-	 * Is AuthMiddleware class
+	 * Has backend interface
 	 *
 	 * @access private
 	 * @param string $class
 	 * @return bool
 	 */
-	private function isModuleSubClass($class)
+	private function hasBackendInterface($class)
 	{
-		if ( TypeCheck::isSubClassOf($class,__NAMESPACE__ . '\Module') ) {
+		$interface = 'FloatPHP\Interfaces\Kernel';
+		if ( TypeCheck::hasInterface($class,$interface . '\BackendInterface') ) {
 			return true;
 		}
 		return false;
 	}
 
 	/**
-	 * Is FrontController class and not AuthMiddleware
+	 * Has front interface
 	 *
 	 * @access private
 	 * @param string $class
-	 * @return void
+	 * @return bool
 	 */
-	private function isFrontController($class)
+	private function hasFrontInterface($class)
 	{
-		if ( !$this->isAuthMiddleware($class) && $this->isFrontSubClass($class) ) {
+		$interface = 'FloatPHP\Interfaces\Kernel';
+		if ( TypeCheck::hasInterface($class,$interface . '\FrontInterface') ) {
 			return true;
 		}
 		return false;
 	}
 
 	/**
-	 * Is BackEndController class but not AuthMiddleware
+	 * Has API interface
 	 *
 	 * @access private
 	 * @param string $class
-	 * @return void
+	 * @return bool
 	 */
-	private function isBackendController($class)
+	private function hasApiInterface($class)
 	{
-		if ( !$this->isAuthMiddleware($class) && $this->isBackendSubClass($class) ) {
+		$interface = 'FloatPHP\Interfaces\Kernel';
+		if ( TypeCheck::hasInterface($class,$interface . '\ApiInterface') ) {
 			return true;
 		}
 		return false;
 	}
 
 	/**
-	 * Is BackEndController class but not AuthMiddleware
+	 * Has authentication middleware interface
 	 *
 	 * @access private
 	 * @param string $class
-	 * @return void
+	 * @return bool
 	 */
-	private function isApiController($class)
+	private function hasAuthMiddlewareInterface($class)
 	{
-		if ( !$this->isAuthMiddleware($class) && $this->isApiSubClass($class) ) {
+		$interface = 'FloatPHP\Interfaces\Kernel';
+		if ( TypeCheck::hasInterface($class,$interface . '\AuthMiddlewareInterface') ) {
 			return true;
 		}
 		return false;
 	}
 
 	/**
-	 * Is Module class but not AuthMiddleware
+	 * Is module
 	 *
 	 * @access private
 	 * @param void
@@ -438,9 +523,58 @@ final class Middleware
 	 */
 	private function isModule()
 	{
-		if ( strpos($this->match['target'],'module') !== false ) {
+		$module = Stringify::lowercase($this->match['target']);
+		if ( Stringify::contains($module,'module') ) {
 			return true;
 		}
 		return false;
+	}
+
+	/**
+	 * Parse class
+	 *
+	 * @access private
+	 * @param void
+	 * @return string
+	 */
+	private function parseClass()
+	{
+		$target = explode('@',$this->match['target']);
+		$class = isset($target[0]) ? $target[0] : false;
+		if ( !$class ) {
+			$this->do404();
+		}
+		return "{$this->getControllerNamespace()}{$class}";
+	}
+
+	/**
+	 * Parse module class
+	 *
+	 * @access private
+	 * @param void
+	 * @return string
+	 */
+	private function parseModuleClass()
+	{
+		$target = explode('@',$this->match['target']);
+		$class = isset($target[0]) ? $target[0] : false;
+		if ( !$class ) {
+			$this->do404();
+		}
+		$module = Stringify::replace('Module','',$class);
+		return $this->getModuleNamespace() . "{$module}\\{$class}";
+	}
+
+	/**
+	 * Parse method
+	 *
+	 * @access private
+	 * @param void
+	 * @return string
+	 */
+	private function parseMethod()
+	{
+		$target = explode('@',$this->match['target']);
+		return isset($target[1]) ? $target[1] : 'index';
 	}
 }

@@ -22,7 +22,6 @@
     "php": ">=7.4",
     "ext-curl": "*",
     "ext-intl": "*",
-    "guzzlehttp/guzzle": "7.3.0",
     "twig/twig": "3.3.0",
     "phpfastcache/phpfastcache": "8.0.5",
     "justinrainbow/json-schema": "5.2.10",

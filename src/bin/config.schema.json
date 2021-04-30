@@ -4,7 +4,7 @@
   "properties": {
     "path": {
       "type": "object",
-      "required": ["base","modules","view","logs","temp","migrate","cache","upload","translate","db","routes"],
+      "required": ["base","modules","view","logs","migrate","cache","upload","translate","db","routes"],
       "properties":{
         "base":{
           "type": "string"
@@ -16,9 +16,6 @@
           "type": "string"
         },
         "logs":{
-          "type": "string"
-        },
-        "temp":{
           "type": "string"
         },
         "migrate":{

@@ -64,8 +64,8 @@ class View extends BaseOptions
 	protected function assign($content = [], $template = 'system/default')
 	{
         // Set View environment
-        $env = Template::getEnvironment($this->getOverridePath($template),[
-            'cache' => $this->getCachePath(),
+        $env = Template::getEnvironment($this->getOverridedViewPath(),[
+            'cache' => "{$this->getCachePath()}/view",
             'debug' => $this->isDebug()
         ]);
 
@@ -147,11 +147,10 @@ class View extends BaseOptions
      * Get view path
      *
      * @access protected
-     * @param string $template
+     * @param void
      * @return string
-     * @todo Override
      */
-    protected function getOverridePath($template)
+    protected function getOverridedViewPath()
     {
         return $this->getViewPath();
     }

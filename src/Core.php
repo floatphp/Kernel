@@ -16,25 +16,32 @@ namespace FloatPHP\Kernel;
 
 use FloatPHP\Classes\Auth\Session;
 use FloatPHP\Classes\Http\Router;
+use FloatPHP\Helpers\Configurator;
 
-class Core
+final class Core
 {
 	/**
 	 * @param void
 	 */
 	public function __construct($config = [])
 	{
-		// FloatPHP header
-		header('X-Powered-By:FloatPHP');
+		$config = Configurator::parse($config);
 
-		// Start session
-		new Session();
+		// FloatPHP setup
+		if ( $config['--disable-setup'] !== true ) {
+			$configurator = new Configurator();
+			$configurator->setup();
+		}
+
+		// FloatPHP X-Powered-By header
+		if ( $config['--disable-powered-by'] !== true ) {
+			header('X-Powered-By:FloatPHP');
+		}
 		
-		// Set override config
-		if ( isset($config['default-lang']) ) {
-			Session::set('default-lang',$config['default-lang']);
-		} else {
-			Session::set('default-lang','en');
+		// Start session
+		if ( $config['--disable-session'] !== true ) {
+			new Session();
+			Session::set('--default-lang',$config['--default-lang']);
 		}
 		
 		// Start routing

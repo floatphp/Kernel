@@ -6,7 +6,6 @@
       "logs":"/App/Storage/logs/",
       "cache":"/App/Storage/cache/",
       "upload":"/App/Storage/upload",
-      "temp":"/App/Storage/temp/",
       "migrate":"/App/Storage/migrate/",
       "translate":"/App/Storage/translate/",
       "db":"/App/Storage/config/db.ini",
