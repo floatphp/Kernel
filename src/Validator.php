@@ -16,7 +16,6 @@ namespace FloatPHP\Kernel;
 
 use FloatPHP\Classes\Filesystem\TypeCheck;
 use FloatPHP\Classes\Filesystem\Json;
-use FloatPHP\Classes\System\Exception;
 use FloatPHP\Exceptions\Kernel\ConfigException;
 use JsonSchema\Validator as JsonValidator;
 
@@ -30,7 +29,7 @@ final class Validator
 	public static function checkConfig($json)
 	{
 		try {
-			$error = self::isValidConfig($json);
+			$error = self::isValidConfig($json,'config.schema.json');
 			if ( TypeCheck::isString($error) ) {
 				throw new ConfigException($error);
 			} elseif ( $error === false ) {
@@ -42,17 +41,36 @@ final class Validator
 	}
 
 	/**
+	 * @access public
+	 * @var mixed $json
+	 * @return void
+	 */
+	public static function checkModuleConfig($json)
+	{
+		try {
+			$error = self::isValidConfig($json,'module.schema.json');
+			if ( TypeCheck::isString($error) ) {
+				throw new ConfigException($error);
+			} elseif ( $error === false ) {
+				throw new ConfigException();
+			}
+		} catch (ConfigException $e) {
+			die($e->get(2));
+		}
+	}
+
+	/**
 	 * @access private
 	 * @var mixed $config
 	 * @return mixed
 	 */
-	private static function isValidConfig(Json $config)
+	private static function isValidConfig(Json $config, $schema)
 	{
 		if ( $config->parse() && !empty($config->parse()) ) {
 			$validator = new JsonValidator;
 			$json = $config->parse();
 			$validator->validate($json, (object)[
-				'$ref' => 'file://' . dirname(__FILE__).'/bin/config.schema.json'
+				'$ref' => 'file://' . dirname(__FILE__). '/bin/' . $schema
 			]);
 			if ( $validator->isValid() ) {
 				return true;

@@ -24,7 +24,7 @@ class BackendController extends BaseController
 	 * @param void
 	 * @return bool
 	 */
-	protected function isAdmin()
+	protected function isAdmin() : bool
 	{
 		$remote = Server::getRemote();
 

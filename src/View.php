@@ -17,6 +17,7 @@ namespace FloatPHP\Kernel;
 use FloatPHP\Classes\Html\Template;
 use FloatPHP\Classes\Auth\Session;
 use FloatPHP\Classes\Security\Tokenizer;
+use FloatPHP\Classes\Filesystem\File;
 use FloatPHP\Classes\Filesystem\Json;
 use FloatPHP\Classes\Filesystem\Stringify;
 
@@ -45,12 +46,12 @@ class View extends BaseOptions
      *
      * @access protected
 	 * @param array $content
-     * @param string $template
+     * @param string $tpl
      * @return void
      */
-    protected function render($content = [], $template = 'system/default')
+    protected function render($content = [], $tpl = 'system/default')
     {
-        echo $this->assign($content, $template);
+        echo $this->assign($content,$tpl);
     }
 
 	/**
@@ -58,19 +59,23 @@ class View extends BaseOptions
 	 *
      * @access protected
 	 * @param array $content
-     * @param string $template
+     * @param string $tpl
 	 * @return string
 	 */
-	protected function assign($content = [], $template = 'system/default')
+	protected function assign($content = [], $tpl = 'system/default')
 	{
         // Set View environment
-        $env = Template::getEnvironment($this->getOverridedViewPath(),[
+        $path = $this->applyFilter('view-path',[
+            $this->getViewPath(),
+            $this->getModulesPath()
+        ]);
+        $env = Template::getEnvironment($path,[
             'cache' => "{$this->getCachePath()}/view",
             'debug' => $this->isDebug()
         ]);
 
         // Set custom callables
-        if ($this->callables) {
+        if ( $this->callables ) {
             foreach ($this->callables as $name => $callable) {
                 $env->addFunction(Template::extend($name, $callable));
             }
@@ -139,19 +144,7 @@ class View extends BaseOptions
         }));
 
         // Return rendered view
-		$view = $env->load("{$template}{$this->getViewExtension()}");
+		$view = $env->load("{$tpl}{$this->getViewExtension()}");
 		return $view->render($content);
 	}
-
-    /**
-     * Get view path
-     *
-     * @access protected
-     * @param void
-     * @return string
-     */
-    protected function getOverridedViewPath()
-    {
-        return $this->getViewPath();
-    }
 }

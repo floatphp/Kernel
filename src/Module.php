@@ -29,10 +29,13 @@ class Module extends BaseController
 		// Load modules
 		foreach ( $this->getModules() as $name ) {
 			$json = new Json("{$name}/module.json");
+			Validator::checkModuleConfig($json);
 			$config = $json->parse();
-			$module = $this->getModuleNamespace();
-			$module .= "{$config->namespace}\\{$config->namespace}Module";
-			new $module;
+			if ( $config->enable ) {
+				$namespace = basename($name);
+				$module = "{$this->getModuleNamespace()}{$namespace}\\{$namespace}Module";
+				new $module;
+			}
 		}
 	}
 
@@ -50,47 +53,45 @@ class Module extends BaseController
 			foreach ( $this->getModules() as $key => $name ) {
 				$json = new Json("{$name}/module.json");
 				$config = $json->parse(true);
-				foreach ($config['router'] as $route) {
-					$wrapper[] = $route;
+				if ( $config['enable'] == true ) {
+					foreach ($config['router'] as $route) {
+						$wrapper[] = $route;
+					}
 				}
 			}
 		}
-		return $wrapper;
+		return $this->applyFilter('module-routes',$wrapper);
 	}
 
 	/**
+	 * Add module js
+	 *
 	 * @access protected
 	 * @param string $js
+	 * @param string $hook
 	 * @return void
 	 */
-	protected function addJS($js)
+	protected function addJS($js, $hook = 'add-js')
 	{
-		$this->addAction('add-js', function() use($js) {
-			parent::assign(['js' => "{$this->getModulesPath()}/{$js}"],'system/js');
+		$this->addAction($hook, function() use($js) {
+			$tpl = $this->applyFilter('module-view-js','system/js');
+			$this->render(['js' => "{$this->getModulesUrl()}/{$js}"],$tpl);
 		});
 	}
 
 	/**
+	 * Add module css
+	 *
 	 * @access protected
 	 * @param string $css
+	 * @param string $hook
 	 * @return void
 	 */
-	protected function addCSS($css)
+	protected function addCSS($css, $hook = 'add-css')
 	{
-		$this->addAction('add-css', function() use($css){
-			parent::assign(['css' => "{$this->getModulesPath()}/{$css}"],'system/css');
+		$this->addAction($hook, function() use($css){
+			$tpl = $this->applyFilter('module-view-css','system/css');
+			$this->render(['css' => "{$this->getModulesUrl()}/{$css}"],$tpl);
 		});
 	}
-
-    /**
-     * Get overrided view path
-     *
-     * @access protected
-     * @param void
-     * @return string
-     */
-    protected function getOverridedViewPath()
-    {
-        return $this->getModulesPath();
-    }
 }

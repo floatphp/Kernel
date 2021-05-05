@@ -1,0 +1,28 @@
+{
+  "$id": "app.module.schema.json",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "system": {
+      "type": "boolean"
+    },
+    "enable": {
+      "type": "boolean"
+    },
+    "router": {
+      "type": "array"
+    }
+  },
+  "required": [
+    "name",
+    "description",
+    "system",
+    "enable",
+    "router"
+  ]
+}

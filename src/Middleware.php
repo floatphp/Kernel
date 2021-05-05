@@ -175,20 +175,18 @@ final class Middleware
 				$instance->$method($var);
 
 			} elseif ( $this->isBackendController($class) ) {
-				if ( $this->isAuthenticated() ) {
-					$instance = new $class();
+				$instance = new $class();
+				if ( $instance->isAuthenticated() ) {
 					$instance->$method($var);
-
 				} else {
 					header("Location: {$this->getLoginUrl()}");
 				}
 
 			} elseif ( $this->isAuthMiddleware($class) ) {
-				if ( $this->isAuthenticated() ) {
+				$instance = new $class;
+				if ( $instance->isAuthenticated() ) {
 					header("Location: {$this->getAdminUrl()}");
-
 				} else {
-					$instance = new $class;
 					$instance->$method($var);
 				}
 
@@ -209,20 +207,18 @@ final class Middleware
 				$instance->$method();
 
 			} elseif ( $this->isBackendController($class) ) {
-				if ( $this->isAuthenticated() ) {
-					$instance = new $class();
+				$instance = new $class();
+				if ( $instance->isAuthenticated() ) {
 					$instance->$method();
-
 				} else {
 					header("Location: {$this->getLoginUrl()}");
 				}
 
 			} elseif ( $this->isAuthMiddleware($class) ) {
-				if ( $this->isAuthenticated() ) {
+				$instance = new $class();
+				if ( $instance->isAuthenticated() ) {
 					header("Location: {$this->getAdminUrl()}");
-
 				} else {
-					$instance = new $class();
 					$instance->$method();
 				}
 
@@ -271,10 +267,9 @@ final class Middleware
 					Response::set('Authorization Required',[],'error',401);
 				}
 			} else {
-				if ( $this->isAuthenticated() ) {
-					$instance = new $class();
+				$instance = new $class();
+				if ( $instance->isAuthenticated() ) {
 					$instance->$method($var);
-
 				} else {
 					header("Location: {$this->getLoginUrl()}");
 				}
@@ -295,10 +290,9 @@ final class Middleware
 					Response::set('Authorization Required',[],'error',401);
 				}
 			} else {
-				if ( $this->isAuthenticated() ) {
-					$instance = new $class();
+				$instance = new $class();
+				if ( $instance->isAuthenticated() ) {
 					$instance->$method();
-
 				} else {
 					header("Location: {$this->getLoginUrl()}");
 				}
@@ -316,23 +310,6 @@ final class Middleware
 	private function do404()
 	{
 		new \FloatPHP\Kernel\ErrorController(404);
-	}
-
-	/**
-	 * Is user authenticated
-	 *
-	 * @access private
-	 * @param void
-	 * @return bool
-	 */
-	private function isAuthenticated()
-	{
-		if ( Session::isSetted($this->getSessionId()) ) {
-			if ( Session::isRegistered() && !Session::isExpired() ) {
-				return true;
-			}
-		}
-		return false;
 	}
 
 	/**

@@ -28,22 +28,29 @@ class ApiController extends View
 	 */
 	public function isHttpAuthenticated() : bool
 	{
-		if ( Server::isBasicAuth() ) {
-			$username = Server::getBasicAuthUser();
-			$password = Server::getBasicAuthPwd();
-		    if ( $username == $this->getApiUsername() && $password == $this->getApiPassword() ){
-			    return true;
-		    }
-		} elseif ( ($token = Server::getBearerToken()) ) {
-			if ( $this->isGranted($token) ) {
-				return true;
+		// Init configuration
+		$this->initConfig();
+
+		// Basic authentication
+		if ( $this->applyFilter('basic-authentication',true) ) {
+			if ( Server::isBasicAuth() ) {
+				$username = Server::getBasicAuthUser();
+				$password = Server::getBasicAuthPwd();
+			    if ( $username == $this->getApiUsername() && $password == $this->getApiPassword() ) {
+				    return true;
+			    }
 			}
+		} 
+
+		// Bearer token
+		if ( ($token = Server::getBearerToken()) ) {
+ 			return $this->isGranted($token);
 		}
 		return false;
 	}
 
 	/**
-	 * Is granted
+	 * Is HTTP granted
 	 *
 	 * @access protected
 	 * @param string $token
@@ -56,7 +63,7 @@ class ApiController extends View
         $username = isset($access[0]) ? $access[0] : false;
         $password = isset($access[1]) ? $access[1] : false;
         if ( $username && $password ) {
-			if ( $username == $this->getApiUsername() && $password == $this->getApiPassword() ){
+			if ( $username == $this->getApiUsername() && $password == $this->getApiPassword() ) {
 			    return true;
 			}
         }

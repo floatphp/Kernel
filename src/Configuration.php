@@ -302,6 +302,19 @@ trait Configuration
 	}
 
 	/**
+	 * Get static modules url
+	 *
+	 * @access protected
+	 * @param void
+	 * @return string
+	 */
+	protected function getModulesUrl() : string
+	{
+		$path = "{$this->getBaseUrl()}/{$this->global->path->modules}";
+		return Stringify::formatPath($path,1);
+	}
+
+	/**
 	 * Get static modules
 	 *
 	 * @access protected
@@ -311,6 +324,28 @@ trait Configuration
 	protected function getModules() : array
 	{
 		return glob("{$this->getModulesPath()}/*",1073741824);
+	}
+
+	/**
+	 * Get static modules config
+	 *
+	 * @access protected
+	 * @param void
+	 * @return array
+	 */
+	protected function getModulesConfig() : array
+	{
+		$list = [];
+		foreach ( $this->getModules() as $name ) {
+			$json = new Json("{$name}/module.json");
+			$config = $json->parse();
+			$list[] = [
+				'name'        => $config->name,
+				'description' => $config->description,
+				'system'      => $config->system
+			];
+		}
+		return $list;
 	}
 
 	/**

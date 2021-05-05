@@ -17,26 +17,40 @@ namespace FloatPHP\Kernel;
 class BaseController extends View
 {
 	/**
+	 * @access public
+	 * @param void
+	 * @return bool
+	 */
+	public function isAuthenticated() : bool
+	{
+		return $this->isLoggedIn();
+	}
+	
+	/**
 	 * @access protected
 	 * @param string $js
+	 * @param string $hook
 	 * @return void
 	 */
-	protected function addJS($js)
+	protected function addJS($js, $hook = 'add-js')
 	{
-		$this->addAction('add-js', function() use($js) {
-			$this->assign(['js' => $js],'system/js');
+		$this->addAction($hook, function() use($js) {
+			$tpl = $this->applyFilter('view-js','system/js');
+			$this->render(['js' => $js],$tpl);
 		});
 	}
 
 	/**
 	 * @access protected
 	 * @param string $css
+	 * @param string $hook
 	 * @return void
 	 */
-	protected function addCSS($css)
+	protected function addCSS($css, $hook = 'add-css')
 	{
-		$this->addAction('add-css', function() use($css){
-			$this->assign(['css' => $css],'system/css');
+		$this->addAction($hook, function() use($css){
+			$tpl = $this->applyFilter('view-css','system/css');
+			$this->render(['css' => $css],$tpl);
 		});
 	}
 }

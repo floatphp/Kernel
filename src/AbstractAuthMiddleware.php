@@ -29,6 +29,19 @@ abstract class AbstractAuthMiddleware extends BackendController
 	abstract public function login();
 
 	/**
+	 * @access public
+	 * @param void
+	 * @return bool
+	 */
+	public function isAuthenticated() : bool
+	{
+		if ( Session::isSetted($this->getSessionId()) ) {
+			return $this->isLoggedIn();
+		}
+		return false;
+	}
+
+	/**
 	 * @access protected
 	 * @param AuthenticationInterface $auth
 	 * @param string $username
@@ -37,18 +50,21 @@ abstract class AbstractAuthMiddleware extends BackendController
 	 */
 	protected function authenticate(AuthenticationInterface $auth, $username, $password)
 	{
+		$this->doAction('authenticate',$username);
 		new Session();
 		if ( ($user = $auth->getUser($username)) ) {
-			if ( Tokenizer::isValidPassword($password, $user['password']) ) {
+			if ( Tokenizer::isValidPassword($password,$user['password']) ) {
 				Session::register($this->getAccessExpire());
 				if ( $this->isLoggedIn() ) {
-					Session::set($auth->getKey(), $user[$auth->getKey()]);
-					Response::set('Connected');
+					Session::set($auth->getKey(),$user[$auth->getKey()]);
+					Response::set($this->applyFilter('authenticate-success-message','Connected'));
 				} else {
 					Session::end();
 				}
 			}
 		}
-		Response::set('Invalid authentication data', [], 'error');
+		$this->doAction('authenticate-failed',$username);
+		$error = $this->applyFilter('authenticate-error-message','Invalid authentication');
+		Response::set($error,[],'error');
 	}
 }
