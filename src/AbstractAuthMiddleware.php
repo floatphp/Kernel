@@ -15,9 +15,9 @@
 namespace FloatPHP\Kernel;
 
 use FloatPHP\Interfaces\Kernel\AuthenticationInterface;
-use FloatPHP\Classes\Auth\Session;
+use FloatPHP\Classes\Http\Session;
 use FloatPHP\Classes\Http\Response;
-Use FloatPHP\Classes\Security\Tokenizer;
+Use FloatPHP\Classes\Security\Password;
 
 abstract class AbstractAuthMiddleware extends BackendController
 {
@@ -53,7 +53,7 @@ abstract class AbstractAuthMiddleware extends BackendController
 		$this->doAction('authenticate',$username);
 		new Session();
 		if ( ($user = $auth->getUser($username)) ) {
-			if ( Tokenizer::isValidPassword($password,$user['password']) ) {
+			if ( Password::isValid($password,$user['password']) ) {
 				Session::register($this->getAccessExpire());
 				if ( $this->isLoggedIn() ) {
 					Session::set($auth->getKey(),$user[$auth->getKey()]);

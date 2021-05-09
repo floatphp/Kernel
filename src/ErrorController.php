@@ -29,8 +29,9 @@ class ErrorController extends FrontController
 		// Init configuration
 		$this->initConfig();
 		
-		Response::setHttpHeaders($code,'text/html; charset=utf-8');
 		$template = $this->applyFilter('error-template','/system/error');
+		$type = $this->applyFilter('error-response-type','text/html; charset=utf-8');
+		Response::setHttpHeaders($code,$type);
 		$this->render([
 			'status' => Response::getMessage($code),
 			'code'   => $code,

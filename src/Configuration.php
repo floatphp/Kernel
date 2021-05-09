@@ -17,6 +17,7 @@ namespace FloatPHP\Kernel;
 use FloatPHP\Classes\Filesystem\File;
 use FloatPHP\Classes\Filesystem\Json;
 use FloatPHP\Classes\Filesystem\Stringify;
+use FloatPHP\Classes\Filesystem\TypeCheck;
 
 trait Configuration
 {
@@ -194,7 +195,33 @@ trait Configuration
 	 */
 	protected function getDatabaseAccess() : array
 	{
-		return (array) File::parseIni($this->getDatabaseFile());
+		$access = File::parseIni($this->getDatabaseFile(),true);
+		Validator::checkDatabaseAccess($access);
+		return [
+			'db'      => isset($access['default']['db']) ? $access['default']['db'] : '',
+			'host'    => isset($access['default']['host']) ? $access['default']['host'] : 'localhost',
+			'port'    => isset($access['default']['port']) ? $access['default']['port'] : 3306,
+			'user'    => isset($access['default']['user']) ? $access['default']['user'] : '',
+			'pswd'    => isset($access['default']['pswd']) ? $access['default']['pswd'] : '',
+			'charset' => isset($access['default']['charset']) ? $access['default']['charset'] : ''
+		];
+	}
+
+	/**
+	 * Get static database root access
+	 *
+	 * @access protected
+	 * @param void
+	 * @return array
+	 */
+	protected function getDatabaseRootAccess() : array
+	{
+		$access = File::parseIni($this->getDatabaseFile(),true);
+		Validator::checkDatabaseAccess($access);
+		return [
+			'user' => isset($access['root']['user']) ? $access['root']['user'] : 'root',
+			'pswd' => isset($access['root']['pswd']) ? $access['root']['pswd'] : ''
+		];
 	}
 
 	/**
@@ -241,12 +268,20 @@ trait Configuration
 	 *
 	 * @access protected
 	 * @param void
-	 * @return string
+	 * @return array
 	 */
-	protected function getViewPath() : string
+	protected function getViewPath() : array
 	{
-		$path = "{$this->getRoot()}/{$this->global->path->view}";
-		return Stringify::formatPath($path,1);
+		$path = $this->global->path->view;
+		if ( TypeCheck::isArray($path) ) {
+			foreach ($path as $key => $view) {
+				$path[$key] = Stringify::formatPath("{$this->getRoot()}/{$view}",1);
+			}
+		} else {
+			$path = "{$this->getRoot()}/{$this->global->path->view}";
+			$path = Stringify::formatPath($path,1);
+		}
+		return (array)$path;
 	}
 
 	/**
@@ -342,7 +377,8 @@ trait Configuration
 			$list[] = [
 				'name'        => $config->name,
 				'description' => $config->description,
-				'system'      => $config->system
+				'system'      => $config->system,
+				'migrate'     => $config->migrate
 			];
 		}
 		return $list;

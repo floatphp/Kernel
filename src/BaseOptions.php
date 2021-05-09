@@ -14,11 +14,11 @@
 
 namespace FloatPHP\Kernel;
 
-use FloatPHP\Classes\Auth\Session;
+use FloatPHP\Classes\Http\Session;
 use FloatPHP\Classes\Http\Request;
-use FloatPHP\Classes\Security\Tokenizer;
 use FloatPHP\Classes\Html\Hook;
 use FloatPHP\Classes\Html\Shortcode;
+use FloatPHP\Classes\Security\Tokenizer;
 use FloatPHP\Classes\Filesystem\Translation;
 
 class BaseOptions

@@ -14,11 +14,11 @@
 
 namespace FloatPHP\Kernel;
 
-use FloatPHP\Classes\Auth\Session;
-use FloatPHP\Classes\Filesystem\TypeCheck;
-use FloatPHP\Classes\Filesystem\Stringify;
+use FloatPHP\Classes\Http\Session;
 use FloatPHP\Classes\Http\Server;
 use FloatPHP\Classes\Http\Response;
+use FloatPHP\Classes\Filesystem\TypeCheck;
+use FloatPHP\Classes\Filesystem\Stringify;
 use FloatPHP\Interfaces\Classes\RouterInterface;
 
 final class Middleware

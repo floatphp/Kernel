@@ -60,6 +60,22 @@ final class Validator
 	}
 
 	/**
+	 * @access public
+	 * @var mixed $access
+	 * @return void
+	 */
+	public static function checkDatabaseAccess($access)
+	{
+		try {
+			if ( !isset($access['default']) || !isset($access['root']) ) {
+				throw new ConfigException();
+			}
+		} catch (ConfigException $e) {
+			die($e->get(3));
+		}
+	}
+
+	/**
 	 * @access private
 	 * @var mixed $config
 	 * @return mixed

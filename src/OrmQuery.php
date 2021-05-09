@@ -29,17 +29,26 @@ class OrmQuery implements OrmQueryInterface
 	 */
 	public function __construct($query = [])
 	{
+		$this->query = $this->setDefault($query);
+	}
+
+	/**
+	 * @access public
+	 * @param array $query
+	 * @return array
+	 */
+	private function setDefault($query = [])
+	{
 		$query = array_merge([
 
-			'table'    => '',
-			'column'   => '*',
-			'where'    => '',
-			'orderby'  => '',
-			'limit'    => '',
-			'format'   => null,
-			'isSingle' => false,
-			'isRow'    => false,
-			'type'     => false
+			'table'     => '',
+			'column'    => '*',
+			'where'     => '',
+			'orderby'   => '',
+			'limit'     => '',
+			'isSingle'  => false,
+			'isRow'     => false,
+			'fetchMode' => null
 
 		], $query);
 
@@ -52,7 +61,6 @@ class OrmQuery implements OrmQueryInterface
 		$query['orderby'] = !empty($query['orderby'])
 		? "ORDER BY {$query['orderby']}" : '';
 
-		$this->query = $query;
-		return $this->query;
+		return $query;
 	}
 }

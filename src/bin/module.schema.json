@@ -14,6 +14,9 @@
     "enable": {
       "type": "boolean"
     },
+    "migrate": {
+      "type": "boolean"
+    },
     "router": {
       "type": "array"
     }
@@ -23,6 +26,7 @@
     "description",
     "system",
     "enable",
+    "migrate",
     "router"
   ]
 }

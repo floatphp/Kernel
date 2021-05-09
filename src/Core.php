@@ -14,7 +14,7 @@
 
 namespace FloatPHP\Kernel;
 
-use FloatPHP\Classes\Auth\Session;
+use FloatPHP\Classes\Http\Session;
 use FloatPHP\Classes\Http\Router;
 use FloatPHP\Helpers\Configurator;
 
@@ -44,6 +44,9 @@ final class Core
 			Session::set('--default-lang',$config['--default-lang']);
 		}
 		
+		// FloatPHP timezone
+		date_default_timezone_set($config['--default-timezone']);
+
 		// Start routing
 		new Middleware(new Router());
 	}

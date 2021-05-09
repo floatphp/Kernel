@@ -15,7 +15,6 @@
 namespace FloatPHP\Kernel;
 
 use FloatPHP\Classes\Html\Template;
-use FloatPHP\Classes\Auth\Session;
 use FloatPHP\Classes\Security\Tokenizer;
 use FloatPHP\Classes\Filesystem\File;
 use FloatPHP\Classes\Filesystem\Json;
@@ -65,10 +64,7 @@ class View extends BaseOptions
 	protected function assign($content = [], $tpl = 'system/default')
 	{
         // Set View environment
-        $path = $this->applyFilter('view-path',[
-            $this->getViewPath(),
-            $this->getModulesPath()
-        ]);
+        $path = $this->applyFilter('view-path',$this->getViewPath());
         $env = Template::getEnvironment($path,[
             'cache' => "{$this->getCachePath()}/view",
             'debug' => $this->isDebug()
@@ -84,6 +80,12 @@ class View extends BaseOptions
 		// Add view global functions
         $env->addFunction(Template::extend('dump', function ($var){
             var_dump($var);
+        }));
+        $env->addFunction(Template::extend('die', function ($var = null){
+            die($var);
+        }));
+        $env->addFunction(Template::extend('exit', function (){
+            exit;
         }));
         $env->addFunction(Template::extend('isLoggedIn', function (){
 			return $this->isLoggedIn();
@@ -117,9 +119,6 @@ class View extends BaseOptions
         }));
         $env->addFunction(Template::extend('JSONencode', function ($array = []){
             return Json::encode($array);
-        }));
-        $env->addFunction(Template::extend('exit', function (){
-            exit;
         }));
         $env->addFunction(Template::extend('serialize', function ($data = []){
             return Stringify::serialize($data);
