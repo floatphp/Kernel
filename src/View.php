@@ -15,6 +15,7 @@
 namespace FloatPHP\Kernel;
 
 use FloatPHP\Classes\Html\Template;
+use FloatPHP\Classes\Http\Session;
 use FloatPHP\Classes\Security\Tokenizer;
 use FloatPHP\Classes\Filesystem\File;
 use FloatPHP\Classes\Filesystem\Json;
@@ -84,8 +85,11 @@ class View extends BaseOptions
         $env->addFunction(Template::extend('die', function ($var = null){
             die($var);
         }));
-        $env->addFunction(Template::extend('exit', function (){
-            exit;
+        $env->addFunction(Template::extend('exit', function ($status = null){
+            exit($status);
+        }));
+        $env->addFunction(Template::extend('session', function ($var = null){
+            return Session::get($var);
         }));
         $env->addFunction(Template::extend('isLoggedIn', function (){
 			return $this->isLoggedIn();
@@ -104,6 +108,9 @@ class View extends BaseOptions
         }));
         $env->addFunction(Template::extend('getAssetUrl', function (){
             return $this->getAssetUrl();
+        }));
+        $env->addFunction(Template::extend('getUploadUrl', function (){
+            return $this->getUploadUrl();
         }));
         $env->addFunction(Template::extend('getLoginUrl', function (){
             return $this->getLoginUrl();
@@ -126,14 +133,17 @@ class View extends BaseOptions
         $env->addFunction(Template::extend('unserialize', function ($string = ''){
             return Stringify::unserialize($string);
         }));
-        $env->addFunction(Template::extend('doAction', function ($action = '', $args = []){
-            $this->doAction($action,$args);
+        $env->addFunction(Template::extend('doAction', function ($hook = '', $args = []){
+            $this->doAction($hook,$args);
         }));
-        $env->addFunction(Template::extend('hasAction', function ($action = '', $args = []){
-            $this->hasAction($action,$args);
+        $env->addFunction(Template::extend('hasAction', function ($hook = '', $args = []){
+            $this->hasAction($hook,$args);
         }));
-        $env->addFunction(Template::extend('applyFilter', function ($filter = '', $value = ''){
-            return $this->applyFilter($filter,$value);
+        $env->addFunction(Template::extend('applyFilter', function ($hook = '', $method = ''){
+            return $this->applyFilter($hook,$method);
+        }));
+        $env->addFunction(Template::extend('hasFilter', function ($hook = '', $method = ''){
+            return $this->hasFilter($hook,$method);
         }));
         $env->addFunction(Template::extend('doShortcode', function ($content = '', $ignoreHTML = false){
             return $this->doShortcode($content,$ignoreHTML);

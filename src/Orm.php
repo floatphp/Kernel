@@ -90,8 +90,12 @@ class Orm extends BaseOptions implements OrmInterface
 	public function select(OrmQueryInterface $data)
 	{
 		extract($data->query);
-		$sql = "SELECT `{$column}` FROM `{$table}` {$where} {$orderby} {$limit};";
-		return $this->query($sql,$isSingle,$isRow);
+		if ( $column !== '*' ) {
+			$column = `{$column}`;
+		}
+		$sql  = trim("SELECT $column FROM `{$table}` {$where} {$orderby} {$limit}");
+		$sql .= ';';
+		return $this->query($sql,$bind);
 	}
 
 	/**
@@ -99,11 +103,11 @@ class Orm extends BaseOptions implements OrmInterface
 	 *
 	 * @access public
 	 * @param string $sql
-	 * @param array $params
+	 * @param array $bind
 	 * @param array $args
 	 * @return mixed
 	 */
-	public function query($sql, $params = null, $args = [])
+	public function query($sql, $bind = null, $args = [])
 	{
 		$isSingle  = isset($args['isSingle']) ? $args['isSingle'] : false;
 		$isColumn  = isset($args['isColumn']) ? $args['isColumn'] : false;
@@ -111,15 +115,15 @@ class Orm extends BaseOptions implements OrmInterface
 		$fetchMode = isset($args['fetchMode']) ? $args['fetchMode'] : null;
 
 		if ( $isSingle ) {
-			return $this->db->single($sql,$params);
+			return $this->db->single($sql,$bind);
 
 		} elseif ($isColumn) {
-			return $this->db->column($sql,$params);
+			return $this->db->column($sql,$bind);
 
 		} elseif ($isRow) {
-			return $this->db->row($sql,$params,$fetchMode);
+			return $this->db->row($sql,$bind,$fetchMode);
 		}
-		return $this->db->query($sql,$params);
+		return $this->db->query($sql,$bind);
 	}
 
 	/**
@@ -297,11 +301,12 @@ class Orm extends BaseOptions implements OrmInterface
 	/**
 	 * @access public
 	 * @param string $field
+	 * @param array $data
 	 * @return int|null
 	 */
 	public function count($field = '*', $data = null)
 	{
-		if ( isset($data) ) {
+		if ( $data ) {
 			$this->db->bind('data',$data);
 			return $this->db->single("SELECT count({$this->key}) FROM `{$this->table}` WHERE `{$field}` = :data;");
 		} else {

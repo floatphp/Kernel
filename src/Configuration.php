@@ -30,18 +30,6 @@ trait Configuration
 	private $routes = [];
 
 	/**
-	 * Get static instance
-	 *
-	 * @access protected
-	 * @param void
-	 * @return object
-	 */
-	protected static function getStatic()
-	{
-		return new static;
-	}
-
-	/**
 	 * Set Config Json File
 	 * Allow Parent Config Access
 	 *
@@ -431,6 +419,19 @@ trait Configuration
 	protected function getAssetUrl() : string
 	{
 		$url = "{$this->getBaseUrl()}{$this->global->url->assets}";
+		return Stringify::untrailingSlash($url);
+	}
+
+	/**
+	 * Get static assets url
+	 *
+	 * @access protected
+	 * @param void
+	 * @return string
+	 */
+	protected function getUploadUrl() : string
+	{
+		$url = "{$this->getBaseUrl()}{$this->global->url->upload}";
 		return Stringify::untrailingSlash($url);
 	}
 

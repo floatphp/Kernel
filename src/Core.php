@@ -48,6 +48,7 @@ final class Core
 		date_default_timezone_set($config['--default-timezone']);
 
 		// Start routing
-		new Middleware(new Router());
+		$middleware = new Middleware(new Router());
+		$middleware->dispatch();
 	}
 }

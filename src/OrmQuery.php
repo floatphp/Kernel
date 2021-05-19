@@ -15,6 +15,8 @@
 namespace FloatPHP\Kernel;
 
 use FloatPHP\Interfaces\Kernel\OrmQueryInterface;
+use FloatPHP\Classes\Filesystem\Arrayify;
+use FloatPHP\Classes\Filesystem\TypeCheck;
 
 class OrmQuery implements OrmQueryInterface
 {
@@ -39,11 +41,12 @@ class OrmQuery implements OrmQueryInterface
 	 */
 	private function setDefault($query = [])
 	{
-		$query = array_merge([
+		$query = Arrayify::merge([
 
 			'table'     => '',
 			'column'    => '*',
 			'where'     => '',
+			'bind'      => [],
 			'orderby'   => '',
 			'limit'     => '',
 			'isSingle'  => false,
@@ -51,6 +54,15 @@ class OrmQuery implements OrmQueryInterface
 			'fetchMode' => null
 
 		], $query);
+
+
+		if ( TypeCheck::isArray($query['where']) ) {
+			$temp = [];
+			foreach ($query['where'] as $property => $value) {
+				$temp[] = "`{$property}` = {$value}";
+			}
+			$query['where'] = implode(' AND ',$temp);
+		}
 
 		$query['where'] = !empty($query['where'])
 		? "WHERE {$query['where']}" : '';

@@ -19,6 +19,7 @@ use FloatPHP\Classes\Http\Server;
 use FloatPHP\Classes\Http\Response;
 use FloatPHP\Classes\Filesystem\TypeCheck;
 use FloatPHP\Classes\Filesystem\Stringify;
+use FloatPHP\Classes\Filesystem\Arrayify;
 use FloatPHP\Interfaces\Classes\RouterInterface;
 
 final class Middleware
@@ -53,19 +54,16 @@ final class Middleware
 
 		// match request
 		$this->match = $router->match();
-
-		// Provide response
-		$this->provide();
 	}
 
 	/**
-	 * Provide response
+	 * Dispatch request & provide response
 	 *
-	 * @access private
+	 * @access public
 	 * @param void
 	 * @return void
 	 */
-	private function provide()
+	public function dispatch()
 	{
 		if ( $this->match ) {
 			// Callable
@@ -164,7 +162,7 @@ final class Middleware
 		if ( $this->hasParameter() ) {
 			// handle parameters
 			if ( count($this->match['params']) > 1 ) {
-				$var = array_merge($this->match['params']);
+				$var = Arrayify::merge($this->match['params']);
 
 			} elseif ( count($this->match['params']) == 1 ) {
 				$key = key($this->match['params']);
@@ -249,7 +247,7 @@ final class Middleware
 		if ( $this->hasParameter() ) {
 			// handle parameters
 			if ( count($this->match['params']) > 1 ) {
-				$var = array_merge($this->match['params']);
+				$var = Arrayify::merge($this->match['params']);
 
 			} elseif ( count($this->match['params']) == 1 ) {
 				$key = key($this->match['params']);

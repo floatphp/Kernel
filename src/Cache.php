@@ -15,6 +15,7 @@
 namespace FloatPHP\Kernel;
 
 use FloatPHP\Classes\Filesystem\FileCache;
+use FloatPHP\Classes\Filesystem\TypeCheck;
 
 class Cache extends FileCache
 {
@@ -28,13 +29,13 @@ class Cache extends FileCache
 		// Init configuration
 		$this->initConfig();
 		// Set cache configuration
-		if ( !self::$config ) {
+		if ( TypeCheck::isNull(self::$config) ) {
 			self::setConfig([
 				'path' => "{$this->getCachePath()}/temp"
 			]);
 		}
 		// Set cache TTL
-		if ( !self::$ttl ) {
+		if ( TypeCheck::isNull(self::$ttl) ) {
 			self::expireIn($this->getExpireIn());
 		}
 		// Instance cache

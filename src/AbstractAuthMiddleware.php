@@ -15,9 +15,9 @@
 namespace FloatPHP\Kernel;
 
 use FloatPHP\Interfaces\Kernel\AuthenticationInterface;
-use FloatPHP\Classes\Http\Session;
-use FloatPHP\Classes\Http\Response;
 Use FloatPHP\Classes\Security\Password;
+use FloatPHP\Classes\Http\Response;
+use FloatPHP\Classes\Http\Session;
 
 abstract class AbstractAuthMiddleware extends BackendController
 {

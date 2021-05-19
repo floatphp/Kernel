@@ -16,10 +16,15 @@ namespace FloatPHP\Kernel;
 
 use FloatPHP\Classes\Http\Session;
 use FloatPHP\Classes\Http\Request;
+use FloatPHP\Classes\Http\Server;
+use FloatPHP\Classes\Http\Response;
+use FloatPHP\Classes\Http\Post;
 use FloatPHP\Classes\Html\Hook;
 use FloatPHP\Classes\Html\Shortcode;
-use FloatPHP\Classes\Security\Tokenizer;
 use FloatPHP\Classes\Filesystem\Translation;
+use FloatPHP\Classes\Filesystem\Stringify;
+use FloatPHP\Classes\Security\Tokenizer;
+use FloatPHP\Helpers\Transient;
 
 class BaseOptions
 {
@@ -33,42 +38,57 @@ class BaseOptions
 		// Init configuration
 		$this->initConfig();
 	}
-	
+
+	/**
+	 * Get static instance
+	 *
+	 * @access protected
+	 * @param void
+	 * @return object
+	 */
+	protected static function getStatic()
+	{
+		return new static;
+	}
+
     /**
      * @access protected
-     * @param void
-     * @param mixed
+     * @param string $action
+     * @return mixed
      */
-	protected function getToken()
+	protected function getToken($item = '')
 	{
-		new Session();
-		$token = new Tokenizer();
-		$generated = false;
+		$token = false;
 		if ( $this->isLoggedIn() ) {
-			$generated = $token->generate(10);
-			Session::set('--private-token',$generated);
-		} else {
-			$generated = $token->generate(10);
-			Session::set('--public-token',$generated);
+			$token = Tokenizer::generate(10);
+			$transient = new Transient();
+			$transient->setTemp($token,Stringify::serialize([
+				'id'   => Session::get($this->getSessionId()),
+				'item' => $item
+			]), $this->getAccessExpire());
 		}
-		return $generated;
+		return $token;
 	}
 
     /**
      * @access protected
      * @param string $token
+     * @param string $item
      * @param bool
      */
-	protected function verifyToken($token)
+	protected function verifyToken($token = '', $item = '')
 	{
-		new Session();
-		if ( $this->isLoggedIn() ) {
-			if ( $token === Session::get('--private-token') ) {
-				return true;
-			}
-		} else {
-			if ( $token === Session::get('--public-token') ) {
-				return true;
+		if ( !empty($token) ) {
+			$transient = new Transient();
+			$data = Stringify::unserialize($transient->getTemp($token));
+			if ( $data ) {
+				if ( Session::get($this->getSessionId()) !== $data['id'] ) {
+					return false;
+				} elseif ( $item !== $data['item'] ) {
+					return false;
+				} else {
+					return true;
+				}
 			}
 		}
 		return false;
@@ -345,5 +365,56 @@ class BaseOptions
 			return true;
 		}
 		return false;
+	}
+
+	/**
+	 * @access protected
+	 * @param string $message
+	 * @param array $content
+	 * @param string $status
+	 * @param int $code
+	 * @return void
+	 */
+	protected function setResponse($message = '', $content = [], $status = 'success', $code = 200)
+	{
+		Response::set($message,$content,$status,$code);
+	}
+
+	/**
+	 * @access protected
+	 * @param void
+	 * @return void
+	 */
+	protected function sanitizeRequest()
+	{
+		$action = Post::isSetted('--action') ? Post::get('--action') : '';
+		if ( !$this->verifyToken(Post::get('--token'),$action) ) {
+			$this->setResponse('Invalid request token', [], 'error', 401);
+
+		} elseif ( Post::isSetted('--ignore') && !empty(Post::get('--ignore')) ) {
+			$this->setResponse('Invalid request data', [], 'error', 401);
+		}
+	}
+
+	/**
+	 * @access protected
+	 * @param void
+	 * @return mixed
+	 */
+	protected function sanitizePost()
+	{
+		$post = Post::get();
+		$excepts = $this->applyFilter('sanitize-post',[
+			'--token',
+			'--action',
+			'--ignore'
+		]);
+		foreach ($excepts as $except) {
+			if ( isset($post[$except]) ) {
+				unset($post[$except]);
+			}
+			
+		}
+		return $post;
 	}
 }

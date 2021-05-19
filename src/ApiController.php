@@ -40,7 +40,7 @@ class ApiController extends View
 				    return true;
 			    }
 			}
-		} 
+		}
 
 		// Bearer token
 		if ( ($token = Server::getBearerToken()) ) {

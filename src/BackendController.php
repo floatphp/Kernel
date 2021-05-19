@@ -34,16 +34,16 @@ class BackendController extends BaseController
 		}
 
 		// Check allowed IPs
-		$allowed = $this->getAllowedAccess();
+		$allowed = $this->applyFilter('admin-allowed-ip',$this->getAllowedAccess());
 		if ( !empty($allowed) ) {
-			if ( Stringify::contains($remote, $allowed) ) {
+			if ( Stringify::contains($remote,$allowed) ) {
 				return false;
 			}
 
 		} else {
 			// Deny access
-			$denied = $this->getDeniedAccess();
-			if ( Stringify::contains($remote, $denied) ) {
+			$denied = $this->applyFilter('admin-denied-ip',$this->getDeniedAccess());
+			if ( Stringify::contains($remote,$denied) ) {
 				return false;
 			}
 		}

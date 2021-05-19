@@ -14,7 +14,9 @@
 
 namespace FloatPHP\Kernel;
 
+use FloatPHP\Classes\Filesystem\File;
 use FloatPHP\Classes\Filesystem\Json;
+use FloatPHP\Helpers\Configurator;
 
 class Module extends BaseController
 {
@@ -27,16 +29,7 @@ class Module extends BaseController
 		$this->initConfig();
 
 		// Load modules
-		foreach ( $this->getModules() as $name ) {
-			$json = new Json("{$name}/module.json");
-			Validator::checkModuleConfig($json);
-			$config = $json->parse();
-			if ( $config->enable ) {
-				$namespace = basename($name);
-				$module = "{$this->getModuleNamespace()}{$namespace}\\{$namespace}Module";
-				new $module;
-			}
-		}
+		$this->loadModules();
 	}
 
 	/**
@@ -93,5 +86,33 @@ class Module extends BaseController
 			$tpl = $this->applyFilter('module-view-css','system/css');
 			$this->render(['css' => "{$this->getModulesUrl()}/{$css}"],$tpl);
 		});
+	}
+
+	/**
+	 * Get modules routes
+	 *
+	 * @access private
+	 * @param void
+	 * @param array
+	 */
+	private function loadModules()
+	{
+		foreach ( $this->getModules() as $name ) {
+			$json = new Json("{$name}/module.json");
+			Validator::checkModuleConfig($json);
+			$config = $json->parse();
+			if ( $config->migrate ) {
+				$configurator = new Configurator();
+				$configurator->migrate("{$name}/migrate");
+			}
+			if ( $config->enable ) {
+				$basename = basename($name);
+				$namespace = "{$this->getModuleNamespace()}{$basename}\\{$basename}";
+				if ( File::exists("{$name}/{$basename}Module.php") ) {
+					$module = "{$namespace}Module";
+					new $module;
+				}
+			}
+		}
 	}
 }
