@@ -20,30 +20,32 @@ use FloatPHP\Classes\Filesystem\Stringify;
 class BackendController extends BaseController
 {
 	/**
-	 * @access protected
+	 * Check current ip access
+	 *
+	 * @access public
 	 * @param void
 	 * @return bool
 	 */
-	protected function isAdmin() : bool
+	public function hasAccess() : bool
 	{
-		$remote = Server::getRemote();
+		$ip = Server::getIP();
 
 		// Allow local access
-		if ( $remote == '127.0.0.1' || $remote == '::1' ) {
+		if ( $ip == '127.0.0.1' || $ip == '::1' ) {
 			return true;
 		}
 
 		// Check allowed IPs
 		$allowed = $this->applyFilter('admin-allowed-ip',$this->getAllowedAccess());
 		if ( !empty($allowed) ) {
-			if ( Stringify::contains($remote,$allowed) ) {
+			if ( Stringify::contains($ip,$allowed) ) {
 				return false;
 			}
 
 		} else {
 			// Deny access
 			$denied = $this->applyFilter('admin-denied-ip',$this->getDeniedAccess());
-			if ( Stringify::contains($remote,$denied) ) {
+			if ( Stringify::contains($ip,$denied) ) {
 				return false;
 			}
 		}

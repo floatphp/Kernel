@@ -109,8 +109,8 @@ class View extends BaseOptions
         $env->addFunction(Template::extend('getAssetUrl', function (){
             return $this->getAssetUrl();
         }));
-        $env->addFunction(Template::extend('getUploadUrl', function (){
-            return $this->getUploadUrl();
+        $env->addFunction(Template::extend('getFrontUploadUrl', function (){
+            return $this->getFrontUploadUrl();
         }));
         $env->addFunction(Template::extend('getLoginUrl', function (){
             return $this->getLoginUrl();

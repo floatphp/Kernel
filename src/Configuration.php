@@ -42,8 +42,7 @@ trait Configuration
 		// Parse Config file
 		if ( File::exists(($path = $this->getConfigFile())) ) {
 			$json = new Json($path);
-			Validator::checkConfig($json);
-			$this->global = $json->parse();
+			$this->global = Validator::checkConfig($json)->parse();
 		} else {
 			// Parse Default Config
 			$json = new Json(dirname(__FILE__).'/bin/config.default.json');
@@ -53,7 +52,7 @@ trait Configuration
 		// Set routes config
 		if ( File::exists(($path = $this->getRoutesFile())) ) {
 			$routes = new Json($path);
-			$this->routes = $routes->parse(true);
+			$this->routes = Validator::checkRouteConfig($routes)->parse(true);
 		}
 	}
 
@@ -418,21 +417,73 @@ trait Configuration
 	 */
 	protected function getAssetUrl() : string
 	{
-		$url = "{$this->getBaseUrl()}{$this->global->url->assets}";
+		$url = "{$this->getBaseUrl()}{$this->global->path->assets}";
 		return Stringify::untrailingSlash($url);
 	}
 
 	/**
-	 * Get static assets url
+	 * Get static assets path
 	 *
 	 * @access protected
 	 * @param void
 	 * @return string
 	 */
-	protected function getUploadUrl() : string
+	protected function getAssetPath() : string
 	{
-		$url = "{$this->getBaseUrl()}{$this->global->url->upload}";
+		$path = "{$this->getRoot()}/{$this->global->path->assets}";
+		return Stringify::formatPath($path,1);
+	}
+
+	/**
+	 * Get static front upload url
+	 *
+	 * @access protected
+	 * @param void
+	 * @return string
+	 */
+	protected function getFrontUploadUrl() : string
+	{
+		$url = "{$this->getBaseUrl()}{$this->global->path->upload->front}";
 		return Stringify::untrailingSlash($url);
+	}
+
+	/**
+	 * Get static front upload path
+	 *
+	 * @access protected
+	 * @param void
+	 * @return string
+	 */
+	protected function getFrontUploadPath() : string
+	{
+		$path = "{$this->getRoot()}/{$this->global->path->upload->front}";
+		return Stringify::formatPath($path,1);
+	}
+
+	/**
+	 * Get static upload url
+	 *
+	 * @access protected
+	 * @param void
+	 * @return string
+	 */
+	protected function getAdminUploadUrl() : string
+	{
+		$url = "{$this->getBaseUrl()}{$this->global->path->upload->admin}";
+		return Stringify::untrailingSlash($url);
+	}
+
+	/**
+	 * Get static admin upload path
+	 *
+	 * @access protected
+	 * @param void
+	 * @return string
+	 */
+	protected function getAdminUploadPath() : string
+	{
+		$path = "{$this->getRoot()}/{$this->global->path->upload->admin}";
+		return Stringify::formatPath($path,1);
 	}
 
 	/**

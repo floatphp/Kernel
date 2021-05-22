@@ -53,18 +53,18 @@ class BaseOptions
 
     /**
      * @access protected
-     * @param string $action
+     * @param string $source
      * @return mixed
      */
-	protected function getToken($item = '')
+	protected function getToken($source = '')
 	{
 		$token = false;
 		if ( $this->isLoggedIn() ) {
 			$token = Tokenizer::generate(10);
 			$transient = new Transient();
 			$transient->setTemp($token,Stringify::serialize([
-				'id'   => Session::get($this->getSessionId()),
-				'item' => $item
+				'user'   => Session::get($this->getSessionId()),
+				'source' => $source
 			]), $this->getAccessExpire());
 		}
 		return $token;
@@ -73,18 +73,18 @@ class BaseOptions
     /**
      * @access protected
      * @param string $token
-     * @param string $item
+     * @param string $source
      * @param bool
      */
-	protected function verifyToken($token = '', $item = '')
+	protected function verifyToken($token = '', $source = '')
 	{
 		if ( !empty($token) ) {
 			$transient = new Transient();
 			$data = Stringify::unserialize($transient->getTemp($token));
 			if ( $data ) {
-				if ( Session::get($this->getSessionId()) !== $data['id'] ) {
+				if ( Session::get($this->getSessionId()) !== $data['user'] ) {
 					return false;
-				} elseif ( $item !== $data['item'] ) {
+				} elseif ( $source !== $data['source'] ) {
 					return false;
 				} else {
 					return true;
@@ -385,13 +385,19 @@ class BaseOptions
 	 * @param void
 	 * @return void
 	 */
-	protected function sanitizeRequest()
+	protected function verifyRequest()
 	{
-		$action = Post::isSetted('--action') ? Post::get('--action') : '';
-		if ( !$this->verifyToken(Post::get('--token'),$action) ) {
-			$this->setResponse('Invalid request token', [], 'error', 401);
+		$token  = $this->applyFilter('sanitize-request-token','--token');
+		$source = $this->applyFilter('sanitize-request-source','--source');
+		$ignore = $this->applyFilter('sanitize-request-ignore','--ignore');
 
-		} elseif ( Post::isSetted('--ignore') && !empty(Post::get('--ignore')) ) {
+		if ( Request::isSetted($token) ) {
+			$source = Request::isSetted($source) ? Request::get($source) : '';
+			if ( !$this->verifyToken(Request::get($token),$source) ) {
+				$this->setResponse('Invalid request token', [], 'error', 401);
+			}
+		}
+		if ( Request::isSetted($ignore) && !empty(Request::get($ignore)) ) {
 			$this->setResponse('Invalid request data', [], 'error', 401);
 		}
 	}
@@ -401,20 +407,21 @@ class BaseOptions
 	 * @param void
 	 * @return mixed
 	 */
-	protected function sanitizePost()
+	protected function sanitizeRequest()
 	{
-		$post = Post::get();
-		$excepts = $this->applyFilter('sanitize-post',[
+		$request = Request::get();
+		$excepts = $this->applyFilter('sanitize-request',[
+			'submit',
 			'--token',
-			'--action',
+			'--source',
 			'--ignore'
 		]);
 		foreach ($excepts as $except) {
-			if ( isset($post[$except]) ) {
-				unset($post[$except]);
+			if ( isset($request[$except]) ) {
+				unset($request[$except]);
 			}
 			
 		}
-		return $post;
+		return $request;
 	}
 }

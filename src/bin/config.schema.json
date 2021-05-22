@@ -4,7 +4,7 @@
   "properties": {
     "path": {
       "type": "object",
-      "required": ["base","modules","view","logs","migrate","cache","upload","translate","db","routes"],
+      "required": ["base","modules","view","logs","assets","migrate","cache","upload","translate","db","routes"],
       "properties":{
         "base":{
           "type": "string"
@@ -18,6 +18,9 @@
         "logs":{
           "type": "string"
         },
+        "assets":{
+          "type": "string"
+        },
         "migrate":{
           "type": ["string","boolean"]
         },
@@ -25,7 +28,16 @@
           "type": ["string","boolean"]
         },
         "upload":{
-          "type": "string"
+          "type": "object",
+          "required": ["admin","front"],
+          "properties":{
+            "admin":{
+              "type": "string"
+            },
+            "front":{
+              "type": "string"
+            }
+          }
         },
         "translate":{
           "type": "string"
@@ -40,12 +52,9 @@
     },
     "url": {
       "type": "object",
-      "required": ["base","assets","admin","login"],
+      "required": ["base","admin","login"],
       "properties":{
         "base":{
-          "type": "string"
-        },
-        "assets":{
           "type": "string"
         },
         "admin":{

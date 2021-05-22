@@ -95,7 +95,12 @@ class Orm extends BaseOptions implements OrmInterface
 		}
 		$sql  = trim("SELECT $column FROM `{$table}` {$where} {$orderby} {$limit}");
 		$sql .= ';';
-		return $this->query($sql,$bind);
+		return $this->query($sql,$bind,[
+			'isSingle'  => $isSingle,
+			'isColumn'  => $isColumn,
+			'isRow'     => $isRow,
+			'fetchMode' => $fetchMode
+		]);
 	}
 
 	/**
@@ -197,6 +202,7 @@ class Orm extends BaseOptions implements OrmInterface
 	public function find($id = '')
 	{
 		$id = empty($this->data[$this->key]) ? $id : $this->data[$this->key];
+		var_dump($id);die();
 		if ( !empty($id) ) {
 			$sql = "SELECT * FROM `{$this->table}` WHERE `{$this->key}` = :{$this->key} LIMIT 1";
 			$result = $this->db->row($sql,[$this->key => $id]);

@@ -174,7 +174,7 @@ final class Middleware
 
 			} elseif ( $this->isBackendController($class) ) {
 				$instance = new $class();
-				if ( $instance->isAuthenticated() ) {
+				if ( $instance->isAuthenticated() && $instance->hasAccess() ) {
 					$instance->$method($var);
 				} else {
 					header("Location: {$this->getLoginUrl()}");
@@ -206,7 +206,7 @@ final class Middleware
 
 			} elseif ( $this->isBackendController($class) ) {
 				$instance = new $class();
-				if ( $instance->isAuthenticated() ) {
+				if ( $instance->isAuthenticated() && $instance->hasAccess() ) {
 					$instance->$method();
 				} else {
 					header("Location: {$this->getLoginUrl()}");

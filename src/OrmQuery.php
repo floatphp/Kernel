@@ -50,6 +50,7 @@ class OrmQuery implements OrmQueryInterface
 			'orderby'   => '',
 			'limit'     => '',
 			'isSingle'  => false,
+			'isColumn'  => false,
 			'isRow'     => false,
 			'fetchMode' => null
 

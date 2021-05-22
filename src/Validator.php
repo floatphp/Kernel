@@ -24,7 +24,8 @@ final class Validator
 	/**
 	 * @access public
 	 * @var mixed $json
-	 * @return void
+	 * @return mixed
+	 * @throws ConfigException
 	 */
 	public static function checkConfig($json)
 	{
@@ -38,12 +39,14 @@ final class Validator
 		} catch (ConfigException $e) {
 			die($e->get(1));
 		}
+		return $json;
 	}
 
 	/**
 	 * @access public
 	 * @var mixed $json
-	 * @return void
+	 * @return mixed
+	 * @throws ConfigException
 	 */
 	public static function checkModuleConfig($json)
 	{
@@ -57,12 +60,35 @@ final class Validator
 		} catch (ConfigException $e) {
 			die($e->get(2));
 		}
+		return $json;
+	}
+
+	/**
+	 * @access public
+	 * @var mixed $json
+	 * @return mixed
+	 * @throws ConfigException
+	 */
+	public static function checkRouteConfig($json)
+	{
+		try {
+			$error = self::isValidConfig($json,'route.schema.json');
+			if ( TypeCheck::isString($error) ) {
+				throw new ConfigException($error);
+			} elseif ( $error === false ) {
+				throw new ConfigException();
+			}
+		} catch (ConfigException $e) {
+			die($e->get(3));
+		}
+		return $json;
 	}
 
 	/**
 	 * @access public
 	 * @var mixed $access
 	 * @return void
+	 * @throws ConfigException
 	 */
 	public static function checkDatabaseAccess($access)
 	{
@@ -71,7 +97,7 @@ final class Validator
 				throw new ConfigException();
 			}
 		} catch (ConfigException $e) {
-			die($e->get(3));
+			die($e->get(4));
 		}
 	}
 
