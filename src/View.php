@@ -21,7 +21,7 @@ use FloatPHP\Classes\Filesystem\File;
 use FloatPHP\Classes\Filesystem\Json;
 use FloatPHP\Classes\Filesystem\Stringify;
 
-class View extends BaseOptions
+class View extends Base
 {
     /**
      * @access protected
@@ -88,8 +88,11 @@ class View extends BaseOptions
         $env->addFunction(Template::extend('exit', function ($status = null){
             exit($status);
         }));
-        $env->addFunction(Template::extend('session', function ($var = null){
+        $env->addFunction(Template::extend('getSession', function ($var = null){
             return Session::get($var);
+        }));
+        $env->addFunction(Template::extend('getLanguage', function (){
+            return $this->getLanguage();
         }));
         $env->addFunction(Template::extend('isLoggedIn', function (){
 			return $this->isLoggedIn();
@@ -118,8 +121,8 @@ class View extends BaseOptions
         $env->addFunction(Template::extend('getAdminUrl', function (){
             return $this->getAdminUrl();
         }));
-        $env->addFunction(Template::extend('getToken', function (){
-			return $this->getToken();
+        $env->addFunction(Template::extend('getToken', function ($action = ''){
+			return $this->getToken($action);
         }));
         $env->addFunction(Template::extend('JSONdecode', function ($json = ''){
             return Json::decode($json);
@@ -148,7 +151,7 @@ class View extends BaseOptions
         $env->addFunction(Template::extend('doShortcode', function ($content = '', $ignoreHTML = false){
             return $this->doShortcode($content,$ignoreHTML);
         }));
-        $env->addFunction(Template::extend('translate', function ($string){
+        $env->addFunction(Template::extend('translate', function ($string = ''){
             return $this->translate($string);
         }));
 

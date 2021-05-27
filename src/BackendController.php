@@ -14,42 +14,4 @@
 
 namespace FloatPHP\Kernel;
 
-use FloatPHP\Classes\Http\Server;
-use FloatPHP\Classes\Filesystem\Stringify;
-
-class BackendController extends BaseController
-{
-	/**
-	 * Check current ip access
-	 *
-	 * @access public
-	 * @param void
-	 * @return bool
-	 */
-	public function hasAccess() : bool
-	{
-		$ip = Server::getIP();
-
-		// Allow local access
-		if ( $ip == '127.0.0.1' || $ip == '::1' ) {
-			return true;
-		}
-
-		// Check allowed IPs
-		$allowed = $this->applyFilter('admin-allowed-ip',$this->getAllowedAccess());
-		if ( !empty($allowed) ) {
-			if ( Stringify::contains($ip,$allowed) ) {
-				return false;
-			}
-
-		} else {
-			// Deny access
-			$denied = $this->applyFilter('admin-denied-ip',$this->getDeniedAccess());
-			if ( Stringify::contains($ip,$denied) ) {
-				return false;
-			}
-		}
-
-		return true;
-	}
-}
+class BackendController extends BaseController {}

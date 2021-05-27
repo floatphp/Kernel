@@ -22,7 +22,7 @@ use FloatPHP\Classes\Filesystem\Logger;
 use \PDO;
 use \PDOException;
 
-class Orm extends BaseOptions implements OrmInterface
+class Orm extends Base implements OrmInterface
 {
 	/**
 	 * @access protected

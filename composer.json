@@ -26,6 +26,7 @@
     "phpfastcache/phpfastcache": "8.0.5",
     "justinrainbow/json-schema": "5.2.10",
     "floatphp/classes": "1.0.0",
+    "floatphp/helpers": "1.0.0",
     "floatphp/interfaces": "1.0.0",
     "floatphp/exceptions": "1.0.0",
     "floatphp/cli": "1.0.0"

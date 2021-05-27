@@ -17,7 +17,7 @@ namespace FloatPHP\Kernel;
 use FloatPHP\Classes\Http\Server;
 use FloatPHP\Classes\Security\Encryption;
 
-class ApiController extends View
+class ApiController extends BaseController
 {
 	/**
 	 * Is HTTP authenticated

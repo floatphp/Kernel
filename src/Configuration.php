@@ -18,6 +18,7 @@ use FloatPHP\Classes\Filesystem\File;
 use FloatPHP\Classes\Filesystem\Json;
 use FloatPHP\Classes\Filesystem\Stringify;
 use FloatPHP\Classes\Filesystem\TypeCheck;
+use FloatPHP\Helpers\Validator;
 
 trait Configuration
 {
