@@ -20,7 +20,7 @@ use FloatPHP\Classes\Filesystem\Stringify;
 use FloatPHP\Classes\Filesystem\TypeCheck;
 use FloatPHP\Helpers\Validator;
 
-trait Configuration
+trait TraitConfiguration
 {
 	/**
 	 * @access private
@@ -226,19 +226,6 @@ trait Configuration
 	}
 
 	/**
-	 * Get static translation cache path
-	 *
-	 * @access protected
-	 * @param void
-	 * @return string
-	 */
-	protected function getTranslateCachePath() : string
-	{
-		$path = "{$this->getRoot()}/{$this->global->path->cache}/translation";
-		return Stringify::formatPath($path,1);
-	}
-
-	/**
 	 * Get static temp path
 	 *
 	 * @access protected
@@ -379,7 +366,7 @@ trait Configuration
 	 * @param void
 	 * @return int
 	 */
-	protected function getExpireIn() : int
+	protected function getCacheTTL() : int
 	{
 		return intval($this->global->options->ttl);
 	}

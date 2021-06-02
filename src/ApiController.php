@@ -15,6 +15,7 @@
 namespace FloatPHP\Kernel;
 
 use FloatPHP\Classes\Http\Server;
+use FloatPHP\Classes\Filesystem\Stringify;
 use FloatPHP\Classes\Security\Encryption;
 
 class ApiController extends BaseController
@@ -59,9 +60,10 @@ class ApiController extends BaseController
 	protected function isGranted($token) : bool
 	{
         $encryption = new Encryption($token,$this->getSecret());
-        $access = explode(':',$encryption->decrypt());
-        $username = isset($access[0]) ? $access[0] : false;
-        $password = isset($access[1]) ? $access[1] : false;
+        $access = $encryption->decrypt();
+        $pattern = '/\{(.*?)\}:\{(.*?)\}/';
+        $username = Stringify::match($pattern,$encryption->decrypt(),1);
+        $password = Stringify::match($pattern,$encryption->decrypt(),2);
         if ( $username && $password ) {
 			if ( $username == $this->getApiUsername() && $password == $this->getApiPassword() ) {
 			    return true;

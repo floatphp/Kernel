@@ -19,6 +19,7 @@ use FloatPHP\Interfaces\Kernel\OrmQueryInterface;
 use FloatPHP\Interfaces\Kernel\OrmInterface;
 use FloatPHP\Classes\Filesystem\TypeCheck;
 use FloatPHP\Classes\Filesystem\Logger;
+use FloatPHP\Classes\Filesystem\Arrayify;
 use \PDO;
 use \PDOException;
 
@@ -73,9 +74,8 @@ class Orm extends Base implements OrmInterface
 		// Init db configuration
 		$this->db = new Db(
 			$this->getDatabaseAccess(), 
-			new Logger($this->getLoggerPath(), 
-			'database'
-		));
+			new Logger($this->getLoggerPath(),'database')
+		);
 		// Set data
 		$this->data = $data;
 	}
@@ -135,15 +135,16 @@ class Orm extends Base implements OrmInterface
 	 * Save query
 	 *
 	 * @access public
-	 * @param string $id
-	 * @return array|null
+	 * @param int|string $id
+	 * @return int|null
 	 */
-	public function save($id = '0')
+	public function save($id = 0)
 	{
-		$this->data[$this->key] = (empty($this->data[$this->key])) 
-		? $id : $this->data[$this->key];
+		if ( empty($this->data[$this->key]) ) {
+			$this->data[$this->key] = $id;
+		}
 		$field = '';
-		$columns = array_keys($this->data);
+		$columns = Arrayify::keys($this->data);
 		foreach($columns as $column) {
 			if ( $column !== $this->key ) {
 				$field .= "{$column} = :{$column},";
@@ -151,10 +152,10 @@ class Orm extends Base implements OrmInterface
 		}
 		$field = substr_replace($field,'',-1);
 		if ( count($columns) > 1 ) {
-			$sql = "UPDATE `{$this->table}` SET `{$field}` WHERE `{$this->key}` = :{$this->key};";
-			if ( $id === '0' && $this->data[$this->key] === '0' ) {
+			$sql = "UPDATE `{$this->table}` SET {$field} WHERE {$this->key} = :{$this->key};";
+			if ( $id === 0 && $this->data[$this->key] === 0 ) {
 				unset($this->data[$this->key]);
-				$sql = "UPDATE `{$this->table}` SET `{$field}`;";
+				$sql = "UPDATE `{$this->table}` SET {$field};";
 			}
 			return $this->execute($sql);
 		}
@@ -170,7 +171,7 @@ class Orm extends Base implements OrmInterface
 	{
 		$bind = $this->data;
 		if ( !empty($bind) ) {
-			$fields = array_keys($bind);
+			$fields = Arrayify::keys($bind);
 			$field = [implode(',',$fields),":" . implode(',:',$fields)];
 			$sql = "INSERT INTO `{$this->table}` ({$field[0]}) VALUES ({$field[1]});";
 		}
@@ -183,14 +184,14 @@ class Orm extends Base implements OrmInterface
 	/**
 	 * @access public
 	 * @param string|int $id
-	 * @return array
+	 * @return int
 	 */
-	public function delete($id = '0')
+	public function delete($id = 0)
 	{
-		$id = empty($this->data[$this->key]) ? $id : $this->data[$this->key];
-		if ( !empty($id) ) {
-			$sql = "DELETE FROM `{$this->table}` WHERE `{$this->key}` = :{$this->key} LIMIT 1;";
+		if ( empty($this->data[$this->key]) ) {
+			$this->data[$this->key] = $id;
 		}
+		$sql = "DELETE FROM `{$this->table}` WHERE {$this->key} = :{$this->key} LIMIT 1;";
 		return $this->execute($sql,[$this->key => $id]);
 	}
 
@@ -201,12 +202,13 @@ class Orm extends Base implements OrmInterface
 	 */
 	public function find($id = '')
 	{
-		$id = empty($this->data[$this->key]) ? $id : $this->data[$this->key];
-		var_dump($id);die();
+		if ( empty($this->data[$this->key]) ) {
+			$this->data[$this->key] = $id;
+		}
 		if ( !empty($id) ) {
-			$sql = "SELECT * FROM `{$this->table}` WHERE `{$this->key}` = :{$this->key} LIMIT 1";
+			$sql = "SELECT * FROM `{$this->table}` WHERE {$this->key} = :{$this->key} LIMIT 1;";
 			$result = $this->db->row($sql,[$this->key => $id]);
-			$this->data = ($result != false) ? $result : null;
+			$this->data = ($result !== false) ? $result : null;
 		}
 	}
 
@@ -222,7 +224,7 @@ class Orm extends Base implements OrmInterface
 		$sql = "SELECT * FROM `{$this->table}`";
 		if ( !empty($bind) ) {
 			$field = [];
-			$columns = array_keys($bind);
+			$columns = Arrayify::keys($bind);
 			foreach($columns as $column) {
 				$field [] = "{$column} = :{$column}";
 			}
@@ -314,7 +316,7 @@ class Orm extends Base implements OrmInterface
 	{
 		if ( $data ) {
 			$this->db->bind('data',$data);
-			return $this->db->single("SELECT count({$this->key}) FROM `{$this->table}` WHERE `{$field}` = :data;");
+			return $this->db->single("SELECT count({$this->key}) FROM `{$this->table}` WHERE {$field} = :data;");
 		} else {
 			return $this->db->single("SELECT count({$this->key}) FROM `{$this->table}`;");
 		}
@@ -364,18 +366,13 @@ class Orm extends Base implements OrmInterface
 	/**
 	 * @access private
 	 * @param string $sql
-	 * @param string $isArray
+	 * @param array $bind
 	 * @return int|null
 	 */
-	private function execute($sql, $isArray = false)
+	private function execute($sql, $bind = null)
 	{
-		if ( $isArray ) {
-			$result = $this->db->query($sql,$isArray);
-		} else {
-			$result = $this->db->query($sql,$this->data);
-		}
-		// Empty bind
+		$bind = ($bind) ? $bind : $this->data;
 		$this->data = [];
-		return $result;
+		return $this->db->query($sql,$bind);
 	}
 }

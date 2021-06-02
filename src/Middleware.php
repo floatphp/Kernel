@@ -22,7 +22,7 @@ use FloatPHP\Interfaces\Classes\RouterInterface;
 
 final class Middleware
 {
-	use Configuration;
+	use TraitConfiguration;
 
 	/**
 	 * @access private
