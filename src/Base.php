@@ -14,18 +14,12 @@
 
 namespace FloatPHP\Kernel;
 
+use FloatPHP\Helpers\Filesystem\Transient;
 use FloatPHP\Classes\Html\Hook;
-use FloatPHP\Classes\Http\Server;
 use FloatPHP\Classes\Http\Session;
-use FloatPHP\Classes\Http\Request;
-use FloatPHP\Classes\Http\Response;
-use FloatPHP\Classes\Filesystem\Arrayify;
-use FloatPHP\Classes\Filesystem\Stringify;
-use FloatPHP\Classes\Filesystem\Translation;
+use FloatPHP\Classes\Http\Server;
 use FloatPHP\Classes\Security\Tokenizer;
-use FloatPHP\Helpers\Logger;
-use FloatPHP\Helpers\Cache;
-use FloatPHP\Helpers\Transient;
+use FloatPHP\Classes\Filesystem\Stringify;
 
 class Base
 {
@@ -63,11 +57,11 @@ class Base
 	/**
 	 * Get static instance
 	 *
-	 * @access protected
+	 * @access public
 	 * @param void
 	 * @return object
 	 */
-	protected static function getStatic()
+	public static function getStatic()
 	{
 		return new static;
 	}
@@ -184,18 +178,31 @@ class Base
 		return Hook::getInstance()->hasFilter($hook,$method);
 	}
 
+	/**
+	 * @access protected
+	 * @param void
+	 * @return bool
+	 */
+	protected function isLoggedIn() : bool
+	{
+		if ( Session::isRegistered() && !Session::isExpired() ) {
+			return true;
+		}
+		return false;
+	}
+
     /**
      * @access protected
-     * @param string $action
+     * @param string $source
      * @return mixed
      */
-	protected function getToken($action = '')
+	protected function getToken($source = '')
 	{
 		// Init token data
 		$data = $this->applyFilter('token-data',[]);
 
 		// Set default token data
-		$data['action'] = $action;
+		$data['source'] = $source;
 		$data['url'] = Server::getCurrentUrl();
 		$data['ip'] = Server::getIp();
 
@@ -210,192 +217,5 @@ class Base
 		$transient = new Transient();
 		$transient->setTemp($token,$data,$this->getAccessExpire());
 		return $token;
-	}
-
-    /**
-     * @access protected
-     * @param string $token
-     * @param string $action
-     * @param bool
-     */
-	protected function verifyToken($token = '', $action = '')
-	{
-		if ( !empty($token) ) {
-
-			$transient = new Transient();
-			$data = Stringify::unserialize($transient->getTemp($token));
-
-			// Override
-			$this->doAction('verify-token',$data);
-
-			// Verify token data
-			if ( $data ) {
-
-				if ( $this->isLoggedIn() ) {
-					if ( Session::get($this->getSessionId()) !== $data['user'] ) {
-						return false;
-					}
-				} elseif ( $action !== $data['action'] ) {
-					return false;
-
-				} elseif ( Server::getIp() !== $data['ip'] ) {
-					return false;
-
-				} elseif ( Server::get('http-referer') !== $data['url'] ) {
-					return false;
-
-				} else {
-					return true;
-				}
-			}
-		}
-		return false;
-	}
-
-	/**
-	 * @access protected
-	 * @param void
-	 * @return bool
-	 */
-	protected function isLoggedIn() : bool
-	{
-		if ( Session::isRegistered() && !Session::isExpired() ) {
-			return true;
-		}
-		return false;
-	}
-
-	/**
-	 * @access public
-	 * @param string $url
-	 * @param int $code
-	 * @param string $message
-	 * @return void
-	 */
-	public function redirect($url = '/', $code = 301, $message = 'Moved Permanently')
-	{
-		Server::redirect($url,$code,$message);
-	}
-
-	/**
-	 * @access protected
-	 * @param void
-	 * @return string
-	 */
-	protected function getLanguage()
-	{
-		if ( Arrayify::hasKey('lang',Request::get()) ) {
-			$lang = Request::get('lang');
-		    Session::set('--lang',$lang);
-
-		} elseif ( Arrayify::hasKey('lang',Session::get()) && $this->isLoggedIn() ) {
-		    $lang = Session::get('--lang');
-
-		} else {
-		    $lang = Session::get('--default-lang');
-		}
-		return $this->applyFilter('--default-lang',$lang);
-	}
-
-	/**
-	 * @access protected
-	 * @param string $string
-	 * @return string
-	 */
-	protected function translate($string = '') : string
-	{
-		// Set cache filters
-		$path = $this->applyFilter('translation-cache-path','translate');
-		$ttl = $this->applyFilter('translation-cache-ttl',3600);
-
-		// Cache translation
-		$cache = new Cache($path,$ttl);
-
-		$length = strlen($string);
-		$lang = $this->getLanguage();
-		$id = Stringify::slugify("translation-{$lang}-{$length}-{$string}");
-		$translation = $cache->get($id);
-		if ( !$cache->isCached() ) {
-			$path = $this->applyFilter('translation-path',$this->getTranslatePath());
-			$translator = new Translation($lang,$path);
-			$translation = $translator->translate($string);
-			$cache->set($translation,'translation');
-		}
-		return ($translation) ? $translation : (string)$string;
-	}
-
-	/**
-	 * @access protected
-	 * @param string $string
-	 * @param string $vars
-	 * @return string
-	 */
-	protected function translateVars($string,...$vars) : string
-	{
-		return sprintf($this->translate($string),$vars);
-	}
-
-	/**
-	 * @access protected
-	 * @param string $message
-	 * @param array $content
-	 * @param string $status
-	 * @param int $code
-	 * @return void
-	 */
-	protected function setResponse($message = '', $content = [], $status = 'success', $code = 200)
-	{
-		Response::set($message,$content,$status,$code);
-	}
-
-	/**
-	 * @access protected
-	 * @param void
-	 * @return void
-	 */
-	protected function verifyRequest()
-	{
-		$token  = $this->applyFilter('verify-request-token','--token');
-		$action = $this->applyFilter('verify-request-action','--action');
-		$ignore = $this->applyFilter('verify-request-ignore','--ignore');
-
-		if ( Request::isSetted($token) ) {
-			$action = Request::isSetted($action) ? Request::get($action) : '';
-			if ( !$this->verifyToken(Request::get($token),$action) ) {
-				$msg = $this->applyFilter('invalid-request-token','Invalid request token');
-				$msg = $this->translate($msg);
-				$this->setResponse($msg,[],'error',401);
-			}
-
-		} elseif ( Request::isSetted($ignore) && !empty(Request::get($ignore)) ) {
-			$msg = $this->applyFilter('invalid-request-data','Invalid request data');
-			$msg = $this->translate($msg);
-			$this->setResponse($msg,[],'error',401);
-		}
-	}
-
-	/**
-	 * @access protected
-	 * @param bool $verify
-	 * @return mixed
-	 */
-	protected function sanitizeRequest($verify = true)
-	{
-		if ( $verify ) {
-			$this->verifyRequest();
-		}
-		$request = Request::get();
-		$excepts = $this->applyFilter('sanitize-request',[
-			'submit',
-			'--token',
-			'--action',
-			'--ignore'
-		]);
-		foreach ($excepts as $except) {
-			if ( isset($request[$except]) ) {
-				unset($request[$except]);
-			}
-		}
-		return $request;
 	}
 }

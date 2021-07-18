@@ -28,14 +28,13 @@ class ErrorController extends FrontController
 	{
 		// Init configuration
 		$this->initConfig();
-		
 		$template = $this->applyFilter('error-template','/system/error');
 		$type = $this->applyFilter('error-response-type','text/html; charset=utf-8');
 		Response::setHttpHeaders($code,$type);
 		$this->render([
 			'status' => Response::getMessage($code),
 			'code'   => $code,
-			'error'  => $error
+			'error'  => $this->translate($error)
 		], $template);
 		die();
 	}

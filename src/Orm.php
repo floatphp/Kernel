@@ -14,12 +14,15 @@
 
 namespace FloatPHP\Kernel;
 
-use FloatPHP\Classes\Connection\Db;
 use FloatPHP\Interfaces\Kernel\OrmQueryInterface;
 use FloatPHP\Interfaces\Kernel\OrmInterface;
+use FloatPHP\Classes\Connection\Db;
 use FloatPHP\Classes\Filesystem\TypeCheck;
 use FloatPHP\Classes\Filesystem\Logger;
 use FloatPHP\Classes\Filesystem\Arrayify;
+use FloatPHP\Classes\Filesystem\Stringify;
+use FloatPHP\Classes\Filesystem\File;
+use FloatPHP\Classes\Server\System;
 use \PDO;
 use \PDOException;
 
@@ -48,12 +51,12 @@ class Orm extends Base implements OrmInterface
 
 	/**
 	 * @param string $name
-	 * @return object|null
+	 * @return mixed
 	 */
 	public function __get($name)
 	{
 		if ( TypeCheck::isArray($this->data) ) {
-			if ( array_key_exists($name,$this->data) ) {
+			if ( Arrayify::hasKey($name,$this->data) ) {
 				return $this->data[$name];
 			}
 		}
@@ -61,7 +64,7 @@ class Orm extends Base implements OrmInterface
 	}
 	
 	/**
-	 * Init Db object
+	 * Init database object
 	 *
 	 * @access public
 	 * @param array $data
@@ -74,14 +77,14 @@ class Orm extends Base implements OrmInterface
 		// Init db configuration
 		$this->db = new Db(
 			$this->getDatabaseAccess(), 
-			new Logger($this->getLoggerPath(),'database')
+			new Logger("{$this->getLoggerPath()}/database",'database')
 		);
 		// Set data
 		$this->data = $data;
 	}
 
 	/**
-	 * Select Query
+	 * Custom Select ORM Query
 	 *
 	 * @access public
 	 * @param OrmQueryInterface $data
@@ -104,7 +107,7 @@ class Orm extends Base implements OrmInterface
 	}
 
 	/**
-	 * Custom Query
+	 * Custom ORM Query
 	 *
 	 * @access public
 	 * @param string $sql
@@ -132,16 +135,17 @@ class Orm extends Base implements OrmInterface
 	}
 
 	/**
-	 * Save query
+	 * Update table object
 	 *
 	 * @access public
-	 * @param int|string $id
-	 * @return int|null
+	 * @param int $id
+	 * @return mixed
 	 */
-	public function save($id = 0)
+	public function save($id = null)
 	{
-		if ( empty($this->data[$this->key]) ) {
-			$this->data[$this->key] = $id;
+		if ( !$id ) {
+			$id = !empty($this->data[$this->key])
+			? intval($this->data[$this->key]) : 0;
 		}
 		$field = '';
 		$columns = Arrayify::keys($this->data);
@@ -150,10 +154,10 @@ class Orm extends Base implements OrmInterface
 				$field .= "{$column} = :{$column},";
 			}
 		}
-		$field = substr_replace($field,'',-1);
+		$field = Stringify::subreplace($field,'',-1,1);
 		if ( count($columns) > 1 ) {
 			$sql = "UPDATE `{$this->table}` SET {$field} WHERE {$this->key} = :{$this->key};";
-			if ( $id === 0 && $this->data[$this->key] === 0 ) {
+			if ( $id === 0 ) {
 				unset($this->data[$this->key]);
 				$sql = "UPDATE `{$this->table}` SET {$field};";
 			}
@@ -163,60 +167,69 @@ class Orm extends Base implements OrmInterface
 	}
 
 	/**
+	 * Create table object
+	 *
 	 * @access public
 	 * @param void
-	 * @return array
+	 * @return int
 	 */
-	public function create()
+	public function create() : int
 	{
 		$bind = $this->data;
 		if ( !empty($bind) ) {
 			$fields = Arrayify::keys($bind);
 			$field = [implode(',',$fields),":" . implode(',:',$fields)];
 			$sql = "INSERT INTO `{$this->table}` ({$field[0]}) VALUES ({$field[1]});";
-		}
-		else {
+		} else {
 			$sql = "INSERT INTO `{$this->table}` () VALUES ();";
 		}
 		return $this->execute($sql);
 	}
 
 	/**
+	 * Delete table object
+	 *
 	 * @access public
-	 * @param string|int $id
+	 * @param int $id
 	 * @return int
 	 */
-	public function delete($id = 0)
+	public function delete($id = null) : int
 	{
-		if ( empty($this->data[$this->key]) ) {
-			$this->data[$this->key] = $id;
+		if ( !$id ) {
+			$id = !empty($this->data[$this->key])
+			? intval($this->data[$this->key]) : 0;
 		}
 		$sql = "DELETE FROM `{$this->table}` WHERE {$this->key} = :{$this->key} LIMIT 1;";
-		return $this->execute($sql,[$this->key => $id]);
+		$bind = [$this->key => $id];
+		return $this->execute($sql,$bind);
 	}
 
 	/**
+	 * Find table object
+	 *
 	 * @access public
-	 * @param string $id
-	 * @return void
+	 * @param int $id
+	 * @return mixed
 	 */
-	public function find($id = '')
+	public function find($id = null)
 	{
-		if ( empty($this->data[$this->key]) ) {
-			$this->data[$this->key] = $id;
+		if ( !$id ) {
+			$id = !empty($this->data[$this->key])
+			? intval($this->data[$this->key]) : 0;
 		}
-		if ( !empty($id) ) {
-			$sql = "SELECT * FROM `{$this->table}` WHERE {$this->key} = :{$this->key} LIMIT 1;";
-			$result = $this->db->row($sql,[$this->key => $id]);
-			$this->data = ($result !== false) ? $result : null;
-		}
+		$sql = "SELECT * FROM `{$this->table}` WHERE {$this->key} = :{$this->key} LIMIT 1;";
+		$bind = [$this->key => $id];
+		$result = $this->db->row($sql,$bind);
+		return $this->data = ($result) ? $result : null;
 	}
 
 	/**
+	 * Search table objects by fields
+	 *
 	 * @access public
 	 * @param array $fields
 	 * @param array $sort
-	 * @return array
+	 * @return mixed
 	 */
 	public function search($fields = [], $sort = [])
 	{
@@ -231,96 +244,128 @@ class Orm extends Base implements OrmInterface
 			$sql .= " WHERE " . implode(" AND ",$field);
 		}
 		if ( !empty($sort) ) {
-			$sortvals = [];
+			$sorted = [];
 			foreach ($sort as $key => $value) {
-				$sortvals[] = "{$key} {$value}";
+				$sorted[] = "{$key} {$value}";
 			}
-			$sql .= " ORDER BY " . implode(", ", $sortvals);
+			$sql .= " ORDER BY " . implode(", ", $sorted);
 		}
-		return $this->execute($sql);
+		return $this->execute($sql,$bind);
 	}
 
 	/**
+	 * Search table object by fields
+	 *
 	 * @access public
-	 * @param bool $isRow
-	 * @return array
+	 * @param array $fields
+	 * @param array $sort
+	 * @return mixed
 	 */
-	public function all($isRow = false)
+	public function searchOne($fields = [], $sort = [])
+	{
+		$bind = empty($fields) ? $this->data : $fields;
+		$sql = "SELECT * FROM `{$this->table}`";
+		if ( !empty($bind) ) {
+			$field = [];
+			$columns = Arrayify::keys($bind);
+			foreach($columns as $column) {
+				$field [] = "{$column} = :{$column}";
+			}
+			$sql .= ' WHERE ' . implode(' AND ',$field);
+		}
+		if ( !empty($sort) ) {
+			$sorted = [];
+			foreach ($sort as $key => $value) {
+				$sorted[] = "{$key} {$value}";
+			}
+			$sql .= ' ORDER BY ' . implode(', ',$sorted);
+		}
+		$sql .= ' LIMIT 1;';
+		$result = $this->db->row($sql,$bind);
+		return $this->data = ($result) ? $result : null;
+	}
+
+	/**
+	 * Get all table onjects
+	 *
+	 * @access public
+	 * @param void
+	 * @return mixed
+	 */
+	public function all()
 	{
 		$sql = "SELECT * FROM `{$this->table}`;";
-		if ( $isRow ) {
-			return $this->db->row($sql);
-		}
 		return $this->db->query($sql);
 	}
 	
 	/**
+	 * Get field min
+	 *
 	 * @access public
 	 * @param string $field
-	 * @return int|null
+	 * @return mixed
 	 */
-	public function min($field)
+	public function min(string $field)
 	{
-		if ( $field ) {
-			return $this->db->single("SELECT min({$field}) FROM `{$this->table}`;");
-		}
-		return null;
+		return $this->db->single("SELECT min({$field}) FROM `{$this->table}`;");
 	}
 
 	/**
+	 * Get field max
+	 *
 	 * @access public
 	 * @param string $field
-	 * @return int|null
+	 * @return mixed
 	 */
-	public function max($field)
+	public function max(string $field)
 	{
-		if ( $field ) {
-			return $this->db->single("SELECT max({$field}) FROM `{$this->table}`;");
-		}
-		return null;
+		return $this->db->single("SELECT max({$field}) FROM `{$this->table}`;");
 	}
 
 	/**
+	 * Get field avg
+	 *
 	 * @access public
 	 * @param string $field
-	 * @return int|null
+	 * @return mixed
 	 */
-	public function avg($field)
+	public function avg(string $field)
 	{
-		if ( $field ) {
-			return $this->db->single("SELECT avg({$field}) FROM `{$this->table}`;");
-		}
-		return null;
+		return $this->db->single("SELECT avg({$field}) FROM `{$this->table}`;");
 	}
 
 	/**
+	 * Get field sum
+	 *
 	 * @access public
 	 * @param string $field
-	 * @return int|null
+	 * @return mixed
 	 */
-	public function sum($field)
+	public function sum(string $field)
 	{
-		if ( $field ) {
-			return $this->db->single("SELECT sum({$field}) FROM `{$this->table}`;");
-		}
-		return null;
+		return $this->db->single("SELECT sum({$field}) FROM `{$this->table}`;");
 	}
 
 	/**
+	 * Count items
+	 *
 	 * @access public
-	 * @param string $field
-	 * @param array $data
-	 * @return int|null
+	 * @param array $bind
+	 * @return mixed
 	 */
-	public function count($field = '*', $data = null)
+	public function count($bind = null)
 	{
-		if ( $data ) {
-			$this->db->bind('data',$data);
-			return $this->db->single("SELECT count({$this->key}) FROM `{$this->table}` WHERE {$field} = :data;");
-		} else {
-			return $this->db->single("SELECT count({$this->key}) FROM `{$this->table}`;");
+		$sql = "SELECT COUNT({$this->key}) FROM `{$this->table}`";
+		if ( TypeCheck::isArray($bind) ) {
+			$where = '';
+			foreach ($bind as $key => $value) {
+				$where .= "`{$key}` LIKE :{$key} AND ";
+			}
+			$where = rtrim($where,' AND ');
+			$sql .= " WHERE {$where}";
 		}
-		return null;
+		$sql .= ";";
+		return $this->db->single($sql,$bind);
 	}
 
 	/**
@@ -330,10 +375,42 @@ class Orm extends Base implements OrmInterface
 	 * @param string $table
 	 * @return int
 	 */
-	public function deleteAll($table)
+	public function deleteAll($table = '') : int
 	{
+		if ( empty($table) ) {
+			$table = $this->table;
+		}
 		$sql = "DELETE FROM `{$table}`;";
 		return $this->db->query($sql);
+	}
+
+	/**
+	 * Delete all from table
+	 *
+	 * @access public
+	 * @param string $table
+	 * @return mixed
+	 */
+	public function resetId($table = '')
+	{
+		if ( empty($table) ) {
+			$table = $this->table;
+		}
+		$sql = "ALTER TABLE `{$table}` AUTO_INCREMENT = 1;";
+		return $this->db->query($sql);
+	}
+
+	/**
+	 * Set table data
+	 *
+	 * @access public
+	 * @param array $data
+	 * @return object
+	 */
+	public function setData($data = []) : object
+	{
+		$this->data = $data;
+		return $this;
 	}
 
 	/**
@@ -342,6 +419,7 @@ class Orm extends Base implements OrmInterface
 	 * @access public
 	 * @param void
 	 * @return bool
+	 * @throws PDOException
 	 */
 	public function createDatabase()
 	{
@@ -364,14 +442,27 @@ class Orm extends Base implements OrmInterface
 	}
 
 	/**
+	 * Get application tables
+	 *
+	 * @access public
+	 * @param void
+	 * @return array
+	 */
+	public function getTables() : array
+	{
+		return (array)$this->db->query('show tables;');
+	}
+	
+	/**
 	 * @access private
 	 * @param string $sql
 	 * @param array $bind
-	 * @return int|null
+	 * @return mixed
 	 */
 	private function execute($sql, $bind = null)
 	{
 		$bind = ($bind) ? $bind : $this->data;
+		// Reset data
 		$this->data = [];
 		return $this->db->query($sql,$bind);
 	}

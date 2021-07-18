@@ -14,7 +14,7 @@
 
 namespace FloatPHP\Kernel;
 
-use FloatPHP\Helpers\Logger;
+use FloatPHP\Helpers\Filesystem\Logger;
 
 trait TraitException
 {

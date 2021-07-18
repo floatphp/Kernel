@@ -18,7 +18,8 @@ use FloatPHP\Classes\Filesystem\File;
 use FloatPHP\Classes\Filesystem\Json;
 use FloatPHP\Classes\Filesystem\Stringify;
 use FloatPHP\Classes\Filesystem\TypeCheck;
-use FloatPHP\Helpers\Validator;
+use FloatPHP\Classes\Http\Server;
+use FloatPHP\Helpers\Framework\Validator;
 
 trait TraitConfiguration
 {
@@ -123,15 +124,19 @@ trait TraitConfiguration
 	 * Get static base routes path
 	 *
 	 * @access protected
-	 * @param void
+	 * @param bool $trailingSlash
 	 * @return string
 	 */
-	protected function getBaseRoute() : string
+	protected function getBaseRoute($trailingSlash = true) : string
 	{
 		$path = "{$this->global->path->base}";
 		if ( !empty($path) ) {
 			$path = ltrim($path,'/');
-			$path = Stringify::formatPath(Stringify::trailingSlash($path));
+			$path = rtrim($path,'/');
+			if ( $trailingSlash ) {
+				$path = Stringify::trailingSlash($path);
+			}
+			$path = Stringify::formatPath($path);
 		}
 		return $path;
 	}
@@ -222,19 +227,6 @@ trait TraitConfiguration
 	protected function getCachePath() : string
 	{
 		$path = "{$this->getRoot()}/{$this->global->path->cache}";
-		return Stringify::formatPath($path,1);
-	}
-
-	/**
-	 * Get static temp path
-	 *
-	 * @access protected
-	 * @param void
-	 * @return string
-	 */
-	protected function getTempPath() : string
-	{
-		$path = "{$this->getRoot()}/{$this->global->path->temp}";
 		return Stringify::formatPath($path,1);
 	}
 
@@ -333,7 +325,7 @@ trait TraitConfiguration
 	 */
 	protected function getModules() : array
 	{
-		return glob("{$this->getModulesPath()}/*",1073741824);
+		return glob("{$this->getModulesPath()}/*");
 	}
 
 	/**
@@ -368,7 +360,7 @@ trait TraitConfiguration
 	 */
 	protected function getCacheTTL() : int
 	{
-		return intval($this->global->options->ttl);
+		return $this->global->options->ttl;
 	}
 
 	/**
@@ -380,7 +372,7 @@ trait TraitConfiguration
 	 */
 	protected function getViewExtension() : string
 	{
-		return "{$this->global->options->view->extension}";
+		return $this->global->options->view->extension;
 	}
 
 	/**
@@ -392,8 +384,9 @@ trait TraitConfiguration
 	 */
 	protected function getBaseUrl() : string
 	{
-		$url = "{$this->global->url->base}";
-		return Stringify::untrailingSlash($url);
+		$url = Server::getBaseUrl();
+		$route = $this->getBaseRoute();
+		return Stringify::untrailingSlash("{$url}/{$route}");
 	}
 
 	/**
@@ -475,6 +468,30 @@ trait TraitConfiguration
 	}
 
 	/**
+	 * Get static admin storage path
+	 *
+	 * @access protected
+	 * @param string $path
+	 * @return string
+	 */
+	protected function getStoragePath($path = 'Storage') : string
+	{
+		return "{$this->getAppDir()}/{$path}";
+	}
+
+	/**
+	 * Get static public path
+	 *
+	 * @access protected
+	 * @param string $path
+	 * @return string
+	 */
+	protected function getPublicPath($path = 'public') : string
+	{
+		return "{$this->getRoot()}/{$path}";
+	}
+
+	/**
 	 * Get static admin url
 	 *
 	 * @access protected
@@ -507,7 +524,7 @@ trait TraitConfiguration
 	 */
 	protected function getApiUsername() : string
 	{
-		return "{$this->global->api->username}";
+		return $this->global->api->username;
 	}
 
 	/**
@@ -519,7 +536,7 @@ trait TraitConfiguration
 	 */
 	protected function getApiPassword() : string
 	{
-		return "{$this->global->api->password}";
+		return $this->global->api->password;
 	}
 
 	/**
@@ -555,7 +572,7 @@ trait TraitConfiguration
 	 */
 	protected function getSessionId() : string
 	{
-		return "{$this->global->access->sessionId}";
+		return $this->global->access->sessionId;
 	}
 
 	/**
@@ -567,19 +584,36 @@ trait TraitConfiguration
 	 */
 	protected function getAccessExpire() : int
 	{
-		return "{$this->global->access->expire}";
+		return (int)$this->global->access->expire;
 	}
 
 	/**
 	 * Get static secret
 	 *
 	 * @access protected
-	 * @param void
+	 * @param bool $api
 	 * @return string
 	 */
-	protected function getSecret() : string
+	protected function getSecret($api = false) : string
 	{
-		return "{$this->global->access->secret}";
+		if ( $api ) {
+			if ( !empty($this->global->api->secret) ) {
+				return $this->global->api->secret;
+			}
+		}
+		return $this->global->access->secret;
+	}
+
+	/**
+	 * Get static permissions status
+	 *
+	 * @access protected
+	 * @param void
+	 * @return bool
+	 */
+	protected function isPermissions() : bool
+	{
+		return $this->global->access->permissions;
 	}
 
 	/**

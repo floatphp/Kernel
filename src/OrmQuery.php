@@ -18,7 +18,7 @@ use FloatPHP\Interfaces\Kernel\OrmQueryInterface;
 use FloatPHP\Classes\Filesystem\Arrayify;
 use FloatPHP\Classes\Filesystem\TypeCheck;
 
-class OrmQuery implements OrmQueryInterface
+final class OrmQuery implements OrmQueryInterface
 {
 	/**
 	 * @access public

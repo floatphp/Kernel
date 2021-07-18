@@ -17,7 +17,8 @@ namespace FloatPHP\Kernel;
 use FloatPHP\Interfaces\Kernel\AuthenticationInterface;
 Use FloatPHP\Classes\Security\Password;
 use FloatPHP\Classes\Http\Session;
-use FloatPHP\Helpers\Transient;
+use FloatPHP\Classes\Http\Request;
+use FloatPHP\Helpers\Filesystem\Transient;
 
 abstract class AbstractAuthController extends BaseController
 {
@@ -48,10 +49,17 @@ abstract class AbstractAuthController extends BaseController
 	 * @param string $password
 	 * @return void
 	 */
-	protected function authenticate(AuthenticationInterface $auth, $username, $password)
+	protected function authenticate(AuthenticationInterface $auth, $username = null, $password = null)
 	{
 		// Security
-		$this->verifyRequest();
+		$this->verifyRequest(true);
+
+		if ( !$username ) {
+			$username = Request::get('username');
+		}
+		if ( !$password ) {
+			$password = Request::get('password');
+		}
 
 		// Authenticate override
 		$this->doAction('authenticate',$username);

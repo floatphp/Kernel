@@ -17,6 +17,7 @@ namespace FloatPHP\Kernel;
 use FloatPHP\Classes\Http\Server;
 use FloatPHP\Classes\Filesystem\Stringify;
 use FloatPHP\Classes\Security\Encryption;
+use FloatPHP\Helpers\Filesystem\Transient;
 
 class ApiController extends BaseController
 {
@@ -37,7 +38,14 @@ class ApiController extends BaseController
 			if ( Server::isBasicAuth() ) {
 				$username = Server::getBasicAuthUser();
 				$password = Server::getBasicAuthPwd();
-			    if ( $username == $this->getApiUsername() && $password == $this->getApiPassword() ) {
+	        	// API authenticate override
+				$this->doAction('api-authenticate',[
+					'username' => $username,
+					'address'  => Server::getIP(),
+					'method'   => 'basic'
+				]);
+			    if ( $username == $this->getApiUsername() 
+			    	&& $password == $this->getApiPassword() ) {
 				    return true;
 			    }
 			}
@@ -51,7 +59,7 @@ class ApiController extends BaseController
 	}
 
 	/**
-	 * Is HTTP granted
+	 * Is HTTP granted (Token)
 	 *
 	 * @access protected
 	 * @param string $token
@@ -59,16 +67,59 @@ class ApiController extends BaseController
 	 */
 	protected function isGranted($token) : bool
 	{
-        $encryption = new Encryption($token,$this->getSecret());
+        $encryption = new Encryption($token,$this->getSecret(true));
         $access = $encryption->decrypt();
         $pattern = '/\{(.*?)\}:\{(.*?)\}/';
         $username = Stringify::match($pattern,$encryption->decrypt(),1);
         $password = Stringify::match($pattern,$encryption->decrypt(),2);
         if ( $username && $password ) {
-			if ( $username == $this->getApiUsername() && $password == $this->getApiPassword() ) {
+        	// API authenticate override
+			$this->doAction('api-authenticate',[
+				'username' => $username,
+				'address'  => Server::getIP(),
+				'method'   => 'token'
+			]);
+			if ( $username == $this->getApiUsername() 
+				&& $password == $this->getApiPassword() ) {
 			    return true;
 			}
         }
 		return false;
+	}
+
+	/**
+	 * API Authentication protection
+	 *
+	 * @access protected
+	 * @param int $max
+	 * @param int $seconds
+	 * @param bool $address
+	 * @param bool $method
+	 * @return void
+	 */
+	protected function protect($max = 120, $seconds = 60, $address = false, $method = false)
+	{
+		// Authentication
+		$this->addAction('api-authenticate',function($args = []) use ($max,$seconds,$address,$method){
+			$transient = new Transient();
+			$key = "api-authenticate-{$args['username']}";
+			if ( $address ) {
+				$key = "{$key}-{$args['address']}";
+			}
+			if ( $method ) {
+				$key = "{$key}-{$args['method']}";
+			}
+			$attempts = 0;
+			if ( !($attempts = $transient->getTemp($key)) ) {
+				$transient->setTemp($key,1,$seconds);
+			} else {
+				$transient->setTemp($key,$attempts + 1,$seconds);
+			}
+			if ( $attempts >= (int)$max ) {
+				$msg = $this->applyFilter('api-authenticate-attempt-message','Access forbidden');
+				$msg = $this->translate($msg);
+				$this->setResponse($msg,[],'error',401);
+			}
+		});
 	}
 }

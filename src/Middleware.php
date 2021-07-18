@@ -138,6 +138,7 @@ final class Middleware
 		$class = $this->parseClass();
 		$method = $this->parseMethod();
 		$var = $this->parseVar();
+		$roles = $this->parsePermissions();
 
 		// Secure access
 		$instance = new $class();
@@ -151,7 +152,11 @@ final class Middleware
 
 		} elseif ( $this->isBackendController($class) ) {
 			if ( $instance->isAuthenticated() ) {
-				$instance->$method($var);
+				if ( $instance->hasPermissions($roles) ) {
+					$instance->$method($var);
+				} else {
+					$instance->exception(401);
+				}
 			} else {
 				header("Location: {$this->getLoginUrl()}");
 			}
@@ -420,6 +425,24 @@ final class Middleware
 	}
 
 	/**
+	 * Parse module class
+	 *
+	 * @access private
+	 * @param void
+	 * @return string
+	 */
+	private function parseModuleClass() : string
+	{
+		$target = explode('@',$this->match['target']);
+		$class = isset($target[0]) ? $target[0] : false;
+		if ( !$class ) {
+			$this->do404();
+		}
+		$module = Stringify::replace('Module','',$class);
+		return $this->getModuleNamespace() . "{$module}\\{$class}";
+	}
+	
+	/**
 	 * Parse class
 	 *
 	 * @access private
@@ -437,24 +460,6 @@ final class Middleware
 	}
 
 	/**
-	 * Parse module class
-	 *
-	 * @access private
-	 * @param void
-	 * @return string
-	 */
-	private function parseModuleClass() : string
-	{
-		$target = explode('@',$this->match['target']);
-		$class = isset($target[0]) ? $target[0] : false;
-		if ( !$class ) {
-			$this->do404();
-		}
-		$module = Stringify::replace('Module','',$class);
-		return $this->getModuleNamespace() . "{$module}\\{$class}";
-	}
-
-	/**
 	 * Parse method
 	 *
 	 * @access private
@@ -465,6 +470,19 @@ final class Middleware
 	{
 		$target = explode('@',$this->match['target']);
 		return isset($target[1]) ? $target[1] : 'index';
+	}
+
+	/**
+	 * Parse permissions
+	 *
+	 * @access private
+	 * @param void
+	 * @return mixed
+	 */
+	private function parsePermissions()
+	{
+		return isset($this->match['permissions']) 
+		? $this->match['permissions'] : false;
 	}
 
 	/**

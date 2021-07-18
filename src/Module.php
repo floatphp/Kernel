@@ -16,7 +16,8 @@ namespace FloatPHP\Kernel;
 
 use FloatPHP\Classes\Filesystem\File;
 use FloatPHP\Classes\Filesystem\Json;
-use FloatPHP\Helpers\Configurator;
+use FloatPHP\Helpers\Framework\Configurator;
+use FloatPHP\Helpers\Framework\Validator;
 
 class Module extends BaseController
 {

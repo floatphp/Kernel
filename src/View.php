@@ -20,14 +20,18 @@ use FloatPHP\Classes\Security\Tokenizer;
 use FloatPHP\Classes\Filesystem\File;
 use FloatPHP\Classes\Filesystem\Json;
 use FloatPHP\Classes\Filesystem\Stringify;
+use FloatPHP\Classes\Filesystem\Arrayify;
+use FloatPHP\Helpers\Framework\Permission;
 
 class View extends Base
 {
     /**
      * @access protected
      * @var array $callables
+     * @var array $content
      */
     protected $callables = false;
+    protected $content = [];
 
 	/**
 	 * Define custom callables
@@ -42,6 +46,18 @@ class View extends Base
 	}
 
     /**
+     * Define global content
+     *
+     * @access protected
+     * @param array $content
+     * @return void
+     */
+    protected function setContent($content = [])
+    {
+        $this->content = $content;
+    }
+
+    /**
      * Render view
      *
      * @access protected
@@ -51,7 +67,7 @@ class View extends Base
      */
     protected function render($content = [], $tpl = 'system/default')
     {
-        echo $this->assign($content,$tpl);
+        echo $this->assign(Arrayify::merge($this->content,$content),$tpl);
     }
 
 	/**
@@ -91,6 +107,12 @@ class View extends Base
         $env->addFunction(Template::extend('getSession', function ($var = null){
             return Session::get($var);
         }));
+        $env->addFunction(Template::extend('hasCapability', function ($capability = null, $userId = null){
+            return Permission::hasCapability($capability,$userId);
+        }));
+        $env->addFunction(Template::extend('hasRole', function ($role = null, $userId = null){
+            return Permission::hasRole($role,$userId);
+        }));
         $env->addFunction(Template::extend('getLanguage', function (){
             return $this->getLanguage();
         }));
@@ -105,6 +127,9 @@ class View extends Base
         }));
         $env->addFunction(Template::extend('getRoot', function (){
             return $this->getRoot();
+        }));
+        $env->addFunction(Template::extend('getBaseRoute', function (){
+            return $this->getBaseRoute(false);
         }));
         $env->addFunction(Template::extend('getBaseUrl', function (){
             return $this->getBaseUrl();
@@ -124,10 +149,10 @@ class View extends Base
         $env->addFunction(Template::extend('getToken', function ($action = ''){
 			return $this->getToken($action);
         }));
-        $env->addFunction(Template::extend('JSONdecode', function ($json = ''){
+        $env->addFunction(Template::extend('decodeJSON', function ($json = ''){
             return Json::decode($json);
         }));
-        $env->addFunction(Template::extend('JSONencode', function ($array = []){
+        $env->addFunction(Template::extend('encodeJSON', function ($array = []){
             return Json::encode($array);
         }));
         $env->addFunction(Template::extend('serialize', function ($data = []){
@@ -148,8 +173,8 @@ class View extends Base
         $env->addFunction(Template::extend('hasFilter', function ($hook = '', $method = ''){
             return $this->hasFilter($hook,$method);
         }));
-        $env->addFunction(Template::extend('doShortcode', function ($content = '', $ignoreHTML = false){
-            return $this->doShortcode($content,$ignoreHTML);
+        $env->addFunction(Template::extend('doShortcode', function ($shortcode = '', $ignoreHTML = false){
+            return $this->doShortcode($shortcode,$ignoreHTML);
         }));
         $env->addFunction(Template::extend('translate', function ($string = ''){
             return $this->translate($string);
@@ -157,6 +182,6 @@ class View extends Base
 
         // Return rendered view
 		$view = $env->load("{$tpl}{$this->getViewExtension()}");
-		return $view->render($content);
+		return $view->render(Arrayify::merge($this->content,$content));
 	}
 }

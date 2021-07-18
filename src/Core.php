@@ -16,7 +16,8 @@ namespace FloatPHP\Kernel;
 
 use FloatPHP\Classes\Http\Session;
 use FloatPHP\Classes\Http\Router;
-use FloatPHP\Helpers\Configurator;
+use FloatPHP\Classes\Server\Date;
+use FloatPHP\Helpers\Framework\Configurator;
 
 final class Core
 {
@@ -43,9 +44,14 @@ final class Core
 			new Session();
 			Session::set('--default-lang',$config['--default-lang']);
 		}
-		
+
+		// Maintenance
+		if ( $config['--enable-maintenance'] == true ) {
+			new ErrorController(503);
+		}
+
 		// FloatPHP timezone
-		date_default_timezone_set($config['--default-timezone']);
+		Date::setDefaultTimezone($config['--default-timezone']);
 
 		// Start routing
 		$middleware = new Middleware(new Router());
