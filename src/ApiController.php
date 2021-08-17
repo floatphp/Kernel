@@ -15,6 +15,7 @@
 namespace FloatPHP\Kernel;
 
 use FloatPHP\Classes\Http\Server;
+use FloatPHP\Classes\Http\Response;
 use FloatPHP\Classes\Filesystem\Stringify;
 use FloatPHP\Classes\Security\Encryption;
 use FloatPHP\Helpers\Filesystem\Transient;
@@ -97,7 +98,7 @@ class ApiController extends BaseController
 	 * @param bool $method
 	 * @return void
 	 */
-	protected function protect($max = 120, $seconds = 60, $address = false, $method = false)
+	protected function protect($max = 120, $seconds = 60, $address = true, $method = true)
 	{
 		// Authentication
 		$this->addAction('api-authenticate',function($args = []) use ($max,$seconds,$address,$method){
@@ -117,9 +118,21 @@ class ApiController extends BaseController
 			}
 			if ( $attempts >= (int)$max ) {
 				$msg = $this->applyFilter('api-authenticate-attempt-message','Access forbidden');
-				$msg = $this->translate($msg);
-				$this->setResponse($msg,[],'error',401);
+				$this->setHttpResponse($msg,[],'error',429);
 			}
 		});
+	}
+
+	/**
+	 * @access protected
+	 * @param string $message
+	 * @param array $content
+	 * @param string $status
+	 * @param int $code
+	 * @return void
+	 */
+	protected function setHttpResponse($message = '', $content = [], $status = 'success', $code = 200)
+	{
+		Response::set($message,$content,$status,$code);
 	}
 }
