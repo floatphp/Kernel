@@ -15,7 +15,6 @@
 namespace FloatPHP\Kernel;
 
 use FloatPHP\Classes\Http\Session;
-use FloatPHP\Classes\Filesystem\TypeCheck;
 use FloatPHP\Helpers\Framework\Permission;
 
 class BackendController extends BaseController

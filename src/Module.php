@@ -28,7 +28,6 @@ class Module extends BaseController
 	{
 		// Init configuration
 		$this->initConfig();
-
 		// Load modules
 		$this->loadModules();
 	}

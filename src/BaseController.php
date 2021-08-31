@@ -14,16 +14,11 @@
 
 namespace FloatPHP\Kernel;
 
-use FloatPHP\Helpers\Filesystem\Cache;
 use FloatPHP\Helpers\Filesystem\Transient;
 use FloatPHP\Classes\Http\Server;
 use FloatPHP\Classes\Http\Request;
 use FloatPHP\Classes\Http\Response;
 use FloatPHP\Classes\Http\Session;
-use FloatPHP\Classes\Html\Shortcode;
-use FloatPHP\Classes\Security\Tokenizer;
-use FloatPHP\Classes\Filesystem\Translation;
-use FloatPHP\Classes\Filesystem\Arrayify;
 use FloatPHP\Classes\Filesystem\Stringify;
 
 class BaseController extends View
@@ -81,83 +76,6 @@ class BaseController extends View
 	}
 
 	/**
-	 * Register a shortcode handler
-	 *
-	 * @access protected
-	 * @param string $tag
-	 * @param callable $callback
-	 * @return void
-	 */
-	protected function addShortcode($tag, $callback)
-	{
-		return Shortcode::getInstance()->addShortcode($tag,$callback);
-	}
-
-	/**
-	 * Search content for shortcodes 
-	 * and filter shortcodes through their hooks
-	 *
-	 * @access protected
-	 * @param string $content
-	 * @param bool $ignoreHTML
-	 * @return void
-	 */
-	protected function renderShortcode($content, $ignoreHTML = false)
-	{
-		echo $this->doShortcode($content,$ignoreHTML);
-	}
-
-	/**
-	 * Search content for shortcodes 
-	 * and filter shortcodes through their hooks
-	 *
-	 * @access protected
-	 * @param string $content
-	 * @param bool $ignoreHTML
-	 * @return string
-	 */
-	protected function doShortcode($content, $ignoreHTML = false)
-	{
-		return Shortcode::getInstance()->doShortcode($content,$ignoreHTML);
-	}
-
-	/**
-	 * Removes hook for shortcode
-	 *
-	 * @access protected
-	 * @param string $tag
-	 * @return bool
-	 */
-	protected function removeShortcode($tag)
-	{
-		return Shortcode::getInstance()->removeShortcode($tag);
-	}
-
-	/**
-	 * Checks Whether a registered shortcode exists named $tag
-	 *
-	 * @access protected
-	 * @param string $tag
-	 * @return bool
-	 */
-	protected function shortcodeExists($tag)
-	{
-		return Shortcode::getInstance()->shortcodeExists($tag);
-	}
-
-	/**
-	 * Checks Whether a registered shortcode exists named $tag
-	 *
-	 * @access protected
-	 * @param string $tag
-	 * @return bool
-	 */
-	protected function hasShortcode($tag)
-	{
-		return Shortcode::getInstance()->hasShortcode($tag);
-	}
-
-	/**
 	 * @access protected
 	 * @param string $js
 	 * @param string $hook
@@ -195,73 +113,6 @@ class BaseController extends View
 	public function redirect($url = '/', $code = 301, $message = 'Moved Permanently')
 	{
 		Server::redirect($url,$code,$message);
-	}
-
-	/**
-	 * @access protected
-	 * @param void
-	 * @return string
-	 */
-	protected function getLanguage()
-	{
-		if ( Arrayify::hasKey('lang',Request::get()) ) {
-			$lang = Request::get('lang');
-		    Session::set('--lang',$lang);
-
-		} elseif ( Arrayify::hasKey('lang',Session::get()) && $this->isLoggedIn() ) {
-		    $lang = Session::get('--lang');
-
-		} else {
-		    $lang = Session::get('--default-lang');
-		}
-		return $this->applyFilter('--default-lang',$lang);
-	}
-
-	/**
-	 * @access protected
-	 * @param string $string
-	 * @return string
-	 */
-	protected function translate($string = '') : string
-	{
-		// Set cache filters
-		$path = $this->applyFilter('translation-cache-path','translate');
-		$ttl = $this->applyFilter('translation-cache-ttl',3600);
-
-		// Cache translation
-		$cache = new Cache($path,$ttl);
-
-		// Translation cache id
-		$length = strlen($string);
-		$lang = $this->getLanguage();
-		$uppercases = Stringify::matchAll('/([A-Z])/',$string);
-		$translateId = '';
-		foreach ($uppercases as $uppercase) {
-			$translateId = Stringify::replace($uppercase,"{$uppercase}-1",$string);
-		}
-		if ( empty($translateId) ) {
-			$translateId = $string;
-		}
-		$translateId = Stringify::slugify("translation-{$lang}-{$length}-{$translateId}");
-		$translation = $cache->get($translateId);
-		if ( !$cache->isCached() ) {
-			$path = $this->applyFilter('translation-path',$this->getTranslatePath());
-			$translator = new Translation($lang,$path);
-			$translation = $translator->translate($string);
-			$cache->set($translation,'translation');
-		}
-		return ($translation) ? $translation : (string)$string;
-	}
-
-	/**
-	 * @access protected
-	 * @param string $string
-	 * @param string $vars
-	 * @return string
-	 */
-	protected function translateVars($string,...$vars) : string
-	{
-		return sprintf($this->translate($string),$vars);
 	}
 
     /**

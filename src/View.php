@@ -16,8 +16,6 @@ namespace FloatPHP\Kernel;
 
 use FloatPHP\Classes\Html\Template;
 use FloatPHP\Classes\Http\Session;
-use FloatPHP\Classes\Security\Tokenizer;
-use FloatPHP\Classes\Filesystem\File;
 use FloatPHP\Classes\Filesystem\Json;
 use FloatPHP\Classes\Filesystem\Stringify;
 use FloatPHP\Classes\Filesystem\Arrayify;
