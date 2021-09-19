@@ -345,15 +345,23 @@ class Orm extends Base implements OrmInterface
 	}
 
 	/**
-	 * Count items
+	 * Count items.
 	 *
 	 * @access public
 	 * @param array $bind
+	 * @param string $column
+	 * @param bool $distinct
 	 * @return mixed
 	 */
-	public function count($bind = null)
+	public function count($bind = null, $column = null, $distinct = false)
 	{
-		$sql = "SELECT COUNT({$this->key}) FROM `{$this->table}`";
+		if ( !$column ) {
+			$column = $this->key;
+		}
+		if ( $distinct ) {
+			$column = "DISTINCT {$column}";
+		}
+		$sql = "SELECT COUNT({$column}) FROM `{$this->table}`";
 		if ( TypeCheck::isArray($bind) ) {
 			$where = '';
 			foreach ($bind as $key => $value) {

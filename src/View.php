@@ -93,88 +93,88 @@ class View extends Base
         }
     
 		// Add view global functions
-        $env->addFunction(Template::extend('dump', function ($var){
+        $env->addFunction(Template::extend('dump', function($var){
             var_dump($var);
         }));
-        $env->addFunction(Template::extend('die', function ($var = null){
+        $env->addFunction(Template::extend('die', function($var = null){
             die($var);
         }));
-        $env->addFunction(Template::extend('exit', function ($status = null){
+        $env->addFunction(Template::extend('exit', function($status = null){
             exit($status);
         }));
-        $env->addFunction(Template::extend('getSession', function ($var = null){
+        $env->addFunction(Template::extend('getSession', function($var = null){
             return Session::get($var);
         }));
-        $env->addFunction(Template::extend('hasCapability', function ($capability = null, $userId = null){
+        $env->addFunction(Template::extend('hasCapability', function($capability = null, $userId = null){
             return Permission::hasCapability($capability,$userId);
         }));
-        $env->addFunction(Template::extend('hasRole', function ($role = null, $userId = null){
+        $env->addFunction(Template::extend('hasRole', function($role = null, $userId = null){
             return Permission::hasRole($role,$userId);
         }));
-        $env->addFunction(Template::extend('getLanguage', function (){
+        $env->addFunction(Template::extend('getLanguage', function(){
             return $this->getLanguage();
         }));
-        $env->addFunction(Template::extend('isLoggedIn', function (){
+        $env->addFunction(Template::extend('isLoggedIn', function(){
 			return $this->isLoggedIn();
         }));
-        $env->addFunction(Template::extend('isDebug', function (){
+        $env->addFunction(Template::extend('isDebug', function(){
             return $this->isDebug();
         }));
-        $env->addFunction(Template::extend('getConfig', function ($config){
+        $env->addFunction(Template::extend('getConfig', function($config = ''){
             return $this->getConfig($config);
         }));
-        $env->addFunction(Template::extend('getRoot', function (){
+        $env->addFunction(Template::extend('getRoot', function(){
             return $this->getRoot();
         }));
-        $env->addFunction(Template::extend('getBaseRoute', function (){
+        $env->addFunction(Template::extend('getBaseRoute', function(){
             return $this->getBaseRoute(false);
         }));
-        $env->addFunction(Template::extend('getBaseUrl', function (){
+        $env->addFunction(Template::extend('getBaseUrl', function(){
             return $this->getBaseUrl();
         }));
-        $env->addFunction(Template::extend('getAssetUrl', function (){
+        $env->addFunction(Template::extend('getAssetUrl', function(){
             return $this->getAssetUrl();
         }));
-        $env->addFunction(Template::extend('getFrontUploadUrl', function (){
+        $env->addFunction(Template::extend('getFrontUploadUrl', function(){
             return $this->getFrontUploadUrl();
         }));
-        $env->addFunction(Template::extend('getLoginUrl', function (){
+        $env->addFunction(Template::extend('getLoginUrl', function(){
             return $this->getLoginUrl();
         }));
-        $env->addFunction(Template::extend('getAdminUrl', function (){
+        $env->addFunction(Template::extend('getAdminUrl', function(){
             return $this->getAdminUrl();
         }));
-        $env->addFunction(Template::extend('getToken', function ($action = ''){
+        $env->addFunction(Template::extend('getToken', function($action = ''){
 			return $this->getToken($action);
         }));
-        $env->addFunction(Template::extend('decodeJSON', function ($json = ''){
+        $env->addFunction(Template::extend('decodeJSON', function($json = ''){
             return Json::decode($json);
         }));
-        $env->addFunction(Template::extend('encodeJSON', function ($array = []){
+        $env->addFunction(Template::extend('encodeJSON', function($array = []){
             return Json::encode($array);
         }));
-        $env->addFunction(Template::extend('serialize', function ($data = []){
+        $env->addFunction(Template::extend('serialize', function($data = []){
             return Stringify::serialize($data);
         }));
-        $env->addFunction(Template::extend('unserialize', function ($string = ''){
+        $env->addFunction(Template::extend('unserialize', function($string = ''){
             return Stringify::unserialize($string);
         }));
-        $env->addFunction(Template::extend('doAction', function ($hook = '', $args = []){
+        $env->addFunction(Template::extend('doAction', function($hook = '', $args = []){
             $this->doAction($hook,$args);
         }));
-        $env->addFunction(Template::extend('hasAction', function ($hook = '', $args = []){
+        $env->addFunction(Template::extend('hasAction', function($hook = '', $args = []){
             $this->hasAction($hook,$args);
         }));
-        $env->addFunction(Template::extend('applyFilter', function ($hook = '', $method = ''){
+        $env->addFunction(Template::extend('applyFilter', function($hook = '', $method = ''){
             return $this->applyFilter($hook,$method);
         }));
-        $env->addFunction(Template::extend('hasFilter', function ($hook = '', $method = ''){
+        $env->addFunction(Template::extend('hasFilter', function($hook = '', $method = ''){
             return $this->hasFilter($hook,$method);
         }));
-        $env->addFunction(Template::extend('doShortcode', function ($shortcode = '', $ignoreHTML = false){
+        $env->addFunction(Template::extend('doShortcode', function($shortcode = '', $ignoreHTML = false){
             return $this->doShortcode($shortcode,$ignoreHTML);
         }));
-        $env->addFunction(Template::extend('translate', function ($string = ''){
+        $env->addFunction(Template::extend('translate', function($string = ''){
             return $this->translate($string);
         }));
 
