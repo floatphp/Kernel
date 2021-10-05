@@ -1,2 +1,2 @@
 # Kernel
-Framework Kernel Component
+Framework Kernel Components
