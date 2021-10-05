@@ -22,20 +22,38 @@ class ErrorController extends FrontController
 	 * @param int $code
 	 * @param string $message
 	 * @param string $error
+	 * @param bool $render
 	 * @return void
 	 */
-	public function __construct($code = 404, $error = null)
+	public function __construct($code = 404, $error = null, $render = true)
 	{
 		// Init configuration
 		$this->initConfig();
-		$template = $this->applyFilter('error-template','/system/error');
-		$type = $this->applyFilter('error-response-type','text/html; charset=utf-8');
-		Response::setHttpHeaders($code,$type);
-		$this->render([
-			'status' => Response::getMessage($code),
-			'code'   => $code,
-			'error'  => $this->translate($error)
-		], $template);
-		die();
+
+		$message = $this->applyFilter('error-message',Response::getMessage($code));
+
+		if ( !$error ) {
+			$error = $message;
+		}
+
+		if ( $render ) {
+
+			$type     = $this->applyFilter('error-response-type','text/html;charset=utf-8');
+			$template = $this->applyFilter('error-template','/system/error');
+			$error    = $this->applyFilter('error',$this->translate($error));
+
+			Response::setHttpHeaders($code,$type);
+			$this->render([
+				'status' => $message,
+				'code'   => $code,
+				'error'  => $error
+			], $template);
+			die();
+
+		} else {
+
+			$args = $this->applyFilter('error-http-args',[]);
+			Response::set($error,$args,'error',$code);
+		}
 	}
 }

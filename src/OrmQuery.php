@@ -42,7 +42,6 @@ final class OrmQuery implements OrmQueryInterface
 	private function setDefault($query = [])
 	{
 		$query = Arrayify::merge([
-
 			'table'     => '',
 			'column'    => '*',
 			'where'     => '',
@@ -53,7 +52,6 @@ final class OrmQuery implements OrmQueryInterface
 			'isColumn'  => false,
 			'isRow'     => false,
 			'fetchMode' => null
-
 		], $query);
 
 

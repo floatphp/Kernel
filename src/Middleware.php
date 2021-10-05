@@ -126,7 +126,7 @@ final class Middleware
 	}
 
 	/**
-	 * Instance controller
+	 * Instance controller.
 	 *
 	 * @access private
 	 * @param void
@@ -178,7 +178,7 @@ final class Middleware
 	}
 
 	/**
-	 * Instance module
+	 * Instance module.
 	 *
 	 * @access private
 	 * @param void
@@ -218,7 +218,7 @@ final class Middleware
 	}
 
 	/**
-	 * 404
+	 * 404.
 	 *
 	 * @access private
 	 * @param void
@@ -230,7 +230,7 @@ final class Middleware
 	}
 
 	/**
-	 * Is front controller
+	 * Is front controller.
 	 *
 	 * @access private
 	 * @param string $class

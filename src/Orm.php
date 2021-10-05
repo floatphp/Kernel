@@ -96,7 +96,7 @@ class Orm extends Base implements OrmInterface
 		}
 		$sql  = trim("SELECT $column FROM `{$table}` {$where} {$orderby} {$limit}");
 		$sql .= ';';
-		return $this->query($sql,$bind,[
+		return $this->query($sql,[],[
 			'isSingle'  => $isSingle,
 			'isColumn'  => $isColumn,
 			'isRow'     => $isRow,
@@ -115,9 +115,9 @@ class Orm extends Base implements OrmInterface
 	 */
 	public function query($sql, $bind = null, $args = [])
 	{
-		$isSingle  = isset($args['isSingle']) ? $args['isSingle'] : false;
-		$isColumn  = isset($args['isColumn']) ? $args['isColumn'] : false;
-		$isRow     = isset($args['isRow']) ? $args['isRow'] : false;
+		$isSingle  = isset($args['isSingle'])  ? $args['isSingle']  : false;
+		$isColumn  = isset($args['isColumn'])  ? $args['isColumn']  : false;
+		$isRow     = isset($args['isRow'])     ? $args['isRow']     : false;
 		$fetchMode = isset($args['fetchMode']) ? $args['fetchMode'] : null;
 
 		if ( $isSingle ) {
@@ -145,19 +145,19 @@ class Orm extends Base implements OrmInterface
 			$id = !empty($this->data[$this->key])
 			? intval($this->data[$this->key]) : 0;
 		}
-		$field = '';
+		$fields = '';
 		$columns = Arrayify::keys($this->data);
 		foreach($columns as $column) {
 			if ( $column !== $this->key ) {
-				$field .= "{$column} = :{$column},";
+				$fields .= "`{$column}` = :{$column},";
 			}
 		}
-		$field = Stringify::subreplace($field,'',-1,1);
+		$fields = Stringify::subreplace($fields,'',-1,1);
 		if ( count($columns) > 1 ) {
-			$sql = "UPDATE `{$this->table}` SET {$field} WHERE {$this->key} = :{$this->key};";
+			$sql = "UPDATE `{$this->table}` SET {$fields} WHERE `{$this->key}` = :{$this->key};";
 			if ( $id === 0 ) {
 				unset($this->data[$this->key]);
-				$sql = "UPDATE `{$this->table}` SET {$field};";
+				$sql = "UPDATE `{$this->table}` SET {$fields};";
 			}
 			return $this->execute($sql);
 		}
@@ -175,9 +175,14 @@ class Orm extends Base implements OrmInterface
 	{
 		$bind = $this->data;
 		if ( !empty($bind) ) {
-			$fields = Arrayify::keys($bind);
-			$field = [implode(',',$fields),":" . implode(',:',$fields)];
-			$sql = "INSERT INTO `{$this->table}` ({$field[0]}) VALUES ({$field[1]});";
+			$bind = Arrayify::keys($bind);
+			$columns = [];
+			foreach ($bind as $key => $column) {
+				$columns[$key] = "`{$column}`";
+			}
+			$fields = implode(',',$columns);
+			$values = ':' . implode(',:',$bind);
+			$sql = "INSERT INTO `{$this->table}` ({$fields}) VALUES ({$values});";
 		} else {
 			$sql = "INSERT INTO `{$this->table}` () VALUES ();";
 		}
@@ -197,7 +202,7 @@ class Orm extends Base implements OrmInterface
 			$id = !empty($this->data[$this->key])
 			? intval($this->data[$this->key]) : 0;
 		}
-		$sql = "DELETE FROM `{$this->table}` WHERE {$this->key} = :{$this->key} LIMIT 1;";
+		$sql = "DELETE FROM `{$this->table}` WHERE `{$this->key}` = :{$this->key} LIMIT 1;";
 		$bind = [$this->key => $id];
 		return $this->execute($sql,$bind);
 	}
@@ -215,31 +220,31 @@ class Orm extends Base implements OrmInterface
 			$id = !empty($this->data[$this->key])
 			? intval($this->data[$this->key]) : 0;
 		}
-		$sql = "SELECT * FROM `{$this->table}` WHERE {$this->key} = :{$this->key} LIMIT 1;";
+		$sql = "SELECT * FROM `{$this->table}` WHERE `{$this->key}` = :{$this->key} LIMIT 1;";
 		$bind = [$this->key => $id];
 		$result = $this->db->row($sql,$bind);
 		return $this->data = ($result) ? $result : null;
 	}
 
 	/**
-	 * Search table objects by fields
+	 * Search table objects by bind
 	 *
 	 * @access public
-	 * @param array $fields
+	 * @param array $bind
 	 * @param array $sort
 	 * @return mixed
 	 */
-	public function search($fields = [], $sort = [])
+	public function search($bind = [], $sort = [])
 	{
-		$bind = empty($fields) ? $this->data : $fields;
+		$bind = empty($bind) ? $this->data : $bind;
 		$sql = "SELECT * FROM `{$this->table}`";
 		if ( !empty($bind) ) {
-			$field = [];
+			$fields = [];
 			$columns = Arrayify::keys($bind);
 			foreach($columns as $column) {
-				$field [] = "{$column} = :{$column}";
+				$fields [] = "`{$column}` = :{$column}";
 			}
-			$sql .= " WHERE " . implode(" AND ",$field);
+			$sql .= " WHERE " . implode(" AND ",$fields);
 		}
 		if ( !empty($sort) ) {
 			$sorted = [];
@@ -252,24 +257,24 @@ class Orm extends Base implements OrmInterface
 	}
 
 	/**
-	 * Search table object by fields
+	 * Search table object by bind
 	 *
 	 * @access public
-	 * @param array $fields
+	 * @param array $bind
 	 * @param array $sort
 	 * @return mixed
 	 */
-	public function searchOne($fields = [], $sort = [])
+	public function searchOne($bind = [], $sort = [])
 	{
-		$bind = empty($fields) ? $this->data : $fields;
+		$bind = empty($bind) ? $this->data : $bind;
 		$sql = "SELECT * FROM `{$this->table}`";
 		if ( !empty($bind) ) {
-			$field = [];
+			$fields = [];
 			$columns = Arrayify::keys($bind);
 			foreach($columns as $column) {
-				$field [] = "{$column} = :{$column}";
+				$fields[] = "`{$column}` = :{$column}";
 			}
-			$sql .= ' WHERE ' . implode(' AND ',$field);
+			$sql .= ' WHERE ' . implode(' AND ',$fields);
 		}
 		if ( !empty($sort) ) {
 			$sorted = [];
@@ -391,7 +396,7 @@ class Orm extends Base implements OrmInterface
 	}
 
 	/**
-	 * Delete all from table
+	 * Reset table Id.
 	 *
 	 * @access public
 	 * @param string $table
@@ -446,9 +451,22 @@ class Orm extends Base implements OrmInterface
 	        die("ERROR : {$e->getMessage()}");
 	    }
 	}
+	
+	/**
+	 * Check table.
+	 *
+	 * @access public
+	 * @param string $table
+	 * @return bool
+	 */
+	public function hasTable($table = '')
+	{
+		$sql = "SHOW TABLES LIKE '{$table}';";
+		return (bool)$this->db->query($sql);
+	}
 
 	/**
-	 * Get application tables
+	 * Get tables.
 	 *
 	 * @access public
 	 * @param void
