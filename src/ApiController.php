@@ -100,7 +100,6 @@ class ApiController extends BaseController
 	 */
 	protected function protect($max = 120, $seconds = 60, $address = true, $method = true)
 	{
-		// Authentication
 		$this->addAction('api-authenticate',function($args = []) use ($max,$seconds,$address,$method){
 			$transient = new Transient();
 			$key = "api-authenticate-{$args['username']}";
