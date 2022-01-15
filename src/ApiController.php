@@ -116,7 +116,8 @@ class ApiController extends BaseController
 			} else {
 				$transient->setTemp($key,$attempts + 1,$seconds);
 			}
-			if ( $attempts >= (int)$max ) {
+			$max = (int)$max;
+			if ( $attempts >= $max && $max !== 0 ) {
 				$msg = $this->applyFilter('api-authenticate-attempt-message','Access forbidden');
 				$this->setHttpResponse($msg,[],'error',429);
 			}
