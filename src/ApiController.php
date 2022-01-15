@@ -17,6 +17,7 @@ namespace FloatPHP\Kernel;
 use FloatPHP\Classes\Http\Server;
 use FloatPHP\Classes\Http\Response;
 use FloatPHP\Classes\Filesystem\Stringify;
+use FloatPHP\Classes\Filesystem\Arrayify;
 use FloatPHP\Classes\Security\Encryption;
 use FloatPHP\Helpers\Filesystem\Transient;
 
@@ -96,11 +97,17 @@ class ApiController extends BaseController
 	 * @param int $seconds
 	 * @param bool $address
 	 * @param bool $method
-	 * @return void
+	 * @return mixed
 	 */
 	protected function protect($max = 120, $seconds = 60, $address = true, $method = true)
 	{
 		$this->addAction('api-authenticate',function($args = []) use ($max,$seconds,$address,$method){
+			// Exception
+			$exception = (array)$this->applyFilter('api-exception',[]);
+			if ( Arrayify::inArray($args['username'],$exception) ) {
+				return;
+			}
+			// Authentication
 			$transient = new Transient();
 			$key = "api-authenticate-{$args['username']}";
 			if ( $address ) {
