@@ -97,7 +97,7 @@ class ApiController extends BaseController
 	 * @param int $seconds
 	 * @param bool $address
 	 * @param bool $method
-	 * @return mixed
+	 * @return void
 	 */
 	protected function protect($max = 120, $seconds = 60, $address = true, $method = true)
 	{
