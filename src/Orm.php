@@ -62,7 +62,7 @@ class Orm extends Base implements OrmInterface
 	}
 	
 	/**
-	 * Init database object
+	 * Init database object.
 	 *
 	 * @access public
 	 * @param array $data
@@ -82,7 +82,7 @@ class Orm extends Base implements OrmInterface
 	}
 
 	/**
-	 * Custom Select ORM Query
+	 * Custom Select ORM Query.
 	 *
 	 * @access public
 	 * @param OrmQueryInterface $data
@@ -105,7 +105,7 @@ class Orm extends Base implements OrmInterface
 	}
 
 	/**
-	 * Custom ORM Query
+	 * Custom ORM Query.
 	 *
 	 * @access public
 	 * @param string $sql
@@ -133,7 +133,7 @@ class Orm extends Base implements OrmInterface
 	}
 
 	/**
-	 * Update table object
+	 * Update table object.
 	 *
 	 * @access public
 	 * @param int $id
@@ -165,7 +165,7 @@ class Orm extends Base implements OrmInterface
 	}
 
 	/**
-	 * Create table object
+	 * Create table object.
 	 *
 	 * @access public
 	 * @param void
@@ -190,7 +190,7 @@ class Orm extends Base implements OrmInterface
 	}
 
 	/**
-	 * Delete table object
+	 * Delete table object.
 	 *
 	 * @access public
 	 * @param int $id
@@ -208,7 +208,7 @@ class Orm extends Base implements OrmInterface
 	}
 
 	/**
-	 * Find table object
+	 * Find table object.
 	 *
 	 * @access public
 	 * @param int $id
@@ -227,7 +227,7 @@ class Orm extends Base implements OrmInterface
 	}
 
 	/**
-	 * Search table objects by bind
+	 * Search table objects by bind.
 	 *
 	 * @access public
 	 * @param array $bind
@@ -242,7 +242,7 @@ class Orm extends Base implements OrmInterface
 			$fields = [];
 			$columns = Arrayify::keys($bind);
 			foreach($columns as $column) {
-				$fields [] = "`{$column}` = :{$column}";
+				$fields [] = "`{$column}` LIKE :{$column}";
 			}
 			$sql .= " WHERE " . implode(" AND ",$fields);
 		}
@@ -257,7 +257,7 @@ class Orm extends Base implements OrmInterface
 	}
 
 	/**
-	 * Search table object by bind
+	 * Search table object by bind.
 	 *
 	 * @access public
 	 * @param array $bind
@@ -272,7 +272,7 @@ class Orm extends Base implements OrmInterface
 			$fields = [];
 			$columns = Arrayify::keys($bind);
 			foreach($columns as $column) {
-				$fields[] = "`{$column}` = :{$column}";
+				$fields[] = "`{$column}` LIKE :{$column}";
 			}
 			$sql .= ' WHERE ' . implode(' AND ',$fields);
 		}
@@ -289,7 +289,7 @@ class Orm extends Base implements OrmInterface
 	}
 
 	/**
-	 * Get all table onjects
+	 * Get all table onjects.
 	 *
 	 * @access public
 	 * @param void
@@ -302,7 +302,7 @@ class Orm extends Base implements OrmInterface
 	}
 	
 	/**
-	 * Get field min
+	 * Get field min.
 	 *
 	 * @access public
 	 * @param string $field
@@ -314,7 +314,7 @@ class Orm extends Base implements OrmInterface
 	}
 
 	/**
-	 * Get field max
+	 * Get field max.
 	 *
 	 * @access public
 	 * @param string $field
@@ -326,7 +326,7 @@ class Orm extends Base implements OrmInterface
 	}
 
 	/**
-	 * Get field avg
+	 * Get field avg.
 	 *
 	 * @access public
 	 * @param string $field
@@ -338,7 +338,7 @@ class Orm extends Base implements OrmInterface
 	}
 
 	/**
-	 * Get field sum
+	 * Get field sum.
 	 *
 	 * @access public
 	 * @param string $field
@@ -380,7 +380,7 @@ class Orm extends Base implements OrmInterface
 	}
 
 	/**
-	 * Delete all from table
+	 * Delete all from table.
 	 *
 	 * @access public
 	 * @param string $table
@@ -412,7 +412,7 @@ class Orm extends Base implements OrmInterface
 	}
 
 	/**
-	 * Set table data
+	 * Set table data.
 	 *
 	 * @access public
 	 * @param array $data
@@ -425,7 +425,7 @@ class Orm extends Base implements OrmInterface
 	}
 
 	/**
-	 * Create application database
+	 * Create application database.
 	 *
 	 * @access public
 	 * @param void
