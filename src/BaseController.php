@@ -1,13 +1,13 @@
 <?php
 /**
- * @author    : JIHAD SINNAOUR
- * @package   : FloatPHP
- * @subpackage: Kernel Component
- * @version   : 1.0.0
- * @category  : PHP framework
- * @copyright : (c) 2017 - 2021 JIHAD SINNAOUR <mail@jihadsinnaour.com>
- * @link      : https://www.floatphp.com
- * @license   : MIT License
+ * @author     : JIHAD SINNAOUR
+ * @package    : FloatPHP
+ * @subpackage : Kernel Component
+ * @version    : 1.0.0
+ * @category   : PHP framework
+ * @copyright  : (c) 2017 - 2021 JIHAD SINNAOUR <mail@jihadsinnaour.com>
+ * @link       : https://www.floatphp.com
+ * @license    : MIT License
  *
  * This file if a part of FloatPHP Framework
  */
@@ -50,7 +50,9 @@ class BaseController extends View
 		// Allow local access
 		if ( Stringify::contains(['127.0.0.1','::1'],$ip) ) {
 			$access = true;
+
 		} else {
+
 			// Check allowed IPs
 			$allowed = $this->applyFilter('access-allowed-ip',$this->getAllowedAccess());
 			if ( !empty($allowed) ) {
@@ -59,6 +61,7 @@ class BaseController extends View
 				} else {
 					$access = false;
 				}
+				
 			} else {
 				// Deny access
 				$denied = $this->applyFilter('access-denied-ip',$this->getDeniedAccess());

@@ -1,13 +1,13 @@
 <?php
 /**
- * @author    : JIHAD SINNAOUR
- * @package   : FloatPHP
- * @subpackage: Kernel Component
- * @version   : 1.0.0
- * @category  : PHP framework
- * @copyright : (c) 2017 - 2021 JIHAD SINNAOUR <mail@jihadsinnaour.com>
- * @link      : https://www.floatphp.com
- * @license   : MIT License
+ * @author     : JIHAD SINNAOUR
+ * @package    : FloatPHP
+ * @subpackage : Kernel Component
+ * @version    : 1.0.0
+ * @category   : PHP framework
+ * @copyright  : (c) 2017 - 2021 JIHAD SINNAOUR <mail@jihadsinnaour.com>
+ * @link       : https://www.floatphp.com
+ * @license    : MIT License
  *
  * This file if a part of FloatPHP Framework
  */
@@ -18,7 +18,7 @@ use FloatPHP\Interfaces\Kernel\AuthenticationInterface;
 Use FloatPHP\Classes\Security\Password;
 use FloatPHP\Classes\Http\Session;
 use FloatPHP\Classes\Http\Request;
-use FloatPHP\Helpers\Filesystem\Transient;
+use FloatPHP\Classes\Filesystem\Arrayify;
 
 abstract class AbstractAuthController extends BaseController
 {
@@ -45,35 +45,39 @@ abstract class AbstractAuthController extends BaseController
 	/**
 	 * @access protected
 	 * @param AuthenticationInterface $auth
-	 * @param string $username
-	 * @param string $password
+	 * @param array $args
 	 * @return void
 	 */
-	protected function authenticate(AuthenticationInterface $auth, $username = null, $password = null)
+	protected function authenticate(AuthenticationInterface $auth, $args = [])
 	{
 		// Security
 		$this->verifyRequest(true);
 
-		if ( !$username ) {
-			$username = Request::get('username');
+		$args = Arrayify::merge([
+			'username' => false,
+			'password' => false
+		],$args);
+
+		if ( !$args['username'] ) {
+			$args['username'] = Request::get('username');
 		}
-		if ( !$password ) {
-			$password = Request::get('password');
+		if ( !$args['password'] ) {
+			$args['password'] = Request::get('password');
 		}
 
 		// Authenticate override
-		$this->doAction('authenticate',$username);
+		$this->doAction('authenticate',$args['username']);
 
 		// Authenticate
 		new Session();
-		if ( ($user = $auth->getUser($username)) ) {
+		if ( ($user = $auth->getUser($args['username'])) ) {
 
 			// Check password
-			if ( Password::isValid($password,$user['password']) ) {
+			if ( Password::isValid($args['password'],$user['password']) ) {
 
 				// Check password format
 				if ( $this->applyFilter('authenticate-strong-password',false) ) {
-					if ( !Password::isStrong($password) ) {
+					if ( !Password::isStrong($args['password']) ) {
 						// Authenticate failed response
 						$msg = $this->applyFilter('authenticate-password-message','Strong password required');
 						$msg = $this->translate($msg);
@@ -100,58 +104,11 @@ abstract class AbstractAuthController extends BaseController
 		}
 
 		// Authenticate failed override
-		$this->doAction('authenticate-failed',$username);
+		$this->doAction('authenticate-failed',$args['username']);
 
 		// Authenticate failed response
 		$msg = $this->applyFilter('authenticate-error-message','Authentication failed');
 		$msg = $this->translate($msg);
 		$this->setResponse($msg,[],'error',401);
-	}
-
-	/**
-	 * @access protected
-	 * @param void
-	 * @return void
-	 */
-	protected function useStrongPassword()
-	{
-		$this->addFilter('authenticate-strong-password',function(){
-			return true;
-		});
-	}
-
-	/**
-	 * @access protected
-	 * @param int $max
-	 * @return void
-	 */
-	protected function limitAttempts($max = 3)
-	{
-		// Log failed authentication
-		$this->addAction('authenticate-failed',function($username){
-			if ( !empty($username) ) {
-				$transient = new Transient();
-				$key = "authenticate-{$username}";
-				if ( !($attempt = $transient->getTemp($key)) ) {
-					$transient->setTemp($key,1,0);
-				} else {
-					$transient->setTemp($key,$attempt + 1,0);
-				}
-			}
-		});
-
-		// Apply attempts limit
-		$this->addAction('authenticate',function($username) use ($max) {
-			if ( !empty($username) ) {
-				$key = "authenticate-{$username}";
-				$transient = new Transient();
-				$attempt = $transient->getTemp($key);
-				if ( $attempt >= (int)$max ) {
-					$msg = $this->applyFilter('authenticate-attempt-message','Access forbidden');
-					$msg = $this->translate($msg);
-					$this->setResponse($msg,[],'error',401);
-				}
-			}
-		});
 	}
 }
