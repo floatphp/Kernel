@@ -144,6 +144,9 @@ class View extends Base
         $env->addFunction(Template::extend('getAdminUrl', function(){
             return $this->getAdminUrl();
         }));
+        $env->addFunction(Template::extend('getVerifyUrl', function(){
+            return $this->getVerifyUrl();
+        }));
         $env->addFunction(Template::extend('getToken', function($action = ''){
 			return $this->getToken($action);
         }));

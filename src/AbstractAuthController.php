@@ -41,7 +41,7 @@ abstract class AbstractAuthController extends BaseController
 		}
 		return false;
 	}
-
+	
 	/**
 	 * @access protected
 	 * @param AuthenticationInterface $auth
@@ -53,6 +53,7 @@ abstract class AbstractAuthController extends BaseController
 		// Security
 		$this->verifyRequest(true);
 
+		// Get authentication
 		$args = Arrayify::merge([
 			'username' => false,
 			'password' => false
@@ -68,8 +69,7 @@ abstract class AbstractAuthController extends BaseController
 		// Authenticate override
 		$this->doAction('authenticate',$args['username']);
 
-		// Authenticate
-		new Session();
+		// Verify authentication
 		if ( ($user = $auth->getUser($args['username'])) ) {
 
 			// Check password
@@ -91,11 +91,20 @@ abstract class AbstractAuthController extends BaseController
 				// Check session registred
 				if ( $this->isLoggedIn() ) {
 
-					Session::set($auth->getKey(),$user[$auth->getKey()]);
-					// Authenticate success response
-					$msg = $this->applyFilter('authenticate-success-message','Connected');
-					$msg = $this->translate($msg);
-					$this->setResponse($msg);
+					if ( $auth->hasSecret($args['username']) ) {
+						Session::set('--verify',$args['username']);
+						// Authenticate accepted response
+						$msg = $this->applyFilter('authenticate-accepted-message','Accepted');
+						$msg = $this->translate($msg);
+						$this->setResponse($msg,[],'accepted',202);
+
+					} else {
+						Session::set($auth->getKey(),$user[$auth->getKey()]);
+						// Authenticate success response
+						$msg = $this->applyFilter('authenticate-success-message','Connected');
+						$msg = $this->translate($msg);
+						$this->setResponse($msg);
+					}
 
 				} else {
 					Session::end();

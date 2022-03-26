@@ -504,6 +504,18 @@ trait TraitConfiguration
 	}
 
 	/**
+	 * Get static verify url
+	 *
+	 * @access protected
+	 * @param void
+	 * @return string
+	 */
+	protected function getVerifyUrl() : string
+	{
+		return "{$this->getBaseUrl()}{$this->global->url->verify}";
+	}
+
+	/**
 	 * Get static login url
 	 *
 	 * @access protected
