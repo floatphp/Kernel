@@ -24,8 +24,10 @@ use FloatPHP\Classes\Filesystem\Stringify;
 use \PDO;
 use \PDOException;
 
-class Orm extends Base implements OrmInterface
+class Orm implements OrmInterface
 {
+	use TraitConfiguration;
+
 	/**
 	 * @access protected
 	 * @var object $db
@@ -34,6 +36,25 @@ class Orm extends Base implements OrmInterface
 	protected $db;
 	protected $data;
 
+	/**
+	 * @param array $data
+	 * @return void
+	 */
+	public function __construct($data = [])
+	{
+		// Init configuration
+		$this->initConfig();
+
+		// Init db configuration
+		$this->db = new Db(
+			$this->getDatabaseAccess(), 
+			new Logger("{$this->getLoggerPath()}/database",'database')
+		);
+
+		// Set data
+		$this->data = $data;
+	}
+	
 	/**
 	 * @param string $name
 	 * @param string $value
@@ -59,26 +80,6 @@ class Orm extends Base implements OrmInterface
 			}
 		}
 		return null;
-	}
-	
-	/**
-	 * Init database object.
-	 *
-	 * @access public
-	 * @param array $data
-	 * @return void
-	 */
-	public function init($data = [])
-	{
-		// Init configuration
-		$this->initConfig();
-		// Init db configuration
-		$this->db = new Db(
-			$this->getDatabaseAccess(), 
-			new Logger("{$this->getLoggerPath()}/database",'database')
-		);
-		// Set data
-		$this->data = $data;
 	}
 
 	/**

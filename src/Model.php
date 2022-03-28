@@ -21,7 +21,7 @@ class Model extends Orm
 	 */
 	public function __construct($data = [])
 	{
-		$this->init($data);
+		parent::__construct($data);
 	}
 
     /**

@@ -230,4 +230,17 @@ class BaseController extends View
 	{
 		Response::set($this->translate($message),$content,$status,$code);
 	}
+
+	/**
+	 * @access protected
+	 * @param string $message
+	 * @param array $content
+	 * @param string $status
+	 * @param int $code
+	 * @return void
+	 */
+	protected function setHttpResponse($message = '', $content = [], $status = 'success', $code = 200)
+	{
+		Response::set($message,$content,$status,$code);
+	}
 }
