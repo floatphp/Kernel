@@ -33,7 +33,7 @@ class Module extends BaseController
 	}
 
 	/**
-	 * Get modules routes
+	 * Get modules routes.
 	 *
 	 * @access public
 	 * @param void
@@ -44,8 +44,7 @@ class Module extends BaseController
 		$wrapper = [];
 		if ( $this->getModules() ) {
 			foreach ( $this->getModules() as $key => $name ) {
-				$json = new Json("{$name}/module.json");
-				$config = $json->parse(true);
+				$config = Json::parse("{$name}/module.json",true);
 				if ( $config['enable'] == true ) {
 					foreach ($config['router'] as $route) {
 						$wrapper[] = $route;
@@ -57,7 +56,7 @@ class Module extends BaseController
 	}
 
 	/**
-	 * Add module js
+	 * Add module js.
 	 *
 	 * @access protected
 	 * @param string $js
@@ -73,7 +72,7 @@ class Module extends BaseController
 	}
 
 	/**
-	 * Add module css
+	 * Add module css.
 	 *
 	 * @access protected
 	 * @param string $css
@@ -89,7 +88,7 @@ class Module extends BaseController
 	}
 
 	/**
-	 * Get modules routes
+	 * Get modules routes.
 	 *
 	 * @access private
 	 * @param void
@@ -98,9 +97,8 @@ class Module extends BaseController
 	private function loadModules()
 	{
 		foreach ( $this->getModules() as $name ) {
-			$json = new Json("{$name}/module.json");
-			Validator::checkModuleConfig($json);
-			$config = $json->parse();
+			$config = Json::parse("{$name}/module.json");
+			Validator::checkModuleConfig($config);
 			if ( $config->migrate ) {
 				$configurator = new Configurator();
 				$configurator->migrate("{$name}/migrate");

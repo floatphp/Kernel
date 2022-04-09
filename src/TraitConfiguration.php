@@ -32,8 +32,8 @@ trait TraitConfiguration
 	private $routes = [];
 
 	/**
-	 * Set Config Json File
-	 * Allow Parent Config Access
+	 * Set Config Json File,
+	 * Allow Parent Config Access.
 	 *
 	 * @access protected
 	 * @param void
@@ -43,18 +43,18 @@ trait TraitConfiguration
 	{
 		// Parse Config file
 		if ( File::exists(($path = $this->getConfigFile())) ) {
-			$json = new Json($path);
-			$this->global = Validator::checkConfig($json)->parse();
+			Validator::checkConfig(($config = Json::parse($path)));
+			$this->global = $config;
+
 		} else {
 			// Parse Default Config
-			$json = new Json(dirname(__FILE__).'/bin/config.default.json');
-			$this->global = $json->parse();
+			$this->global = Json::parse(dirname(__FILE__).'/bin/config.default.json');
 		}
 
 		// Set routes config
 		if ( File::exists(($path = $this->getRoutesFile())) ) {
-			$routes = new Json($path);
-			$this->routes = Validator::checkRouteConfig($routes)->parse(true);
+			Validator::checkRouteConfig(($routes = Json::parse($path,true)));
+			$this->routes = $routes;
 		}
 	}
 
@@ -84,8 +84,7 @@ trait TraitConfiguration
 	 */
 	protected function updateConfig($options = [], $section = 'options', $args = 64|128|256)
 	{
-		$json = new Json($this->getConfigFile());
-		$config = $json->parse(true);
+		$config = Json::parse($this->getConfigFile(),true);
 		foreach ($options as $option => $value) {
 			if ( isset($config[$section][$option]) ) {
 				$config[$section][$option] = $value;
@@ -329,7 +328,7 @@ trait TraitConfiguration
 	}
 
 	/**
-	 * Get static modules config
+	 * Get static modules config.
 	 *
 	 * @access protected
 	 * @param void
@@ -339,8 +338,7 @@ trait TraitConfiguration
 	{
 		$list = [];
 		foreach ( $this->getModules() as $name ) {
-			$json = new Json("{$name}/module.json");
-			$config = $json->parse();
+			$config = Json::parse("{$name}/module.json");
 			$list[] = [
 				'name'        => $config->name,
 				'description' => $config->description,
@@ -352,7 +350,7 @@ trait TraitConfiguration
 	}
 
 	/**
-	 * Get static expire
+	 * Get static expire.
 	 *
 	 * @access protected
 	 * @param void
@@ -364,7 +362,7 @@ trait TraitConfiguration
 	}
 
 	/**
-	 * Get static view extension
+	 * Get static view extension.
 	 *
 	 * @access protected
 	 * @param void
@@ -376,7 +374,7 @@ trait TraitConfiguration
 	}
 
 	/**
-	 * Get static base url
+	 * Get static base url.
 	 *
 	 * @access protected
 	 * @param void
@@ -390,7 +388,7 @@ trait TraitConfiguration
 	}
 
 	/**
-	 * Get static assets url
+	 * Get static assets url.
 	 *
 	 * @access protected
 	 * @param void
@@ -403,7 +401,7 @@ trait TraitConfiguration
 	}
 
 	/**
-	 * Get static assets path
+	 * Get static assets path.
 	 *
 	 * @access protected
 	 * @param void
@@ -416,7 +414,7 @@ trait TraitConfiguration
 	}
 
 	/**
-	 * Get static front upload url
+	 * Get static front upload url.
 	 *
 	 * @access protected
 	 * @param void
@@ -429,7 +427,7 @@ trait TraitConfiguration
 	}
 
 	/**
-	 * Get static front upload path
+	 * Get static front upload path.
 	 *
 	 * @access protected
 	 * @param void
@@ -442,7 +440,7 @@ trait TraitConfiguration
 	}
 
 	/**
-	 * Get static upload url
+	 * Get static upload url.
 	 *
 	 * @access protected
 	 * @param void
@@ -455,7 +453,7 @@ trait TraitConfiguration
 	}
 
 	/**
-	 * Get static admin upload path
+	 * Get static admin upload path.
 	 *
 	 * @access protected
 	 * @param void
@@ -468,7 +466,7 @@ trait TraitConfiguration
 	}
 
 	/**
-	 * Get static admin storage path
+	 * Get static admin storage path.
 	 *
 	 * @access protected
 	 * @param string $path
@@ -480,7 +478,7 @@ trait TraitConfiguration
 	}
 
 	/**
-	 * Get static public path
+	 * Get static public path.
 	 *
 	 * @access protected
 	 * @param string $path
@@ -492,7 +490,7 @@ trait TraitConfiguration
 	}
 
 	/**
-	 * Get static admin url
+	 * Get static admin url.
 	 *
 	 * @access protected
 	 * @param void
@@ -504,7 +502,7 @@ trait TraitConfiguration
 	}
 
 	/**
-	 * Get static verify url
+	 * Get static verify url.
 	 *
 	 * @access protected
 	 * @param void
@@ -516,7 +514,7 @@ trait TraitConfiguration
 	}
 
 	/**
-	 * Get static login url
+	 * Get static login url.
 	 *
 	 * @access protected
 	 * @param void
@@ -528,7 +526,7 @@ trait TraitConfiguration
 	}
 
 	/**
-	 * Get static API username
+	 * Get static API username.
 	 *
 	 * @access protected
 	 * @param void
@@ -540,7 +538,7 @@ trait TraitConfiguration
 	}
 
 	/**
-	 * Get static API password
+	 * Get static API password.
 	 *
 	 * @access protected
 	 * @param void
@@ -552,7 +550,7 @@ trait TraitConfiguration
 	}
 
 	/**
-	 * Get static allowed Access
+	 * Get static allowed Access.
 	 *
 	 * @access protected
 	 * @param void
@@ -564,7 +562,7 @@ trait TraitConfiguration
 	}
 
 	/**
-	 * Get static denied Access
+	 * Get static denied Access.
 	 *
 	 * @access protected
 	 * @param void
@@ -576,7 +574,7 @@ trait TraitConfiguration
 	}
 
 	/**
-	 * Get static session ID
+	 * Get static session ID.
 	 *
 	 * @access protected
 	 * @param void
@@ -588,7 +586,7 @@ trait TraitConfiguration
 	}
 
 	/**
-	 * Get static access expire
+	 * Get static access expire.
 	 *
 	 * @access protected
 	 * @param void
@@ -600,7 +598,7 @@ trait TraitConfiguration
 	}
 
 	/**
-	 * Get static secret
+	 * Get static secret.
 	 *
 	 * @access protected
 	 * @param bool $api
@@ -617,7 +615,7 @@ trait TraitConfiguration
 	}
 
 	/**
-	 * Get static permissions status
+	 * Get static permissions status.
 	 *
 	 * @access protected
 	 * @param void
@@ -629,7 +627,7 @@ trait TraitConfiguration
 	}
 
 	/**
-	 * Get static debug status
+	 * Get static debug status.
 	 *
 	 * @access protected
 	 * @param void
@@ -641,7 +639,7 @@ trait TraitConfiguration
 	}
 
 	/**
-	 * Get static config file path
+	 * Get static config file path.
 	 *
 	 * @access protected
 	 * @param void
@@ -653,7 +651,7 @@ trait TraitConfiguration
 	}
 
 	/**
-	 * Get static routes file path
+	 * Get static routes file path.
 	 *
 	 * @access protected
 	 * @param void
@@ -665,7 +663,7 @@ trait TraitConfiguration
 	}
 
 	/**
-	 * Get static database file path
+	 * Get static database file path.
 	 *
 	 * @access protected
 	 * @param void
