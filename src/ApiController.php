@@ -50,10 +50,18 @@ class ApiController extends BaseController
 			}
 		}
 
-		// Bearer token
-		if ( ($token = Server::getBearerToken()) ) {
- 			return $this->isGranted($token);
+		// Bearer token authentication
+		if ( $this->applyFilter('bearer-authentication',true) ) {
+			if ( ($token = Server::getBearerToken()) ) {
+	 			return $this->isGranted($token);
+			}
 		}
+
+		// Extra authentication
+		if ( $this->applyFilter('extra-authentication',false) ) {
+			return $this->applyFilter('extra-authenticated',false);
+		}
+
 		return false;
 	}
 
@@ -68,9 +76,10 @@ class ApiController extends BaseController
 	{
         $encryption = new Encryption($token,$this->getSecret(true));
         $access = $encryption->decrypt();
-        $pattern = '/\{(.*?)\}:\{(.*?)\}/';
-        $username = Stringify::match($pattern,$encryption->decrypt(),1);
-        $password = Stringify::match($pattern,$encryption->decrypt(),2);
+        $pattern = '/{user:(.*?)}{pswd:(.*?)}/';
+        $username = Stringify::match($pattern,$access,1);
+        $password = Stringify::match($pattern,$access,2);
+
         if ( $username && $password ) {
         	// API authenticate override
 			$this->doAction('api-authenticate',[
