@@ -12,6 +12,8 @@
  * This file if a part of FloatPHP Framework
  */
 
+declare(strict_types=1);
+
 namespace FloatPHP\Kernel;
 
 use FloatPHP\Helpers\Filesystem\Cache;
@@ -183,6 +185,7 @@ class Base
 		}
 		return false;
 	}
+
 	/**
 	 * @access protected
 	 * @param void
@@ -190,11 +193,11 @@ class Base
 	 */
 	protected function getLanguage()
 	{
-		if ( Arrayify::hasKey('lang',Request::get()) ) {
+		if ( Arrayify::hasKey('lang',(array)Request::get()) ) {
 			$lang = Request::get('lang');
 		    Session::set('--lang',$lang);
 
-		} elseif ( Arrayify::hasKey('lang',Session::get()) && $this->isLoggedIn() ) {
+		} elseif ( Arrayify::hasKey('lang',(array)Session::get()) && $this->isLoggedIn() ) {
 		    $lang = Session::get('--lang');
 
 		} else {
