@@ -15,6 +15,7 @@
 namespace FloatPHP\Kernel;
 
 use FloatPHP\Classes\Http\Session;
+use FloatPHP\Classes\Http\Cookie;
 use FloatPHP\Helpers\Framework\Permission;
 
 class BackendController extends BaseController
@@ -42,6 +43,7 @@ class BackendController extends BaseController
 	public function logout()
 	{
 		Session::end();
+		Cookie::clear();
 		die();
 	}
 }
