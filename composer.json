@@ -22,7 +22,7 @@
     "php": ">=7.4",
     "ext-curl": "*",
     "ext-intl": "*",
-    "twig/twig": "3.3.7",
+    "twig/twig": "3.4.3",
     "phpfastcache/phpfastcache": "8.1.0",
     "justinrainbow/json-schema": "5.2.11",
     "floatphp/classes": "1.0.0",
