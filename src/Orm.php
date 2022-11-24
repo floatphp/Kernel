@@ -5,22 +5,24 @@
  * @subpackage : Kernel Component
  * @version    : 1.0.0
  * @category   : PHP framework
- * @copyright  : (c) 2017 - 2021 JIHAD SINNAOUR <mail@jihadsinnaour.com>
+ * @copyright  : (c) 2017 - 2022 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://www.floatphp.com
- * @license    : MIT License
+ * @license    : MIT
  *
- * This file if a part of FloatPHP Framework
+ * This file if a part of FloatPHP Framework.
  */
+
+declare(strict_types=1);
 
 namespace FloatPHP\Kernel;
 
-use FloatPHP\Interfaces\Kernel\OrmQueryInterface;
-use FloatPHP\Interfaces\Kernel\OrmInterface;
-use FloatPHP\Classes\Connection\Db;
-use FloatPHP\Classes\Filesystem\TypeCheck;
-use FloatPHP\Classes\Filesystem\Logger;
-use FloatPHP\Classes\Filesystem\Arrayify;
-use FloatPHP\Classes\Filesystem\Stringify;
+use FloatPHP\Interfaces\Kernel\{
+    OrmInterface, OrmQueryInterface
+};
+use FloatPHP\Classes\{
+    Connection\Db, 
+    Filesystem\TypeCheck, Filesystem\Stringify, Filesystem\Arrayify, Filesystem\Logger
+};
 use \PDO;
 use \PDOException;
 

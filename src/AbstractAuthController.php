@@ -5,20 +5,21 @@
  * @subpackage : Kernel Component
  * @version    : 1.0.0
  * @category   : PHP framework
- * @copyright  : (c) 2017 - 2021 JIHAD SINNAOUR <mail@jihadsinnaour.com>
+ * @copyright  : (c) 2017 - 2022 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://www.floatphp.com
- * @license    : MIT License
+ * @license    : MIT
  *
- * This file if a part of FloatPHP Framework
+ * This file if a part of FloatPHP Framework.
  */
+
+declare(strict_types=1);
 
 namespace FloatPHP\Kernel;
 
 use FloatPHP\Interfaces\Kernel\AuthenticationInterface;
-Use FloatPHP\Classes\Security\Password;
-use FloatPHP\Classes\Http\Session;
-use FloatPHP\Classes\Http\Request;
-use FloatPHP\Classes\Filesystem\Arrayify;
+use FloatPHP\Classes\{
+    Security\Password, Http\Session, Http\Request, Filesystem\Arrayify
+};
 
 abstract class AbstractAuthController extends BaseController
 {

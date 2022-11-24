@@ -5,19 +5,21 @@
  * @subpackage : Kernel Component
  * @version    : 1.0.0
  * @category   : PHP framework
- * @copyright  : (c) 2017 - 2021 JIHAD SINNAOUR <mail@jihadsinnaour.com>
+ * @copyright  : (c) 2017 - 2022 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://www.floatphp.com
- * @license    : MIT License
+ * @license    : MIT
  *
- * This file if a part of FloatPHP Framework
+ * This file if a part of FloatPHP Framework.
  */
+
+declare(strict_types=1);
 
 namespace FloatPHP\Kernel;
 
-use FloatPHP\Classes\Http\Response;
-use FloatPHP\Classes\Filesystem\TypeCheck;
-use FloatPHP\Classes\Filesystem\Stringify;
-use FloatPHP\Classes\Filesystem\Arrayify;
+use FloatPHP\Classes\{
+    Filesystem\TypeCheck, Filesystem\Stringify, Filesystem\Arrayify, 
+    Http\Response
+};
 use FloatPHP\Interfaces\Classes\RouterInterface;
 
 final class Middleware
@@ -30,32 +32,32 @@ final class Middleware
 	private $match;
 
 	/**
-	 * Middleware system
-	 * $router->addMatchTypes(['name'=>'regex']);
+	 * Middleware system.
 	 *
 	 * @param RouterInterface $router
+	 * @see $router->addMatchTypes(['name'=>'regex']);
 	 */
 	public function __construct(RouterInterface $router)
 	{
 		// Init configuration
 		$this->initConfig();
 
-		// prepare router from config
+		// Prepare router from config
 		$router->setBasePath($this->getBaseRoute());
 
-		// set global router
+		// Set global router
 		$router->addRoutes($this->getRoutes());
 
-		// set modules router
+		// Set modules router
 		$module = new Module();
 		$router->addRoutes($module->getModulesRoutes());
 
-		// match request
+		// Match request
 		$this->match = $router->match();
 	}
 
 	/**
-	 * Dispatch request & provide response
+	 * Dispatch request & provide response.
 	 *
 	 * @access public
 	 * @param void
@@ -82,7 +84,7 @@ final class Middleware
 	}
 
 	/**
-	 * If controller is a function
+	 * Whether controller is a function.
 	 *
 	 * @access private
 	 * @param void
@@ -97,7 +99,7 @@ final class Middleware
 	}
 
 	/**
-	 * If controller is a class
+	 * Whether controller is a class.
 	 *
 	 * @access private
 	 * @param void
@@ -112,7 +114,7 @@ final class Middleware
 	}
 
 	/**
-	 * Execute callable
+	 * Execute callable.
 	 *
 	 * @access private
 	 * @param void
@@ -486,7 +488,7 @@ final class Middleware
 	}
 
 	/**
-	 * Parse request var
+	 * Parse request var.
 	 *
 	 * @access private
 	 * @param void

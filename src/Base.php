@@ -5,28 +5,26 @@
  * @subpackage : Kernel Component
  * @version    : 1.0.0
  * @category   : PHP framework
- * @copyright  : (c) 2017 - 2021 JIHAD SINNAOUR <mail@jihadsinnaour.com>
+ * @copyright  : (c) 2017 - 2022 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://www.floatphp.com
- * @license    : MIT License
+ * @license    : MIT
  *
- * This file if a part of FloatPHP Framework
+ * This file if a part of FloatPHP Framework.
  */
 
 declare(strict_types=1);
 
 namespace FloatPHP\Kernel;
 
-use FloatPHP\Helpers\Filesystem\Cache;
-use FloatPHP\Helpers\Filesystem\Transient;
-use FloatPHP\Classes\Filesystem\Arrayify;
-use FloatPHP\Classes\Filesystem\Stringify;
-use FloatPHP\Classes\Filesystem\Translation;
-use FloatPHP\Classes\Html\Hook;
-use FloatPHP\Classes\Html\Shortcode;
-use FloatPHP\Classes\Http\Session;
-use FloatPHP\Classes\Http\Server;
-use FloatPHP\Classes\Http\Request;
-use FloatPHP\Classes\Security\Tokenizer;
+use FloatPHP\Classes\{
+	Filesystem\Arrayify, Filesystem\Stringify, Filesystem\Translation, 
+    Html\Hook, Html\Shortcode, 
+    Http\Session, Http\Server, Http\Request,
+    Security\Tokenizer
+};
+use FloatPHP\Helpers\Filesystem\{
+	Cache, Transient
+};
 
 class Base
 {
