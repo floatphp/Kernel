@@ -3,9 +3,9 @@
  * @author     : JIHAD SINNAOUR
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.0.0
+ * @version    : 1.0.1
  * @category   : PHP framework
- * @copyright  : (c) 2017 - 2022 Jihad Sinnaour <mail@jihadsinnaour.com>
+ * @copyright  : (c) 2017 - 2023 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://www.floatphp.com
  * @license    : MIT
  *
@@ -20,7 +20,7 @@ use FloatPHP\Classes\Filesystem\{
     File, Json
 };
 use FloatPHP\Helpers\Framework\{
-    Configurator, Validator
+    Configurator, Validator, Permission
 };
 
 class Module extends BaseController
@@ -37,6 +37,21 @@ class Module extends BaseController
 	}
 
 	/**
+	 * @access public
+	 * @param mixed $roles
+	 * @return bool
+	 */
+	public function hasPermissions($roles = false) : bool
+	{
+		if ( $this->isPermissions() ) {
+			if ( $roles ) {
+				return Permission::hasRole($roles);
+			}
+		}
+		return true;
+	}
+
+	/**
 	 * Get modules routes.
 	 *
 	 * @access public
@@ -48,7 +63,7 @@ class Module extends BaseController
 		$wrapper = [];
 		if ( $this->getModules() ) {
 			foreach ( $this->getModules() as $key => $name ) {
-				$config = Json::parse("{$name}/module.json",true);
+				$config = Json::parse("{$name}/module.json", true);
 				if ( $config['enable'] == true ) {
 					foreach ($config['router'] as $route) {
 						$wrapper[] = $route;
@@ -56,7 +71,7 @@ class Module extends BaseController
 				}
 			}
 		}
-		return $this->applyFilter('module-routes',$wrapper);
+		return $this->applyFilter('module-routes', $wrapper);
 	}
 
 	/**
@@ -70,7 +85,7 @@ class Module extends BaseController
 	protected function addJS($js, $hook = 'add-js')
 	{
 		$this->addAction($hook, function() use($js) {
-			$tpl = $this->applyFilter('module-view-js','system/js');
+			$tpl = $this->applyFilter('module-view-js', 'system/js');
 			$this->render(['js' => "{$this->getModulesUrl()}/{$js}"],$tpl);
 		});
 	}
@@ -86,7 +101,7 @@ class Module extends BaseController
 	protected function addCSS($css, $hook = 'add-css')
 	{
 		$this->addAction($hook, function() use($css){
-			$tpl = $this->applyFilter('module-view-css','system/css');
+			$tpl = $this->applyFilter('module-view-css', 'system/css');
 			$this->render(['css' => "{$this->getModulesUrl()}/{$css}"],$tpl);
 		});
 	}

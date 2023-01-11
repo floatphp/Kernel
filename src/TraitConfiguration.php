@@ -3,9 +3,9 @@
  * @author     : JIHAD SINNAOUR
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.0.0
+ * @version    : 1.0.1
  * @category   : PHP framework
- * @copyright  : (c) 2017 - 2022 Jihad Sinnaour <mail@jihadsinnaour.com>
+ * @copyright  : (c) 2017 - 2023 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://www.floatphp.com
  * @license    : MIT
  *
@@ -16,11 +16,11 @@ declare(strict_types=1);
 
 namespace FloatPHP\Kernel;
 
-use FloatPHP\Helpers\Framework\Validator;
 use FloatPHP\Classes\{
     Filesystem\TypeCheck, Filesystem\Stringify, Filesystem\File, Filesystem\Json, 
     Http\Server
 };
+use FloatPHP\Helpers\Framework\Validator;
 
 trait TraitConfiguration
 {
@@ -33,8 +33,8 @@ trait TraitConfiguration
 	private $routes = [];
 
 	/**
-	 * Set Config Json File,
-	 * Allow Parent Config Access.
+	 * Set config Json file,
+	 * Allow parent config access.
 	 *
 	 * @access protected
 	 * @param void
@@ -60,7 +60,7 @@ trait TraitConfiguration
 	}
 
 	/**
-	 * Get config
+	 * Get config.
 	 *
 	 * @access protected
 	 * @param string $var
@@ -69,14 +69,13 @@ trait TraitConfiguration
 	protected function getConfig($var = null)
 	{
 		if ( $var ) {
-			return isset($this->global->$var)
-			? $this->global->$var : false;
+			return $this->global->$var ?? false;
 		}
 		return $this->global;
 	}
 
 	/**
-	 * Update config
+	 * Update config.
 	 *
 	 * @access protected
 	 * @param array $options
@@ -96,7 +95,7 @@ trait TraitConfiguration
 	}
 
 	/**
-	 * Get static app dir
+	 * Get static app dir.
 	 *
 	 * @access protected
 	 * @param void
@@ -109,7 +108,7 @@ trait TraitConfiguration
 	}
 
 	/**
-	 * Get static dir root
+	 * Get static dir root.
 	 *
 	 * @access protected
 	 * @param void
@@ -121,7 +120,7 @@ trait TraitConfiguration
 	}
 
 	/**
-	 * Get static base routes path
+	 * Get static base routes path.
 	 *
 	 * @access protected
 	 * @param bool $trailingSlash
@@ -142,7 +141,7 @@ trait TraitConfiguration
 	}
 
 	/**
-	 * Get static routes
+	 * Get static routes.
 	 *
 	 * @access protected
 	 * @param void
@@ -154,7 +153,7 @@ trait TraitConfiguration
 	}
 
 	/**
-	 * Get static controller namespace
+	 * Get static controller namespace.
 	 *
 	 * @access protected
 	 * @param void
@@ -163,11 +162,11 @@ trait TraitConfiguration
 	protected function getControllerNamespace() : string
 	{
 		$namespace = "{$this->global->namespace->controller}";
-		return Stringify::replace('/','\\',$namespace);
+		return Stringify::replace('/', '\\', $namespace);
 	}
 
 	/**
-	 * Get static module namespace
+	 * Get static module namespace.
 	 *
 	 * @access protected
 	 * @param void
@@ -180,7 +179,7 @@ trait TraitConfiguration
 	}
 
 	/**
-	 * Get static database access
+	 * Get static database access.
 	 *
 	 * @access protected
 	 * @param void
@@ -191,17 +190,17 @@ trait TraitConfiguration
 		$access = File::parseIni($this->getDatabaseFile(),true);
 		Validator::checkDatabaseAccess($access);
 		return [
-			'db'      => isset($access['default']['db']) ? $access['default']['db'] : '',
-			'host'    => isset($access['default']['host']) ? $access['default']['host'] : 'localhost',
-			'port'    => isset($access['default']['port']) ? $access['default']['port'] : 3306,
-			'user'    => isset($access['default']['user']) ? $access['default']['user'] : '',
-			'pswd'    => isset($access['default']['pswd']) ? $access['default']['pswd'] : '',
-			'charset' => isset($access['default']['charset']) ? $access['default']['charset'] : ''
+			'db'      => $access['default']['db']      ?? '',
+			'host'    => $access['default']['host']    ?? 'localhost',
+			'port'    => $access['default']['port']    ?? 3306,
+			'user'    => $access['default']['user']    ?? '',
+			'pswd'    => $access['default']['pswd']    ?? '',
+			'charset' => $access['default']['charset'] ?? ''
 		];
 	}
 
 	/**
-	 * Get static database root access
+	 * Get static database root access.
 	 *
 	 * @access protected
 	 * @param void
@@ -212,13 +211,13 @@ trait TraitConfiguration
 		$access = File::parseIni($this->getDatabaseFile(),true);
 		Validator::checkDatabaseAccess($access);
 		return [
-			'user' => isset($access['root']['user']) ? $access['root']['user'] : 'root',
-			'pswd' => isset($access['root']['pswd']) ? $access['root']['pswd'] : ''
+			'user' => $access['root']['user'] ?? 'root',
+			'pswd' => $access['root']['pswd'] ?? ''
 		];
 	}
 
 	/**
-	 * Get static cache path
+	 * Get static cache path.
 	 *
 	 * @access protected
 	 * @param void
@@ -231,7 +230,7 @@ trait TraitConfiguration
 	}
 
 	/**
-	 * Get static view path
+	 * Get static view path.
 	 *
 	 * @access protected
 	 * @param void
@@ -252,7 +251,7 @@ trait TraitConfiguration
 	}
 
 	/**
-	 * Get static translate path
+	 * Get static translate path.
 	 *
 	 * @access protected
 	 * @param void
@@ -265,7 +264,7 @@ trait TraitConfiguration
 	}
 
 	/**
-	 * Get static logs path
+	 * Get static logs path.
 	 *
 	 * @access protected
 	 * @param void
@@ -278,7 +277,7 @@ trait TraitConfiguration
 	}
 
 	/**
-	 * Get static migrate path
+	 * Get static migrate path.
 	 *
 	 * @access protected
 	 * @param void
@@ -291,7 +290,7 @@ trait TraitConfiguration
 	}
 
 	/**
-	 * Get static modules path
+	 * Get static modules path.
 	 *
 	 * @access protected
 	 * @param void
@@ -304,7 +303,7 @@ trait TraitConfiguration
 	}
 
 	/**
-	 * Get static modules url
+	 * Get static modules url.
 	 *
 	 * @access protected
 	 * @param void
@@ -317,7 +316,7 @@ trait TraitConfiguration
 	}
 
 	/**
-	 * Get static modules
+	 * Get static modules.
 	 *
 	 * @access protected
 	 * @param void

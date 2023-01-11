@@ -3,9 +3,9 @@
  * @author     : JIHAD SINNAOUR
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.0.0
+ * @version    : 1.0.1
  * @category   : PHP framework
- * @copyright  : (c) 2017 - 2022 Jihad Sinnaour <mail@jihadsinnaour.com>
+ * @copyright  : (c) 2017 - 2023 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://www.floatphp.com
  * @license    : MIT
  *
@@ -57,7 +57,7 @@ final class Middleware
 	}
 
 	/**
-	 * Dispatch request & provide response.
+	 * Dispatch request (route).
 	 *
 	 * @access public
 	 * @param void
@@ -66,21 +66,25 @@ final class Middleware
 	public function dispatch()
 	{
 		if ( $this->match ) {
-			// Callable
+			
 			if ( $this->isCallable() ) {
+				// Callable
 				$this->doCallable();
-			}
-			// Class method
-			elseif ( $this->isClassMethod() ) {
+
+			} elseif ( $this->isClassMethod() ) {
+				// Class method
 				$this->doInstance();
-			}
-			// Module class
-			elseif ( $this->isModule() ) {
+
+			} elseif ( $this->isModule() ) {
+				// Module class
 				$this->doModuleInstance();
 			}
+
 		} else {
 			$this->do404();
 		}
+
+		die();
 	}
 
 	/**
@@ -174,7 +178,7 @@ final class Middleware
 			if ( $instance->isHttpAuthenticated() ) {
 				$instance->$method($var);
 			} else {
-				Response::set('Authorization Required',[],'error',401);
+				Response::set('Authorization Required', [], 'error', 401);
 			}
 		}
 	}
@@ -192,6 +196,7 @@ final class Middleware
 		$class = $this->parseModuleClass();
 		$method = $this->parseMethod();
 		$var = $this->parseVar();
+		$roles = $this->parsePermissions();
 
 		// Secure access
 		$instance = new $class();
@@ -207,12 +212,16 @@ final class Middleware
 			if ( $instance->isHttpAuthenticated() ) {
 				$instance->$method($var);
 			} else {
-				Response::set('Authorization Required',[],'error',401);
+				Response::set('Authorization Required', [], 'error', 401);
 			}
 
 		} else {
 			if ( $instance->isAuthenticated() ) {
-				$instance->$method($var);
+				if ( $instance->hasPermissions($roles) ) {
+					$instance->$method($var);
+				} else {
+					$instance->exception(401);
+				}
 			} else {
 				header("Location: {$this->getLoginUrl()}");
 			}
@@ -471,7 +480,7 @@ final class Middleware
 	private function parseMethod() : string
 	{
 		$target = explode('@',$this->match['target']);
-		return isset($target[1]) ? $target[1] : 'index';
+		return $target[1] ?? 'index';
 	}
 
 	/**
@@ -483,8 +492,7 @@ final class Middleware
 	 */
 	private function parsePermissions()
 	{
-		return isset($this->match['permissions']) 
-		? $this->match['permissions'] : false;
+		return $this->match['permissions'] ?? false;
 	}
 
 	/**

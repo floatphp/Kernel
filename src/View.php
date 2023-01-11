@@ -3,9 +3,9 @@
  * @author     : JIHAD SINNAOUR
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.0.0
+ * @version    : 1.0.1
  * @category   : PHP framework
- * @copyright  : (c) 2017 - 2022 Jihad Sinnaour <mail@jihadsinnaour.com>
+ * @copyright  : (c) 2017 - 2023 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://www.floatphp.com
  * @license    : MIT
  *
@@ -34,7 +34,7 @@ class View extends Base
     protected $content = [];
 
 	/**
-	 * Define custom callables
+	 * Define custom callables.
 	 *
 	 * @access protected
      * @param array $callables
@@ -46,7 +46,7 @@ class View extends Base
 	}
 
     /**
-     * Define global content
+     * Define global content.
      *
      * @access protected
      * @param array $content
@@ -58,7 +58,7 @@ class View extends Base
     }
 
     /**
-     * Render view
+     * Render view.
      *
      * @access protected
 	 * @param array $content
@@ -67,11 +67,11 @@ class View extends Base
      */
     protected function render($content = [], $tpl = 'system/default')
     {
-        echo $this->assign(Arrayify::merge($this->content,$content),$tpl);
+        echo $this->assign(Arrayify::merge($this->content, $content), $tpl);
     }
 
 	/**
-	 * Aassign content to view
+	 * Aassign content to view.
 	 *
      * @access protected
 	 * @param array $content

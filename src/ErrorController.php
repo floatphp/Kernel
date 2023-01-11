@@ -3,9 +3,9 @@
  * @author     : JIHAD SINNAOUR
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.0.0
+ * @version    : 1.0.1
  * @category   : PHP framework
- * @copyright  : (c) 2017 - 2022 Jihad Sinnaour <mail@jihadsinnaour.com>
+ * @copyright  : (c) 2017 - 2023 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://www.floatphp.com
  * @license    : MIT
  *
@@ -32,7 +32,7 @@ class ErrorController extends FrontController
 		// Init configuration
 		$this->initConfig();
 
-		$message = $this->applyFilter('error-message',Response::getMessage($code));
+		$message = $this->applyFilter('error-message', Response::getMessage($code));
 
 		if ( !$error ) {
 			$error = $message;
@@ -40,11 +40,11 @@ class ErrorController extends FrontController
 
 		if ( $render ) {
 
-			$type     = $this->applyFilter('error-response-type','text/html;charset=utf-8');
-			$template = $this->applyFilter('error-template','/system/error');
-			$error    = $this->applyFilter('error',$this->translate($error));
+			$type     = $this->applyFilter('error-response-type', 'text/html;charset=utf-8');
+			$template = $this->applyFilter('error-template', '/system/error');
+			$error    = $this->applyFilter('error', $this->translate($error));
 
-			Response::setHttpHeaders($code,$type);
+			Response::setHttpHeaders($code, $type);
 			$this->render([
 				'status' => $message,
 				'code'   => $code,
@@ -54,8 +54,8 @@ class ErrorController extends FrontController
 
 		} else {
 
-			$args = $this->applyFilter('error-http-args',[]);
-			Response::set($error,$args,'error',$code);
+			$args = $this->applyFilter('error-http-args', []);
+			Response::set($error, $args, 'error', $code);
 		}
 	}
 }

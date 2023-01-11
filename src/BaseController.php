@@ -3,9 +3,9 @@
  * @author     : JIHAD SINNAOUR
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.0.0
+ * @version    : 1.0.1
  * @category   : PHP framework
- * @copyright  : (c) 2017 - 2022 Jihad Sinnaour <mail@jihadsinnaour.com>
+ * @copyright  : (c) 2017 - 2023 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://www.floatphp.com
  * @license    : MIT
  *
@@ -229,7 +229,7 @@ class BaseController extends View
 	 */
 	protected function setResponse($message = '', $content = [], $status = 'success', $code = 200)
 	{
-		Response::set($this->translate($message),$content,$status,$code);
+		Response::set($this->translate($message), $content, $status, $code);
 	}
 
 	/**
@@ -242,6 +242,6 @@ class BaseController extends View
 	 */
 	protected function setHttpResponse($message = '', $content = [], $status = 'success', $code = 200)
 	{
-		Response::set($message,$content,$status,$code);
+		Response::set($message, $content, $status, $code);
 	}
 }
