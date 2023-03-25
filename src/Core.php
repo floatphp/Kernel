@@ -3,7 +3,7 @@
  * @author     : JIHAD SINNAOUR
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.0.1
+ * @version    : 1.0.2
  * @category   : PHP framework
  * @copyright  : (c) 2017 - 2023 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://www.floatphp.com
@@ -20,7 +20,7 @@ use FloatPHP\Classes\{
     Http\Session, Http\Router, 
     Server\Date
 };
-use FloatPHP\Helpers\Framework\Configurator;
+use FloatPHP\Helpers\Framework\Installer;
 
 final class Core
 {
@@ -29,12 +29,12 @@ final class Core
 	 */
 	public function __construct($config = [])
 	{
-		$config = Configurator::parse($config);
+		$config = Installer::parse($config);
 
 		// FloatPHP setup
 		if ( $config['--disable-setup'] !== true ) {
-			$configurator = new Configurator();
-			$configurator->setup();
+			$installer = new Installer();
+			$installer->setup();
 		}
 
 		// FloatPHP X-Powered-By header

@@ -3,7 +3,7 @@
  * @author     : JIHAD SINNAOUR
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.0.1
+ * @version    : 1.0.2
  * @category   : PHP framework
  * @copyright  : (c) 2017 - 2023 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://www.floatphp.com
@@ -50,6 +50,7 @@ class ErrorController extends FrontController
 				'code'   => $code,
 				'error'  => $error
 			], $template);
+			
 			die();
 
 		} else {
@@ -57,5 +58,8 @@ class ErrorController extends FrontController
 			$args = $this->applyFilter('error-http-args', []);
 			Response::set($error, $args, 'error', $code);
 		}
+
+		// Reset configuration
+        $this->resetConfig();
 	}
 }

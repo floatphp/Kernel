@@ -3,7 +3,7 @@
  * @author     : JIHAD SINNAOUR
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.0.1
+ * @version    : 1.0.2
  * @category   : PHP framework
  * @copyright  : (c) 2017 - 2023 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://www.floatphp.com
@@ -189,6 +189,7 @@ class View extends Base
         try {
             $view = $env->load("{$tpl}{$this->getViewExtension()}");
             return $view->render(Arrayify::merge($this->content, $content));
+            
         } catch (Exception $e) {
             ErrorHandler::clearLastError();
         }

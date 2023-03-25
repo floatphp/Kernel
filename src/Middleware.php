@@ -3,7 +3,7 @@
  * @author     : JIHAD SINNAOUR
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.0.1
+ * @version    : 1.0.2
  * @category   : PHP framework
  * @copyright  : (c) 2017 - 2023 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://www.floatphp.com
@@ -160,9 +160,11 @@ final class Middleware
 			if ( $instance->isAuthenticated() ) {
 				if ( $instance->hasPermissions($roles) ) {
 					$instance->$method($var);
+
 				} else {
 					$instance->exception(401);
 				}
+
 			} else {
 				header("Location: {$this->getLoginUrl()}");
 			}
@@ -170,6 +172,7 @@ final class Middleware
 		} elseif ( $this->isAuthController($class) ) {
 			if ( $instance->isAuthenticated() ) {
 				header("Location: {$this->getAdminUrl()}");
+
 			} else {
 				$instance->$method($var);
 			}
@@ -177,6 +180,7 @@ final class Middleware
 		} elseif ( $this->isApiController($class) ) {
 			if ( $instance->isHttpAuthenticated() ) {
 				$instance->$method($var);
+				
 			} else {
 				Response::set('Authorization Required', [], 'error', 401);
 			}
@@ -229,7 +233,7 @@ final class Middleware
 	}
 
 	/**
-	 * 404.
+	 * Throw 404.
 	 *
 	 * @access private
 	 * @param void
@@ -241,7 +245,7 @@ final class Middleware
 	}
 
 	/**
-	 * Is front controller.
+	 * Check front controller.
 	 *
 	 * @access private
 	 * @param string $class
@@ -258,7 +262,7 @@ final class Middleware
 	}
 
 	/**
-	 * Is backend controller
+	 * Check backend controller.
 	 *
 	 * @access private
 	 * @param string $class
@@ -275,7 +279,7 @@ final class Middleware
 	}
 
 	/**
-	 * Is API controller
+	 * Check API controller.
 	 *
 	 * @access private
 	 * @param string $class
@@ -292,7 +296,7 @@ final class Middleware
 	}
 
 	/**
-	 * Is auth controller
+	 * Check auth controller.
 	 *
 	 * @access private
 	 * @access private
@@ -311,7 +315,7 @@ final class Middleware
 	}
 
 	/**
-	 * Is front class
+	 * Check front class.
 	 *
 	 * @access private
 	 * @param string $class
@@ -319,14 +323,11 @@ final class Middleware
 	 */
 	private function isFrontClass($class) : bool
 	{
-		if ( TypeCheck::isSubClassOf($class,__NAMESPACE__ . '\FrontController') ) {
-			return true;
-		}
-		return false;
+		return TypeCheck::isSubClassOf($class, __NAMESPACE__ . '\FrontController');
 	}
 
 	/**
-	 * Is backend class
+	 * Check backend class.
 	 *
 	 * @access private
 	 * @param string $class
@@ -334,14 +335,11 @@ final class Middleware
 	 */
 	private function isBackendClass($class) : bool
 	{
-		if ( TypeCheck::isSubClassOf($class,__NAMESPACE__ . '\BackendController') ) {
-			return true;
-		}
-		return false;
+		return TypeCheck::isSubClassOf($class, __NAMESPACE__ . '\BackendController');
 	}
 
 	/**
-	 * Is API class
+	 * Check API class.
 	 *
 	 * @access private
 	 * @param string $class
@@ -349,14 +347,11 @@ final class Middleware
 	 */
 	private function isApiClass($class) : bool
 	{
-		if ( TypeCheck::isSubClassOf($class,__NAMESPACE__ . '\ApiController') ) {
-			return true;
-		}
-		return false;
+		return TypeCheck::isSubClassOf($class, __NAMESPACE__ . '\ApiController');
 	}
 
 	/**
-	 * Has backend interface
+	 * Check backend interface.
 	 *
 	 * @access private
 	 * @param string $class
@@ -364,15 +359,11 @@ final class Middleware
 	 */
 	private function hasBackendInterface($class) : bool
 	{
-		$interface = 'FloatPHP\Interfaces\Kernel';
-		if ( TypeCheck::hasInterface($class,$interface . '\BackendInterface') ) {
-			return true;
-		}
-		return false;
+		return TypeCheck::hasInterface($class, 'BackendInterface');
 	}
 
 	/**
-	 * Has front interface
+	 * Check front interface.
 	 *
 	 * @access private
 	 * @param string $class
@@ -380,15 +371,14 @@ final class Middleware
 	 */
 	private function hasFrontInterface($class) : bool
 	{
-		$interface = 'FloatPHP\Interfaces\Kernel';
-		if ( TypeCheck::hasInterface($class,$interface . '\FrontInterface') ) {
+		if ( TypeCheck::hasInterface($class, 'FrontInterface') ) {
 			return true;
 		}
 		return false;
 	}
 
 	/**
-	 * Has API interface
+	 * Check API interface.
 	 *
 	 * @access private
 	 * @param string $class
@@ -396,15 +386,11 @@ final class Middleware
 	 */
 	private function hasApiInterface($class) : bool
 	{
-		$interface = 'FloatPHP\Interfaces\Kernel';
-		if ( TypeCheck::hasInterface($class,$interface . '\ApiInterface') ) {
-			return true;
-		}
-		return false;
+		return TypeCheck::hasInterface($class, 'ApiInterface');
 	}
 
 	/**
-	 * Has authentication middleware interface
+	 * Check authentication middleware interface.
 	 *
 	 * @access private
 	 * @param string $class
@@ -412,11 +398,7 @@ final class Middleware
 	 */
 	private function hasAuthMiddlewareInterface($class) : bool
 	{
-		$interface = 'FloatPHP\Interfaces\Kernel';
-		if ( TypeCheck::hasInterface($class,$interface . '\AuthMiddlewareInterface') ) {
-			return true;
-		}
-		return false;
+		return TypeCheck::hasInterface($class, 'AuthMiddlewareInterface');
 	}
 
 	/**
@@ -429,7 +411,7 @@ final class Middleware
 	private function isModule() : bool
 	{
 		$module = Stringify::lowercase($this->match['target']);
-		if ( Stringify::contains($module,'module') ) {
+		if ( Stringify::contains($module, 'module') ) {
 			return true;
 		}
 		return false;
@@ -449,7 +431,7 @@ final class Middleware
 		if ( !$class ) {
 			$this->do404();
 		}
-		$module = Stringify::replace('Module','',$class);
+		$module = Stringify::replace('Module', '', $class);
 		return $this->getModuleNamespace() . "{$module}\\{$class}";
 	}
 	

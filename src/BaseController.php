@@ -3,7 +3,7 @@
  * @author     : JIHAD SINNAOUR
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.0.1
+ * @version    : 1.0.2
  * @category   : PHP framework
  * @copyright  : (c) 2017 - 2023 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://www.floatphp.com
@@ -49,33 +49,35 @@ class BaseController extends View
 		$access = false;
 
 		// Allow local access
-		if ( Stringify::contains(['127.0.0.1','::1'],$ip) ) {
+		if ( Stringify::contains(['127.0.0.1','::1'], $ip) ) {
 			$access = true;
 
 		} else {
 
 			// Check allowed IPs
-			$allowed = $this->applyFilter('access-allowed-ip',$this->getAllowedAccess());
+			$allowed = $this->applyFilter('access-allowed-ip', $this->getAllowedAccess());
 			if ( !empty($allowed) ) {
-				if ( Stringify::contains($allowed,$ip) ) {
+				if ( Stringify::contains($allowed, $ip) ) {
 					$access = true;
+
 				} else {
 					$access = false;
 				}
 				
 			} else {
 				// Deny access
-				$denied = $this->applyFilter('access-denied-ip',$this->getDeniedAccess());
-				if ( Stringify::contains($denied,$ip) ) {
+				$denied = $this->applyFilter('access-denied-ip', $this->getDeniedAccess());
+				if ( Stringify::contains($denied, $ip) ) {
 					$access = false;
+
 				} else {
 					$access = true;
 				}
 			}
 		}
 
-		$data = ['ip' => $ip,'access' => $access];
-		$this->doAction('ip-access',$data);
+		$data = ['ip' => $ip, 'access' => $access];
+		$this->doAction('ip-access', $data);
 		return $access;
 	}
 
@@ -88,8 +90,8 @@ class BaseController extends View
 	protected function addJS($js, $hook = 'add-js')
 	{
 		$this->addAction($hook, function() use($js) {
-			$tpl = $this->applyFilter('view-js','system/js');
-			$this->render(['js' => $js],$tpl);
+			$tpl = $this->applyFilter('view-js', 'system/js');
+			$this->render(['js' => $js], $tpl);
 		});
 	}
 
@@ -102,8 +104,8 @@ class BaseController extends View
 	protected function addCSS($css, $hook = 'add-css')
 	{
 		$this->addAction($hook, function() use($css){
-			$tpl = $this->applyFilter('view-css','system/css');
-			$this->render(['css' => $css],$tpl);
+			$tpl = $this->applyFilter('view-css', 'system/css');
+			$this->render(['css' => $css], $tpl);
 		});
 	}
 
@@ -116,7 +118,7 @@ class BaseController extends View
 	 */
 	public function redirect($url = '/', $code = 301, $message = 'Moved Permanently')
 	{
-		Server::redirect($url,$code,$message);
+		Server::redirect($url, $code, $message);
 	}
 
     /**
@@ -133,7 +135,7 @@ class BaseController extends View
 			$data = Stringify::unserialize($transient->getTemp($token));
 
 			// Override
-			$this->doAction('verify-token',$data);
+			$this->doAction('verify-token', $data);
 
 			// Verify token data
 			if ( $data ) {
@@ -167,30 +169,30 @@ class BaseController extends View
 	 */
 	protected function verifyRequest($force = false)
 	{
-		$token  = $this->applyFilter('verify-request-token','--token');
-		$source = $this->applyFilter('verify-request-source','--source');
-		$ignore = $this->applyFilter('verify-request-ignore','--ignore');
+		$token  = $this->applyFilter('verify-request-token', '--token');
+		$source = $this->applyFilter('verify-request-source', '--source');
+		$ignore = $this->applyFilter('verify-request-ignore', '--ignore');
 
 		if ( $force ) {
 			if ( !Request::isSetted($token) ) {
-				$msg = $this->applyFilter('invalid-request-signature','Invalid request signature');
+				$msg = $this->applyFilter('invalid-request-signature', 'Invalid request signature');
 				$msg = $this->translate($msg);
-				$this->setResponse($msg,[],'error',401);
+				$this->setResponse($msg, [], 'error', 401);
 			}
 		}
 
 		if ( Request::isSetted($token) ) {
 			$source = Request::isSetted($source) ? Request::get($source) : '';
 			if ( !$this->verifyToken(Request::get($token),$source) ) {
-				$msg = $this->applyFilter('invalid-request-token','Invalid request token');
+				$msg = $this->applyFilter('invalid-request-token', 'Invalid request token');
 				$msg = $this->translate($msg);
-				$this->setResponse($msg,[],'error',401);
+				$this->setResponse($msg, [], 'error', 401);
 			}
 		}
 		if ( Request::isSetted($ignore) && !empty(Request::get($ignore)) ) {
-			$msg = $this->applyFilter('invalid-request-data','Invalid request data');
+			$msg = $this->applyFilter('invalid-request-data', 'Invalid request data');
 			$msg = $this->translate($msg);
-			$this->setResponse($msg,[],'error',401);
+			$this->setResponse($msg, [], 'error', 401);
 		}
 	}
 
@@ -205,7 +207,7 @@ class BaseController extends View
 			$this->verifyRequest($force);
 		}
 		$request = Request::get();
-		$excepts = $this->applyFilter('sanitize-request',[
+		$excepts = $this->applyFilter('sanitize-request', [
 			'submit',
 			'--token',
 			'--source',

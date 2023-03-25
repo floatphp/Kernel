@@ -3,7 +3,7 @@
  * @author     : JIHAD SINNAOUR
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.0.1
+ * @version    : 1.0.2
  * @category   : PHP framework
  * @copyright  : (c) 2017 - 2023 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://www.floatphp.com
@@ -78,7 +78,7 @@ class ApiController extends BaseController
 	 */
 	protected function isGranted($token) : bool
 	{
-        $encryption = new Encryption($token,$this->getSecret(true));
+        $encryption = new Encryption($token, $this->getSecret(true));
         $access = $encryption->decrypt();
         $pattern = '/{user:(.*?)}{pswd:(.*?)}/';
         $username = Stringify::match($pattern,$access,1);

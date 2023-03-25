@@ -3,7 +3,7 @@
  * @author     : JIHAD SINNAOUR
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.0.1
+ * @version    : 1.0.2
  * @category   : PHP framework
  * @copyright  : (c) 2017 - 2023 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://www.floatphp.com
@@ -21,7 +21,10 @@ use FloatPHP\Interfaces\Kernel\{
 };
 use FloatPHP\Classes\{
     Connection\Db, 
-    Filesystem\TypeCheck, Filesystem\Stringify, Filesystem\Arrayify, Filesystem\Logger
+    Filesystem\TypeCheck,
+    Filesystem\Stringify,
+    Filesystem\Arrayify,
+    Filesystem\Logger
 };
 use \PDO;
 use \PDOException;
@@ -29,6 +32,14 @@ use \PDOException;
 class Orm implements OrmInterface
 {
 	use TraitConfiguration;
+
+	/**
+	 * @access private
+	 * @var array $access
+	 * @var array $root
+	 */
+	private $access;
+	private $root;
 
 	/**
 	 * @access protected
@@ -47,14 +58,21 @@ class Orm implements OrmInterface
 		// Init configuration
 		$this->initConfig();
 
+		// Set access
+		$this->access = $this->getDatabaseAccess();
+		$this->root = $this->getDatabaseRootAccess();
+
 		// Init db configuration
 		$this->db = new Db(
-			$this->getDatabaseAccess(), 
-			new Logger("{$this->getLoggerPath()}/database",'database')
+			$this->access, 
+			new Logger("{$this->getLoggerPath()}/database", 'database')
 		);
 
 		// Set data
 		$this->data = $data;
+		
+        // Reset configuration
+        $this->resetConfig();
 	}
 	
 	/**
@@ -65,6 +83,7 @@ class Orm implements OrmInterface
 	{
 		if ( strtolower($name) === $this->key ) {
 			$this->data[$this->key] = $value;
+
 		} else {
 			$this->data[$name] = $value;
 		}
@@ -77,7 +96,7 @@ class Orm implements OrmInterface
 	public function __get($name)
 	{
 		if ( TypeCheck::isArray($this->data) ) {
-			if ( Arrayify::hasKey($name,$this->data) ) {
+			if ( Arrayify::hasKey($name, $this->data) ) {
 				return $this->data[$name];
 			}
 		}
@@ -118,10 +137,10 @@ class Orm implements OrmInterface
 	 */
 	public function query($sql, $bind = null, $args = [])
 	{
-		$isSingle  = isset($args['isSingle'])  ? $args['isSingle']  : false;
-		$isColumn  = isset($args['isColumn'])  ? $args['isColumn']  : false;
-		$isRow     = isset($args['isRow'])     ? $args['isRow']     : false;
-		$fetchMode = isset($args['fetchMode']) ? $args['fetchMode'] : null;
+		$isSingle  = $args['isSingle']  ?? false;
+		$isColumn  = $args['isColumn']  ?? false;
+		$isRow     = $args['isRow']     ?? false;
+		$fetchMode = $args['fetchMode'] ?? null;
 
 		if ( $isSingle ) {
 			return $this->db->single($sql,$bind);
@@ -433,21 +452,18 @@ class Orm implements OrmInterface
 	 * @access public
 	 * @param void
 	 * @return bool
-	 * @throws PDOException
 	 */
 	public function createDatabase()
 	{
-		$default = $this->getDatabaseAccess();
-		$root = $this->getDatabaseRootAccess();
 	    try {
-	    	$dsn = "mysql:host={$default['host']};port={$default['port']};charset=utf8mb4";
-	        $pdo = new PDO($dsn,$root['user'],$root['pswd'],[
-	        	PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES {$default['charset']}"
+	    	$dsn = "mysql:host={$this->access['host']};port={$this->access['port']};charset=utf8mb4";
+	        $pdo = new PDO($dsn, $this->root['user'], $this->root['pswd'], [
+	        	PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES {$this->access['charset']}"
 	        ]);
-	        $sql = "CREATE DATABASE IF NOT EXISTS `{$default['db']}`;";
+	        $sql = "CREATE DATABASE IF NOT EXISTS `{$this->access['db']}`;";
 	        $query = $pdo->prepare($sql);
 	        $query->execute();
-	        $query = $pdo->prepare("ALTER DATABASE `{$default['db']}` COLLATE utf8_general_ci;");
+	        $query = $pdo->prepare("ALTER DATABASE `{$this->access['db']}` COLLATE utf8_general_ci;");
 	        $query->execute();
 	    }
 	    catch (PDOException $e) {

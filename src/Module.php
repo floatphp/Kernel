@@ -3,7 +3,7 @@
  * @author     : JIHAD SINNAOUR
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.0.1
+ * @version    : 1.0.2
  * @category   : PHP framework
  * @copyright  : (c) 2017 - 2023 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://www.floatphp.com
@@ -20,7 +20,7 @@ use FloatPHP\Classes\Filesystem\{
     File, Json
 };
 use FloatPHP\Helpers\Framework\{
-    Configurator, Validator, Permission
+    Installer, Validator, Permission
 };
 
 class Module extends BaseController
@@ -32,6 +32,7 @@ class Module extends BaseController
 	{
 		// Init configuration
 		$this->initConfig();
+
 		// Load modules
 		$this->loadModules();
 	}
@@ -86,7 +87,7 @@ class Module extends BaseController
 	{
 		$this->addAction($hook, function() use($js) {
 			$tpl = $this->applyFilter('module-view-js', 'system/js');
-			$this->render(['js' => "{$this->getModulesUrl()}/{$js}"],$tpl);
+			$this->render(['js' => "{$this->getModulesUrl()}/{$js}"], $tpl);
 		});
 	}
 
@@ -102,7 +103,7 @@ class Module extends BaseController
 	{
 		$this->addAction($hook, function() use($css){
 			$tpl = $this->applyFilter('module-view-css', 'system/css');
-			$this->render(['css' => "{$this->getModulesUrl()}/{$css}"],$tpl);
+			$this->render(['css' => "{$this->getModulesUrl()}/{$css}"], $tpl);
 		});
 	}
 
@@ -119,8 +120,8 @@ class Module extends BaseController
 			$config = Json::parse("{$name}/module.json");
 			Validator::checkModuleConfig($config);
 			if ( $config->migrate ) {
-				$configurator = new Configurator();
-				$configurator->migrate("{$name}/migrate");
+				$installer = new Installer();
+				$installer->migrate("{$name}/migrate");
 			}
 			if ( $config->enable ) {
 				$basename = basename($name);

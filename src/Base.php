@@ -3,7 +3,7 @@
  * @author     : JIHAD SINNAOUR
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.0.1
+ * @version    : 1.0.2
  * @category   : PHP framework
  * @copyright  : (c) 2017 - 2023 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://www.floatphp.com
@@ -17,9 +17,15 @@ declare(strict_types=1);
 namespace FloatPHP\Kernel;
 
 use FloatPHP\Classes\{
-	Filesystem\Arrayify, Filesystem\Stringify, Filesystem\Translation, 
-    Html\Hook, Html\Shortcode, 
-    Http\Session, Http\Server, Http\Request,
+	Filesystem\Arrayify,
+	Filesystem\Stringify,
+	Filesystem\TypeCheck,
+	Filesystem\Translation, 
+    Html\Hook,
+    Html\Shortcode, 
+    Http\Session,
+    Http\Server,
+    Http\Request,
     Security\Tokenizer
 };
 use FloatPHP\Helpers\Filesystem\{
@@ -201,54 +207,130 @@ class Base
 		} else {
 		    $lang = Session::get('--default-lang');
 		}
-		return $this->applyFilter('--default-lang',$lang);
+		return $this->applyFilter('--default-lang', $lang);
 	}
 
 	/**
+	 * Translate string,
+	 * May require quotes escaping.
+	 *
 	 * @access protected
 	 * @param string $string
 	 * @return string
 	 */
 	protected function translate($string = '') : string
 	{
-		// Set cache filters
-		$path = $this->applyFilter('translation-cache-path','translate');
-		$ttl = $this->applyFilter('translation-cache-ttl',3600);
-
 		// Cache translation
-		$cache = new Cache($path,$ttl);
+		$cache = new Cache();
 
 		// Translation cache id
 		$length = strlen($string);
 		$lang = $this->getLanguage();
-		$uppercases = Stringify::matchAll('/([A-Z])/',$string);
+		$uppercases = Stringify::matchAll('/([A-Z])/', $string);
 		$translateId = '';
+
 		foreach ($uppercases as $uppercase) {
-			$translateId = Stringify::replace($uppercase,"{$uppercase}-1",$string);
+			$translateId = Stringify::replace($uppercase, "{$uppercase}-1", $string);
 		}
+
 		if ( empty($translateId) ) {
 			$translateId = $string;
 		}
+
 		$translateId = Stringify::slugify("translation-{$lang}-{$length}-{$translateId}");
 		$translation = $cache->get($translateId);
+
 		if ( !$cache->isCached() ) {
-			$path = $this->applyFilter('translation-path',$this->getTranslatePath());
-			$translator = new Translation($lang,$path);
+			$path = $this->applyFilter('translation-path', $this->getTranslatePath());
+			$translator = new Translation($lang, $path);
 			$translation = $translator->translate($string);
-			$cache->set($translation,'translation');
+			$cache->set($translation, 'translation');
 		}
+		
 		return ($translation) ? $translation : (string)$string;
 	}
 
 	/**
+	 * Translate array of strings.
+	 *
+     * @access protected
+     * @param array $strings
+     * @return array
+     */
+    protected function translateArray(array $strings = []) : array
+    {
+        foreach ($strings as $key => $value) {
+            $strings[$key] = $this->translate($value);
+        }
+        return $strings;
+    }
+
+	/**
+	 * Translate string including variables,
+	 * May require quotes escaping.
+	 *
 	 * @access protected
 	 * @param string $string
-	 * @param string $vars
+	 * @param mixed $vars
 	 * @return string
 	 */
-	protected function translateVars($string,...$vars) : string
+	protected function translateVars(string $string, $vars = null) : string
 	{
-		return sprintf($this->translate($string),$vars);
+		if ( TypeCheck::isArray($vars) ) {
+			return vsprintf(
+				$this->translate($string),
+				$vars
+			);
+
+		} else {
+			$vars = (string)$vars;
+			return sprintf($this->translate(
+				Stringify::replace($vars, '%s', $string)
+			), $vars);
+		}
+	}
+
+	/**
+	 * Translate deep strings.
+	 *
+	 * @access protected
+	 * @param array $strings
+	 * @return array
+	 */
+	protected function translateDeepStrings(array $strings)
+	{
+		Arrayify::walkRecursive($strings, function(&$string) {
+			if ( TypeCheck::isString($string) ) {
+				$string = $this->translate($string);
+			}
+		});
+		return $strings;
+	}
+
+	/**
+	 * Load translated strings (admin/front).
+	 *
+	 * @access protected
+	 * @param string $type
+	 * @return array
+	 */
+	protected function loadStrings($type = 'admin')
+	{
+		$strings = $this->applyFilter('strings', $this->getStrings());
+		switch ($type) {
+			case 'admin':
+				return $this->translateDeepStrings(
+					$strings['admin']
+				);
+				break;
+
+			case 'front':
+				return $this->translateDeepStrings(
+					$strings['front']
+				);
+				break;
+		}
+		return $this->translateDeepStrings($strings);
 	}
 
     /**
