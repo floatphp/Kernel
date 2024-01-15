@@ -1,12 +1,11 @@
 <?php
 /**
- * @author     : JIHAD SINNAOUR
+ * @author     : Jakiboy
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.0.2
- * @category   : PHP framework
- * @copyright  : (c) 2017 - 2023 Jihad Sinnaour <mail@jihadsinnaour.com>
- * @link       : https://www.floatphp.com
+ * @version    : 1.1.0
+ * @copyright  : (c) 2018 - 2024 Jihad Sinnaour <mail@jihadsinnaour.com>
+ * @link       : https://floatphp.com
  * @license    : MIT
  *
  * This file if a part of FloatPHP Framework.
@@ -16,15 +15,13 @@ declare(strict_types=1);
 
 namespace FloatPHP\Kernel;
 
-use FloatPHP\Classes\{
-    Filesystem\TypeCheck, Filesystem\Stringify, Filesystem\Arrayify, 
-    Http\Response
-};
+use FloatPHP\Helpers\Framework\Debugger;
 use FloatPHP\Interfaces\Classes\RouterInterface;
 
 final class Middleware
 {
 	use TraitConfiguration;
+	use TraitException;
 
 	/**
 	 * @access private
@@ -32,10 +29,10 @@ final class Middleware
 	private $match;
 
 	/**
-	 * Middleware system.
+	 * Middleware routing system.
 	 *
 	 * @param RouterInterface $router
-	 * @see $router->addMatchTypes(['name'=>'regex']);
+	 * @uses $router->addMatchTypes(['name' => 'regex']);
 	 */
 	public function __construct(RouterInterface $router)
 	{
@@ -57,10 +54,9 @@ final class Middleware
 	}
 
 	/**
-	 * Dispatch request (route).
+	 * Dispatch request (route) and kill execution.
 	 *
 	 * @access public
-	 * @param void
 	 * @return void
 	 */
 	public function dispatch()
@@ -81,22 +77,21 @@ final class Middleware
 			}
 
 		} else {
-			$this->do404();
+			$this->throwError(404);
 		}
 
-		die();
+		if ( !Debugger::enabled() ) die();
 	}
 
 	/**
 	 * Whether controller is a function.
 	 *
 	 * @access private
-	 * @param void
 	 * @return bool
 	 */
 	private function isCallable() : bool
 	{
-		if ( TypeCheck::isCallable($this->match['target']) && !$this->isModule() ) {
+		if ( $this->isType('callable', $this->match['target']) && !$this->isModule() ) {
 			return true;
 		}
 		return false;
@@ -106,12 +101,11 @@ final class Middleware
 	 * Whether controller is a class.
 	 *
 	 * @access private
-	 * @param void
 	 * @return bool
 	 */
 	private function isClassMethod() : bool
 	{
-		if ( !TypeCheck::isCallable($this->match['target']) && !$this->isModule() ) {
+		if ( !$this->isType('callable', $this->match['target']) && !$this->isModule() ) {
 			return true;
 		}
 		return false;
@@ -121,12 +115,11 @@ final class Middleware
 	 * Execute callable.
 	 *
 	 * @access private
-	 * @param void
 	 * @return void
 	 */
 	private function doCallable()
 	{
-		if ( TypeCheck::isFunction($this->match['target']) ) {
+		if ( $this->isType('function', $this->match['target']) ) {
 			$this->match['target']($this->parseVar());
 		}
 	}
@@ -135,7 +128,6 @@ final class Middleware
 	 * Instance controller.
 	 *
 	 * @access private
-	 * @param void
 	 * @return void
 	 */
 	private function doInstance()
@@ -144,12 +136,12 @@ final class Middleware
 		$class = $this->parseClass();
 		$method = $this->parseMethod();
 		$var = $this->parseVar();
-		$roles = $this->parsePermissions();
+		$role = $this->parsePermissions();
 
 		// Secure access
 		$instance = new $class();
 		if ( !$instance->hasAccess() ) {
-			$instance->exception(406);
+			$instance->throwError(406);
 		}
 
 		// Match instance with request
@@ -158,20 +150,20 @@ final class Middleware
 
 		} elseif ( $this->isBackendController($class) ) {
 			if ( $instance->isAuthenticated() ) {
-				if ( $instance->hasPermissions($roles) ) {
+				if ( $instance->hasPermissions($role) ) {
 					$instance->$method($var);
 
 				} else {
-					$instance->exception(401);
+					$instance->throwError(403);
 				}
 
 			} else {
-				header("Location: {$this->getLoginUrl()}");
+				$this->redirect($this->getLoginUrl());
 			}
 
 		} elseif ( $this->isAuthController($class) ) {
 			if ( $instance->isAuthenticated() ) {
-				header("Location: {$this->getAdminUrl()}");
+				$this->redirect($this->getAdminUrl());
 
 			} else {
 				$instance->$method($var);
@@ -182,7 +174,7 @@ final class Middleware
 				$instance->$method($var);
 				
 			} else {
-				Response::set('Authorization Required', [], 'error', 401);
+				$this->setResponse('Authorization Required', [], 'error', 401);
 			}
 		}
 	}
@@ -191,7 +183,6 @@ final class Middleware
 	 * Instance module.
 	 *
 	 * @access private
-	 * @param void
 	 * @return void
 	 */
 	private function doModuleInstance()
@@ -200,12 +191,12 @@ final class Middleware
 		$class = $this->parseModuleClass();
 		$method = $this->parseMethod();
 		$var = $this->parseVar();
-		$roles = $this->parsePermissions();
+		$role = $this->parsePermissions();
 
 		// Secure access
 		$instance = new $class();
 		if ( !$instance->hasAccess() ) {
-			$instance->exception(406);
+			$instance->throwError(406);
 		}
 
 		// Match instance with request
@@ -215,33 +206,24 @@ final class Middleware
 		} elseif ( $this->isApiController($class) ) {
 			if ( $instance->isHttpAuthenticated() ) {
 				$instance->$method($var);
+
 			} else {
-				Response::set('Authorization Required', [], 'error', 401);
+				$this->setResponse('Authorization Required', [], 'error', 401);
 			}
 
 		} else {
 			if ( $instance->isAuthenticated() ) {
-				if ( $instance->hasPermissions($roles) ) {
+				if ( $instance->hasPermissions($role) ) {
 					$instance->$method($var);
+
 				} else {
-					$instance->exception(401);
+					$instance->throwError(403);
 				}
+
 			} else {
-				header("Location: {$this->getLoginUrl()}");
+				$this->redirect($this->getLoginUrl());
 			}
 		}
-	}
-
-	/**
-	 * Throw 404.
-	 *
-	 * @access private
-	 * @param void
-	 * @return void
-	 */
-	private function do404()
-	{
-		new \FloatPHP\Kernel\ErrorController(404);
 	}
 
 	/**
@@ -305,7 +287,7 @@ final class Middleware
 	 */
 	private function isAuthController($class) : bool
 	{
-		if ( TypeCheck::isSubClassOf($class,__NAMESPACE__ . '\AbstractAuthController') ) {
+		if ( $this->hasItem('parent', $class,__NAMESPACE__ . '\AbstractAuthController') ) {
 			return true;
 
 		} elseif ( $this->hasAuthMiddlewareInterface($class) ) {
@@ -323,7 +305,7 @@ final class Middleware
 	 */
 	private function isFrontClass($class) : bool
 	{
-		return TypeCheck::isSubClassOf($class, __NAMESPACE__ . '\FrontController');
+		return $this->hasItem('parent', $class, __NAMESPACE__ . '\FrontController');
 	}
 
 	/**
@@ -335,7 +317,7 @@ final class Middleware
 	 */
 	private function isBackendClass($class) : bool
 	{
-		return TypeCheck::isSubClassOf($class, __NAMESPACE__ . '\BackendController');
+		return $this->hasItem('parent', $class, __NAMESPACE__ . '\BackendController');
 	}
 
 	/**
@@ -347,7 +329,7 @@ final class Middleware
 	 */
 	private function isApiClass($class) : bool
 	{
-		return TypeCheck::isSubClassOf($class, __NAMESPACE__ . '\ApiController');
+		return $this->hasItem('parent', $class, __NAMESPACE__ . '\ApiController');
 	}
 
 	/**
@@ -359,7 +341,7 @@ final class Middleware
 	 */
 	private function hasBackendInterface($class) : bool
 	{
-		return TypeCheck::hasInterface($class, 'BackendInterface');
+		return $this->hasItem('interface', $class, 'BackendInterface');
 	}
 
 	/**
@@ -371,7 +353,7 @@ final class Middleware
 	 */
 	private function hasFrontInterface($class) : bool
 	{
-		if ( TypeCheck::hasInterface($class, 'FrontInterface') ) {
+		if ( $this->hasItem('interface', $class, 'FrontInterface') ) {
 			return true;
 		}
 		return false;
@@ -386,7 +368,7 @@ final class Middleware
 	 */
 	private function hasApiInterface($class) : bool
 	{
-		return TypeCheck::hasInterface($class, 'ApiInterface');
+		return $this->hasItem('interface', $class, 'ApiInterface');
 	}
 
 	/**
@@ -398,65 +380,61 @@ final class Middleware
 	 */
 	private function hasAuthMiddlewareInterface($class) : bool
 	{
-		return TypeCheck::hasInterface($class, 'AuthMiddlewareInterface');
+		return $this->hasItem('interface', $class, 'AuthMiddlewareInterface');
 	}
 
 	/**
-	 * Check module
+	 * Check module.
 	 *
 	 * @access private
-	 * @param void
 	 * @return bool
 	 */
 	private function isModule() : bool
 	{
-		$module = Stringify::lowercase($this->match['target']);
-		if ( Stringify::contains($module, 'module') ) {
+		$module = $this->lowercase($this->match['target']);
+		if ( $this->searchString($module, 'module') ) {
 			return true;
 		}
 		return false;
 	}
 
 	/**
-	 * Parse module class
+	 * Parse module class.
 	 *
 	 * @access private
-	 * @param void
 	 * @return string
 	 */
 	private function parseModuleClass() : string
 	{
-		$target = explode('@',$this->match['target']);
-		$class = isset($target[0]) ? $target[0] : false;
+		$target = explode('@', $this->match['target']);
+		$class = $target[0] ?? false;
 		if ( !$class ) {
-			$this->do404();
+			$this->throwError(404);
 		}
-		$module = Stringify::replace('Module', '', $class);
+		$module = $this->removeString('Module', $class);
 		return $this->getModuleNamespace() . "{$module}\\{$class}";
 	}
 	
 	/**
-	 * Parse class
+	 * Parse class.
 	 *
 	 * @access private
-	 * @param void
 	 * @return string
 	 */
 	private function parseClass() : string
 	{
-		$target = explode('@',$this->match['target']);
-		$class = isset($target[0]) ? $target[0] : false;
+		$target = explode('@', $this->match['target']);
+		$class = $target[0] ?? false;
 		if ( !$class ) {
-			$this->do404();
+			$this->throwError(404);
 		}
 		return "{$this->getControllerNamespace()}{$class}";
 	}
 
 	/**
-	 * Parse method
+	 * Parse method.
 	 *
 	 * @access private
-	 * @param void
 	 * @return string
 	 */
 	private function parseMethod() : string
@@ -466,10 +444,9 @@ final class Middleware
 	}
 
 	/**
-	 * Parse permissions
+	 * Parse permissions.
 	 *
 	 * @access private
-	 * @param void
 	 * @return mixed
 	 */
 	private function parsePermissions()
@@ -481,7 +458,6 @@ final class Middleware
 	 * Parse request var.
 	 *
 	 * @access private
-	 * @param void
 	 * @return mixed
 	 */
 	private function parseVar()
@@ -489,7 +465,8 @@ final class Middleware
 		$var = null;
 		if ( !empty($this->match['params']) ) {
 			if ( count($this->match['params']) > 1 ) {
-				$var = Arrayify::merge($this->match['params']);
+				$var = $this->mergeArray($this->match['params']);
+
 			} elseif ( count($this->match['params']) == 1 ) {
 				$key = key($this->match['params']);
 				$var = $this->match['params'][$key];

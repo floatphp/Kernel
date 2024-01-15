@@ -1,12 +1,11 @@
 <?php
 /**
- * @author     : JIHAD SINNAOUR
+ * @author     : Jakiboy
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.0.2
- * @category   : PHP framework
- * @copyright  : (c) 2017 - 2023 Jihad Sinnaour <mail@jihadsinnaour.com>
- * @link       : https://www.floatphp.com
+ * @version    : 1.1.0
+ * @copyright  : (c) 2018 - 2024 Jihad Sinnaour <mail@jihadsinnaour.com>
+ * @link       : https://floatphp.com
  * @license    : MIT
  *
  * This file if a part of FloatPHP Framework.
@@ -16,25 +15,27 @@ declare(strict_types=1);
 
 namespace FloatPHP\Kernel;
 
-use FloatPHP\Classes\{
-    Http\Session, Http\Router, 
-    Server\Date
-};
+use FloatPHP\Classes\Http\Router;
 use FloatPHP\Helpers\Framework\Installer;
 
 final class Core
 {
+	use TraitException,
+		\FloatPHP\Helpers\Framework\inc\TraitDatable,
+		\FloatPHP\Helpers\Framework\inc\TraitSessionable;
+
 	/**
-	 * @param void
+	 * @param array $config
 	 */
-	public function __construct($config = [])
+	public function __construct(array $config = [])
 	{
-		$config = Installer::parse($config);
+		$config = (new Installer())->parse($config);
 
 		// FloatPHP setup
 		if ( $config['--disable-setup'] !== true ) {
-			$installer = new Installer();
-			$installer->setup();
+			if ( !Installer::isInstalled() ) {
+				(new Installer())->setup();
+			}
 		}
 
 		// FloatPHP X-Powered-By header
@@ -44,20 +45,19 @@ final class Core
 		
 		// Start session
 		if ( $config['--disable-session'] !== true ) {
-			new Session();
-			Session::set('--default-lang',$config['--default-lang']);
+			$this->startSession();
+			$this->setSession('--default-lang', $config['--default-lang']);
 		}
 
 		// Maintenance
 		if ( $config['--enable-maintenance'] == true ) {
-			new ErrorController(503);
+			$this->throwError(503);
 		}
 
 		// FloatPHP timezone
-		Date::setDefaultTimezone($config['--default-timezone']);
+		$this->setDefaultTimezone($config['--default-timezone']);
 
 		// Start routing
-		$middleware = new Middleware(new Router());
-		$middleware->dispatch();
+		(new Middleware(new Router()))->dispatch();
 	}
 }

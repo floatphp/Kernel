@@ -1,12 +1,11 @@
 <?php
 /**
- * @author     : JIHAD SINNAOUR
+ * @author     : Jakiboy
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.0.2
- * @category   : PHP framework
- * @copyright  : (c) 2017 - 2023 Jihad Sinnaour <mail@jihadsinnaour.com>
- * @link       : https://www.floatphp.com
+ * @version    : 1.1.0
+ * @copyright  : (c) 2018 - 2024 Jihad Sinnaour <mail@jihadsinnaour.com>
+ * @link       : https://floatphp.com
  * @license    : MIT
  *
  * This file if a part of FloatPHP Framework.
@@ -17,39 +16,25 @@ declare(strict_types=1);
 namespace FloatPHP\Kernel;
 
 use FloatPHP\Classes\{
-	Filesystem\Stringify, 
-    Http\Session, Http\Server, Http\Request, Http\Response
+    Http\Response
 };
-use FloatPHP\Helpers\Filesystem\Transient;
+use FloatPHP\Helpers\Connection\Transient;
 
 class BaseController extends View
 {
-	use TraitException;
-	
 	/**
-	 * @access public
-	 * @param void
-	 * @return bool
-	 */
-	public function isAuthenticated() : bool
-	{
-		return $this->isLoggedIn();
-	}
-
-	/**
-	 * Check current ip access
+	 * Check whether user has access.
 	 *
 	 * @access public
-	 * @param void
 	 * @return bool
 	 */
 	public function hasAccess() : bool
 	{
-		$ip = Server::getIP();
+		$ip = $this->getServerIp();
 		$access = false;
 
 		// Allow local access
-		if ( Stringify::contains(['127.0.0.1','::1'], $ip) ) {
+		if ( $this->searchString(['127.0.0.1', '::1'], $ip) ) {
 			$access = true;
 
 		} else {
@@ -57,7 +42,7 @@ class BaseController extends View
 			// Check allowed IPs
 			$allowed = $this->applyFilter('access-allowed-ip', $this->getAllowedAccess());
 			if ( !empty($allowed) ) {
-				if ( Stringify::contains($allowed, $ip) ) {
+				if ( $this->searchString($allowed, $ip) ) {
 					$access = true;
 
 				} else {
@@ -67,7 +52,7 @@ class BaseController extends View
 			} else {
 				// Deny access
 				$denied = $this->applyFilter('access-denied-ip', $this->getDeniedAccess());
-				if ( Stringify::contains($denied, $ip) ) {
+				if ( $this->searchString($denied, $ip) ) {
 					$access = false;
 
 				} else {
@@ -82,12 +67,14 @@ class BaseController extends View
 	}
 
 	/**
+	 * Add JS hook.
+	 * 
 	 * @access protected
 	 * @param string $js
 	 * @param string $hook
 	 * @return void
 	 */
-	protected function addJS($js, $hook = 'add-js')
+	protected function addJS(string $js, string $hook = 'add-js')
 	{
 		$this->addAction($hook, function() use($js) {
 			$tpl = $this->applyFilter('view-js', 'system/js');
@@ -96,12 +83,14 @@ class BaseController extends View
 	}
 
 	/**
+	 * Add CSS hook.
+	 * 
 	 * @access protected
 	 * @param string $css
 	 * @param string $hook
 	 * @return void
 	 */
-	protected function addCSS($css, $hook = 'add-css')
+	protected function addCSS(string $css, string $hook = 'add-css')
 	{
 		$this->addAction($hook, function() use($css){
 			$tpl = $this->applyFilter('view-css', 'system/css');
@@ -109,40 +98,29 @@ class BaseController extends View
 		});
 	}
 
-	/**
-	 * @access public
-	 * @param string $url
-	 * @param int $code
-	 * @param string $message
-	 * @return void
-	 */
-	public function redirect($url = '/', $code = 301, $message = 'Moved Permanently')
-	{
-		Server::redirect($url, $code, $message);
-	}
-
     /**
+	 * Verify token against request data.
+	 * 
      * @access protected
      * @param string $token
      * @param string $action
      * @param bool
      */
-	protected function verifyToken($token = '', $source = '')
+	protected function verifyToken(string $token = '', string $source = '')
 	{
 		if ( !empty($token) ) {
 
 			$transient = new Transient();
-			$data = Stringify::unserialize($transient->getTemp($token));
+			$data = $this->unserialize($transient->getTemp($token));
 
 			// Override
 			$this->doAction('verify-token', $data);
 
 			// Verify token data
 			if ( $data ) {
-
-				if ( $this->isLoggedIn() ) {
+				if ( $this->isValidSession() ) {
 					if ( isset($data['user']) ) {
-						if ( Session::get($this->getSessionId()) !== $data['user'] ) {
+						if ( $this->getSession($this->getSessionId()) !== $data['user'] ) {
 							return false;
 						}
 					}
@@ -150,10 +128,10 @@ class BaseController extends View
 				if ( $source !== $data['source'] ) {
 					return false;
 				}
-				if ( Server::getIp() !== $data['ip'] ) {
+				if ( $this->getServerIp() !== $data['ip'] ) {
 					return false;
 				}
-				if ( Server::get('http-referer') !== $data['url'] ) {
+				if ( $this->getServer('http-referer') !== $data['url'] ) {
 					return false;
 				}
 				return true;
@@ -163,33 +141,36 @@ class BaseController extends View
 	}
 
 	/**
+	 * Verify current request.
+	 * 
 	 * @access protected
-	 * @param bool $force
+	 * @param bool $force Token validation
 	 * @return void
 	 */
-	protected function verifyRequest($force = false)
+	protected function verifyRequest(bool $force = false)
 	{
 		$token  = $this->applyFilter('verify-request-token', '--token');
 		$source = $this->applyFilter('verify-request-source', '--source');
 		$ignore = $this->applyFilter('verify-request-ignore', '--ignore');
 
 		if ( $force ) {
-			if ( !Request::isSetted($token) ) {
+			if ( !$this->hasRequest($token) ) {
 				$msg = $this->applyFilter('invalid-request-signature', 'Invalid request signature');
 				$msg = $this->translate($msg);
 				$this->setResponse($msg, [], 'error', 401);
 			}
 		}
 
-		if ( Request::isSetted($token) ) {
-			$source = Request::isSetted($source) ? Request::get($source) : '';
-			if ( !$this->verifyToken(Request::get($token),$source) ) {
+		if ( $this->hasRequest($token) ) {
+			$source = $this->hasRequest($source) ? $this->getRequest($source) : '';
+			if ( !$this->verifyToken($this->getRequest($token), $source) ) {
 				$msg = $this->applyFilter('invalid-request-token', 'Invalid request token');
 				$msg = $this->translate($msg);
 				$this->setResponse($msg, [], 'error', 401);
 			}
 		}
-		if ( Request::isSetted($ignore) && !empty(Request::get($ignore)) ) {
+
+		if ( $this->hasRequest($ignore) && !empty($this->getRequest($ignore)) ) {
 			$msg = $this->applyFilter('invalid-request-data', 'Invalid request data');
 			$msg = $this->translate($msg);
 			$this->setResponse($msg, [], 'error', 401);
@@ -197,53 +178,62 @@ class BaseController extends View
 	}
 
 	/**
+	 * Sanitize current request.
+	 * 
 	 * @access protected
-	 * @param bool $verify
+	 * @param bool $verify Request
+	 * @param bool $force Token validation
 	 * @return mixed
 	 */
-	protected function sanitizeRequest($verify = true, $force = false)
+	protected function sanitizeRequest(bool $verify = true, bool $force = false)
 	{
-		if ( $verify ) {
-			$this->verifyRequest($force);
-		}
-		$request = Request::get();
+		if ( $verify ) $this->verifyRequest($force);
+
+		$request = $this->getRequest();
 		$excepts = $this->applyFilter('sanitize-request', [
 			'submit',
 			'--token',
 			'--source',
 			'--ignore'
 		]);
+
 		foreach ($excepts as $except) {
 			if ( isset($request[$except]) ) {
 				unset($request[$except]);
 			}
 		}
+
 		return $request;
 	}
 
 	/**
+	 * Set HTTP response (Translated).
+	 * 
 	 * @access protected
-	 * @param string $message
-	 * @param array $content
+	 * @param string $msg
+	 * @param mixed $content
 	 * @param string $status
 	 * @param int $code
 	 * @return void
 	 */
-	protected function setResponse($message = '', $content = [], $status = 'success', $code = 200)
+	protected function setResponse(string $msg = '', $content = [], string $status = 'success', int $code = 200)
 	{
-		Response::set($this->translate($message), $content, $status, $code);
+		$msg = $this->translate($msg);
+		Response::set($msg, $content, $status, $code);
 	}
 
 	/**
+	 * Set HTTP response.
+	 * 
 	 * @access protected
-	 * @param string $message
-	 * @param array $content
+	 * @param string $msg
+	 * @param mixed $content
 	 * @param string $status
 	 * @param int $code
 	 * @return void
 	 */
-	protected function setHttpResponse($message = '', $content = [], $status = 'success', $code = 200)
+	protected function setHttpResponse(string $msg = '', $content = [], string $status = 'success', int $code = 200)
 	{
-		Response::set($message, $content, $status, $code);
+		Response::set($msg, $content, $status, $code);
 	}
 }

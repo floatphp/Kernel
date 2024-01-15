@@ -1,12 +1,11 @@
 <?php
 /**
- * @author     : JIHAD SINNAOUR
+ * @author     : Jakiboy
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.0.2
- * @category   : PHP framework
- * @copyright  : (c) 2017 - 2023 Jihad Sinnaour <mail@jihadsinnaour.com>
- * @link       : https://www.floatphp.com
+ * @version    : 1.1.0
+ * @copyright  : (c) 2018 - 2024 Jihad Sinnaour <mail@jihadsinnaour.com>
+ * @link       : https://floatphp.com
  * @license    : MIT
  *
  * This file if a part of FloatPHP Framework.
@@ -16,315 +15,432 @@ declare(strict_types=1);
 
 namespace FloatPHP\Kernel;
 
-use FloatPHP\Interfaces\Kernel\{
-    OrmInterface, OrmQueryInterface
-};
-use FloatPHP\Classes\{
-    Connection\Db, 
-    Filesystem\TypeCheck,
-    Filesystem\Stringify,
-    Filesystem\Arrayify,
-    Filesystem\Logger
-};
+use FloatPHP\Exceptions\Kernel\OrmException;
+use FloatPHP\Interfaces\Kernel\OrmInterface;
 use \PDO;
 use \PDOException;
 
 class Orm implements OrmInterface
 {
-	use TraitConfiguration;
+	use TraitConfiguration,
+		\FloatPHP\Helpers\Framework\inc\TraitConnectable;
 
 	/**
 	 * @access private
-	 * @var array $access
-	 * @var array $root
+	 * @var array $access, User access
+	 * @var array $root, Root access
+	 * @var array $bind, Binded data
+	 * @var array $row, Result row data
+	 * @var bool $connect, Database connection
 	 */
 	private $access;
 	private $root;
+	private $bind = [];
+	private $row = [];
+	private $connect = true;
 
 	/**
 	 * @access protected
-	 * @var object $db
-	 * @var object $data
+	 * @var string $table, Table name
+	 * @var string $key, Primary key
 	 */
-	protected $db;
-	protected $data;
+	protected $table;
+	protected $key;
 
 	/**
-	 * @param array $data
-	 * @return void
+	 * Init database.
+	 * 
+	 * @uses initConfig()
 	 */
-	public function __construct($data = [])
+	public function __construct()
 	{
 		// Init configuration
 		$this->initConfig();
 
 		// Set access
-		$this->access = $this->getDatabaseAccess();
-		$this->root = $this->getDatabaseRootAccess();
+		$this->access = $this->getDbAccess();
+		$this->root = $this->getDbRootAccess();
 
-		// Init db configuration
-		$this->db = new Db(
-			$this->access, 
-			new Logger("{$this->getLoggerPath()}/database", 'database')
-		);
-
-		// Set data
-		$this->data = $data;
-		
-        // Reset configuration
-        $this->resetConfig();
+		// Connect database
+		if ( $this->connect ) {
+			$this->getDbObject($this->access, "{$this->getLoggerPath()}/database");
+		}
 	}
 	
 	/**
+	 * Set request bind property.
+	 * 
 	 * @param string $name
-	 * @param string $value
+	 * @param mixed $value
 	 */
-	public function __set($name, $value)
+	public function __set(string $name, $value)
 	{
-		if ( strtolower($name) === $this->key ) {
-			$this->data[$this->key] = $value;
+		$this->bind[$name] = $value;
+	}
+
+	/**
+	 * Get result row property.
+	 * 
+	 * @param string $name
+	 * @return mixed
+	 */
+	public function __get(string $name)
+	{
+		return $this->row[$name] ?? null;
+	}
+
+    /**
+     * Disable database connection.
+     *
+     * @access public
+     * @return object
+     */
+	public function noConnect() : object
+	{
+		$this->connect = false;
+		return $this;
+	}
+
+	/**
+	 * Bind query data.
+	 *
+	 * @access public
+	 * @param mixed $bind
+	 * @param mixed $value
+	 * @return object
+	 */
+	public function bind($bind = [], $value = null) : self
+	{
+		if ( $this->isType('array', $bind) ) {
+			$this->bind = $bind;
 
 		} else {
-			$this->data[$name] = $value;
+			$this->bind["{$bind}"] = $value;
 		}
+		return $this;
 	}
 
 	/**
-	 * @param string $name
-	 * @return mixed
-	 */
-	public function __get($name)
-	{
-		if ( TypeCheck::isArray($this->data) ) {
-			if ( Arrayify::hasKey($name, $this->data) ) {
-				return $this->data[$name];
-			}
-		}
-		return null;
-	}
-
-	/**
-	 * Custom Select ORM Query.
+	 * Set working table.
 	 *
 	 * @access public
-	 * @param OrmQueryInterface $data
-	 * @return mixed
+	 * @param string $table
+	 * @return object
 	 */
-	public function select(OrmQueryInterface $data)
+	public function setTable(string $table) : self
 	{
-		extract($data->query);
-		if ( $column !== '*' ) {
-			$column = `{$column}`;
-		}
-		$sql  = trim("SELECT $column FROM `{$table}` {$where} {$orderby} {$limit}");
-		$sql .= ';';
-		return $this->query($sql,[],[
-			'isSingle'  => $isSingle,
-			'isColumn'  => $isColumn,
-			'isRow'     => $isRow,
-			'fetchMode' => $fetchMode
-		]);
+		$this->table = $table;
+		return $this;
 	}
 
 	/**
-	 * Custom ORM Query.
+	 * Set table key.
 	 *
 	 * @access public
-	 * @param string $sql
-	 * @param array $bind
-	 * @param array $args
-	 * @return mixed
+	 * @param string $key
+	 * @return object
 	 */
-	public function query($sql, $bind = null, $args = [])
+	public function setKey(string $key) : self
 	{
-		$isSingle  = $args['isSingle']  ?? false;
-		$isColumn  = $args['isColumn']  ?? false;
-		$isRow     = $args['isRow']     ?? false;
-		$fetchMode = $args['fetchMode'] ?? null;
-
-		if ( $isSingle ) {
-			return $this->db->single($sql,$bind);
-
-		} elseif ($isColumn) {
-			return $this->db->column($sql,$bind);
-
-		} elseif ($isRow) {
-			return $this->db->row($sql,$bind,$fetchMode);
-		}
-		return $this->db->query($sql,$bind);
+		$this->key = $key;
+		return $this;
+	}
+	
+	/**
+	 * Create row using data or binded data.
+	 *
+	 * @access public
+	 * @param array $data
+	 * @return bool
+	 */
+	public function create(?array $data = null) : bool
+	{
+		if ( $data ) $this->bind($data);
+		$sql = "{$this->getInsertQuery()};";
+		return (bool)$this->execute($sql);
 	}
 
 	/**
-	 * Update table object.
+	 * Read row using Id or binded Id.
 	 *
 	 * @access public
-	 * @param int $id
-	 * @return mixed
+	 * @param mixed $id
+	 * @return array
 	 */
-	public function save($id = null)
+	public function read($id = null) : array
 	{
-		if ( !$id ) {
-			$id = !empty($this->data[$this->key])
-			? intval($this->data[$this->key]) : 0;
-		}
-		$fields = '';
-		$columns = Arrayify::keys($this->data);
-		foreach($columns as $column) {
-			if ( $column !== $this->key ) {
-				$fields .= "`{$column}` = :{$column},";
-			}
-		}
-		$fields = Stringify::subreplace($fields,'',-1,1);
-		if ( count($columns) > 1 ) {
-			$sql = "UPDATE `{$this->table}` SET {$fields} WHERE `{$this->key}` = :{$this->key};";
-			if ( $id === 0 ) {
-				unset($this->data[$this->key]);
-				$sql = "UPDATE `{$this->table}` SET {$fields};";
-			}
-			return $this->execute($sql);
-		}
-		return null;
+		if ( $id ) $this->{$this->key} = $id;
+		$sql  = "{$this->getSelectQuery()} ";
+		$sql .= "{$this->getWhereQuery(true)} ";
+		$sql .= "{$this->getLimitQuery(1)};";
+		return $this->getRow($sql);
 	}
 
 	/**
-	 * Create table object.
+	 * Read rows.
 	 *
 	 * @access public
-	 * @param void
-	 * @return int
+	 * @return mixed
 	 */
-	public function create() : int
+	public function readAny()
 	{
-		$bind = $this->data;
-		if ( !empty($bind) ) {
-			$bind = Arrayify::keys($bind);
-			$columns = [];
-			foreach ($bind as $key => $column) {
-				$columns[$key] = "`{$column}`";
-			}
-			$fields = implode(',',$columns);
-			$values = ':' . implode(',:',$bind);
-			$sql = "INSERT INTO `{$this->table}` ({$fields}) VALUES ({$values});";
-		} else {
-			$sql = "INSERT INTO `{$this->table}` () VALUES ();";
-		}
+		$sql  = "{$this->getSelectQuery()} ";
+		$sql .= "{$this->getWhereQuery()};";
 		return $this->execute($sql);
 	}
 
 	/**
-	 * Delete table object.
+	 * Update row using Id or binded Id.
 	 *
 	 * @access public
-	 * @param int $id
+	 * @param mixed $id
+	 * @return bool
+	 */
+	public function update($id = null) : bool
+	{
+		if ( $id ) $this->{$this->key} = $id;
+		$sql  = "{$this->getUpdateQuery()} ";
+		$sql .= "{$this->getWhereQuery(true)};";
+		return (bool)$this->execute($sql);
+	}
+
+	/**
+	 * Update rows using custom where.
+	 *
+	 * @access public
+	 * @param array $where
 	 * @return int
 	 */
-	public function delete($id = null) : int
+	public function updateAny(array $where = []) : int
 	{
-		if ( !$id ) {
-			$id = !empty($this->data[$this->key])
-			? intval($this->data[$this->key]) : 0;
-		}
-		$sql = "DELETE FROM `{$this->table}` WHERE `{$this->key}` = :{$this->key} LIMIT 1;";
-		$bind = [$this->key => $id];
-		return $this->execute($sql,$bind);
+		$sql  = "{$this->getUpdateQuery()} ";
+		$sql .= "{$this->parseWhereQuery($where)};";
+		return (int)$this->execute($sql);
 	}
 
 	/**
-	 * Find table object.
+	 * Delete row using Id or binded Id.
 	 *
 	 * @access public
-	 * @param int $id
-	 * @return mixed
+	 * @param mixed $id
+	 * @return bool
 	 */
-	public function find($id = null)
+	public function delete($id = null) : bool
 	{
-		if ( !$id ) {
-			$id = !empty($this->data[$this->key])
-			? intval($this->data[$this->key]) : 0;
-		}
-		$sql = "SELECT * FROM `{$this->table}` WHERE `{$this->key}` = :{$this->key} LIMIT 1;";
-		$bind = [$this->key => $id];
-		$result = $this->db->row($sql,$bind);
-		return $this->data = ($result) ? $result : null;
+		if ( $id ) $this->{$this->key} = $id;
+		$sql  = "{$this->getDeleteQuery()} ";
+		$sql .= "{$this->getWhereQuery(true)} ";
+		$sql .= "{$this->getLimitQuery(1)};";
+		return (bool)$this->execute($sql);
 	}
 
 	/**
-	 * Search table objects by bind.
+	 * Delete rows using binded data.
 	 *
 	 * @access public
+	 * @return int
+	 */
+	public function deleteAny() : int
+	{
+		$sql  = "{$this->getDeleteQuery()} ";
+		$sql .= "{$this->getWhereQuery()};";
+		return (int)$this->execute($sql);
+	}
+
+    /**
+     * Get last inserted Id.
+     *
+	 * @access public
+	 * @return int
+	 */
+	public function lastInsertId() : int
+	{
+		$this->verify();
+		return (int)$this->db->lastInsertId();
+	}
+
+	/**
+	 * Custom query helper.
+	 *
+	 * @access public
+	 * @param string $sql
 	 * @param array $bind
-	 * @param array $sort
+	 * @param string $type
+	 * @param int $mode
 	 * @return mixed
 	 */
-	public function search($bind = [], $sort = [])
+	public function query(string $sql, ?array $bind = null, ?string $type = null, ?int $mode = null)
 	{
-		$bind = empty($bind) ? $this->data : $bind;
-		$sql = "SELECT * FROM `{$this->table}`";
-		if ( !empty($bind) ) {
-			$fields = [];
-			$columns = Arrayify::keys($bind);
-			foreach($columns as $column) {
-				$fields [] = "`{$column}` LIKE :{$column}";
-			}
-			$sql .= " WHERE " . implode(" AND ",$fields);
+		if ( $bind ) {
+			$this->bind($bind);
 		}
-		if ( !empty($sort) ) {
-			$sorted = [];
-			foreach ($sort as $key => $value) {
-				$sorted[] = "{$key} {$value}";
-			}
-			$sql .= " ORDER BY " . implode(", ", $sorted);
+		
+		switch ($type) {
+			case 'single':
+				return $this->getSingle($sql);
+				break;
+
+			case 'column':
+				return $this->getColumn($sql);
+				break;
+
+			case 'row':
+				return $this->getRow($sql, $mode);
+				break;
+
+			default:
+				return $this->execute($sql);
+				break;
 		}
-		return $this->execute($sql,$bind);
 	}
 
 	/**
-	 * Search table object by bind.
+	 * Search rows using binded data,
+	 * a [readAny] aliase with custom columns, sort and limit.
 	 *
 	 * @access public
-	 * @param array $bind
+	 * @param mixed $columns
 	 * @param array $sort
-	 * @return mixed
+	 * @param int $limit
+	 * @return array
 	 */
-	public function searchOne($bind = [], $sort = [])
+	public function search($columns = '*', array $sort = [], ?int $limit = 0) : array
 	{
-		$bind = empty($bind) ? $this->data : $bind;
-		$sql = "SELECT * FROM `{$this->table}`";
-		if ( !empty($bind) ) {
-			$fields = [];
-			$columns = Arrayify::keys($bind);
-			foreach($columns as $column) {
-				$fields[] = "`{$column}` LIKE :{$column}";
-			}
-			$sql .= ' WHERE ' . implode(' AND ',$fields);
-		}
-		if ( !empty($sort) ) {
-			$sorted = [];
-			foreach ($sort as $key => $value) {
-				$sorted[] = "{$key} {$value}";
-			}
-			$sql .= ' ORDER BY ' . implode(', ',$sorted);
-		}
-		$sql .= ' LIMIT 1;';
-		$result = $this->db->row($sql,$bind);
-		return $this->data = ($result) ? $result : null;
+		$sql  = "{$this->getSelectQuery($columns)} ";
+		$sql .= "{$this->getWhereQuery()} ";
+		$sql .= "{$this->getSortQuery($sort)} ";
+		$sql .= "{$this->getLimitQuery($limit)};";
+		return (array)$this->execute($sql);
 	}
 
 	/**
-	 * Get all table onjects.
+	 * Search row using binded data,
+	 * a [read] aliase with custom columns and sort.
 	 *
 	 * @access public
-	 * @param void
-	 * @return mixed
+	 * @param mixed $columns
+	 * @param array $sort
+	 * @return array
 	 */
-	public function all()
+	public function searchOne($columns = '*', array $sort = []) : array
 	{
-		$sql = "SELECT * FROM `{$this->table}`;";
-		return $this->db->query($sql);
+		$sql  = "{$this->getSelectQuery($columns)} ";
+		$sql .= "{$this->getWhereQuery()} ";
+		$sql .= "{$this->getSortQuery($sort)} ";
+		$sql .= "{$this->getLimitQuery(1)};";
+		return $this->getRow($sql);
+	}
+
+	/**
+	 * Select distinct rows using binded data.
+	 *
+	 * @access public
+	 * @param mixed $columns
+	 * @param array $sort
+	 * @return array
+	 */
+	public function distinct($columns, array $sort = []) : array
+	{
+		$sql  = "{$this->getSelectQuery($columns, true)} ";
+		$sql .= "{$this->getWhereQuery()} ";
+		$sql .= "{$this->getSortQuery($sort)};";
+		return (array)$this->execute($sql);
+	}
+
+	/**
+	 * Select older rows using binded data.
+	 *
+	 * @access public
+	 * @param int $days
+	 * @param mixed $columns
+	 * @param string $col date
+	 * @return array
+	 */
+	public function olderThan(int $days, $columns = '*', string $col = 'date') : array
+	{
+		$sql  = "{$this->getSelectQuery($columns)} ";
+		$sql .= "{$this->getWhereDateQuery($days, $col)} ";
+		$sql .= "{$this->getSortQuery([$col => 'DESC'])};";
+		return (array)$this->execute($sql);
+	}
+
+	/**
+	 * Delete older rows using binded data.
+	 *
+	 * @access public
+	 * @param int $days
+	 * @param string $col date
+	 * @return int
+	 */
+	public function deleteOlderThan(int $days, string $col = 'date') : int
+	{
+		$sql  = "{$this->getDeleteQuery()} ";
+		$sql .= "{$this->getWhereDateQuery($days, $col)} ";
+		return (int)$this->execute($sql);
+	}
+
+	/**
+	 * Select newer rows using binded data.
+	 *
+	 * @access public
+	 * @param int $days
+	 * @param mixed $columns
+	 * @param string $col date
+	 * @return array
+	 */
+	public function newerThan(int $days, $columns = '*', string $col = 'date') : array
+	{
+		$sql  = "{$this->getSelectQuery($columns)} ";
+		$sql .= "{$this->getWhereDateQuery($days, $col, '>=')} ";
+		$sql .= "{$this->getSortQuery([$col => 'DESC'])};";
+		return (array)$this->execute($sql);
+	}
+
+	/**
+	 * Delete newer rows using binded data.
+	 *
+	 * @access public
+	 * @param int $days
+	 * @param string $col date
+	 * @return int
+	 */
+	public function deleteNewerThan(int $days, string $col = 'date') : int
+	{
+		$sql  = "{$this->getDeleteQuery()} ";
+		$sql .= "{$this->getWhereDateQuery($days, $col, '>=')} ";
+		return (int)$this->execute($sql);
+	}
+
+	/**
+	 * Delete duplicated rows using custom columns.
+	 *
+	 * @access public
+	 * @param array $columns
+	 * @return int
+	 */
+	public function keepOne(array $columns = []) : int
+	{
+		$sql  = "{$this->getDeleteDuplicatedQuery()} ";
+		$sql .= "{$this->getWhereDuplicatedQuery($columns)} ";
+		return (int)$this->execute($sql, true);
+	}
+
+	/**
+	 * Get all rows.
+	 *
+	 * @access public
+	 * @param mixed $columns
+	 * @return array
+	 */
+	public function all($columns = '*', array $sort = []) : array
+	{
+		$sql  = "{$this->getSelectQuery($columns)} ";
+		$sql .= "{$this->getSortQuery($sort)};";
+		return (array)$this->execute($sql, true);
 	}
 	
 	/**
-	 * Get field min.
+	 * Get min value.
 	 *
 	 * @access public
 	 * @param string $field
@@ -332,11 +448,12 @@ class Orm implements OrmInterface
 	 */
 	public function min(string $field)
 	{
-		return $this->db->single("SELECT min({$field}) FROM `{$this->table}`;");
+		$sql = "SELECT min({$field}) FROM `{$this->table}`;";
+		return $this->getSingle($sql);
 	}
 
 	/**
-	 * Get field max.
+	 * Get max value.
 	 *
 	 * @access public
 	 * @param string $field
@@ -344,11 +461,12 @@ class Orm implements OrmInterface
 	 */
 	public function max(string $field)
 	{
-		return $this->db->single("SELECT max({$field}) FROM `{$this->table}`;");
+		$sql = "SELECT max({$field}) FROM `{$this->table}`;";
+		return $this->getSingle($sql);
 	}
 
 	/**
-	 * Get field avg.
+	 * Get avg value.
 	 *
 	 * @access public
 	 * @param string $field
@@ -356,11 +474,12 @@ class Orm implements OrmInterface
 	 */
 	public function avg(string $field)
 	{
-		return $this->db->single("SELECT avg({$field}) FROM `{$this->table}`;");
+		$sql = "SELECT avg({$field}) FROM `{$this->table}`;";
+		return $this->getSingle($sql);
 	}
 
 	/**
-	 * Get field sum.
+	 * Get sum value.
 	 *
 	 * @access public
 	 * @param string $field
@@ -368,145 +487,604 @@ class Orm implements OrmInterface
 	 */
 	public function sum(string $field)
 	{
-		return $this->db->single("SELECT sum({$field}) FROM `{$this->table}`;");
+		$sql = "SELECT sum({$field}) FROM `{$this->table}`;";
+		return $this->getSingle($sql);
 	}
 
 	/**
-	 * Count items.
+	 * Count rows.
 	 *
 	 * @access public
-	 * @param array $bind
 	 * @param string $column
 	 * @param bool $distinct
-	 * @return mixed
-	 */
-	public function count($bind = null, $column = null, $distinct = false)
-	{
-		if ( !$column ) {
-			$column = $this->key;
-		}
-		if ( $distinct ) {
-			$column = "DISTINCT {$column}";
-		}
-		$sql = "SELECT COUNT({$column}) FROM `{$this->table}`";
-		if ( TypeCheck::isArray($bind) ) {
-			$where = '';
-			foreach ($bind as $key => $value) {
-				$where .= "`{$key}` LIKE :{$key} AND ";
-			}
-			$where = rtrim($where,' AND ');
-			$sql .= " WHERE {$where}";
-		}
-		$sql .= ";";
-		return $this->db->single($sql,$bind);
-	}
-
-	/**
-	 * Delete all from table.
-	 *
-	 * @access public
-	 * @param string $table
 	 * @return int
 	 */
-	public function deleteAll($table = '') : int
+	public function count(?string $column = null, bool $distinct = false) : int
 	{
-		if ( empty($table) ) {
-			$table = $this->table;
-		}
-		$sql = "DELETE FROM `{$table}`;";
-		return $this->db->query($sql);
+		$sql = $this->getCountQuery($column, $distinct);
+		return (int)$this->getSingle($sql);
 	}
 
 	/**
-	 * Reset table Id.
+	 * Clear table.
+	 *
+	 * @access public
+	 * @return int
+	 */
+	public function clear() : int
+	{
+		$sql = "{$this->getDeleteQuery()};";
+		return $this->execute($sql, true);
+	}
+
+	/**
+	 * Reset table rows Ids.
 	 *
 	 * @access public
 	 * @param string $table
 	 * @return mixed
 	 */
-	public function resetId($table = '')
+	public function resetId(?string $table = null)
 	{
-		if ( empty($table) ) {
-			$table = $this->table;
-		}
-		$sql = "ALTER TABLE `{$table}` AUTO_INCREMENT = 1;";
-		return $this->db->query($sql);
+		if ( $table ) $this->table = $table;
+		$sql = "ALTER TABLE `{$this->table}` AUTO_INCREMENT = 1;";
+		return $this->execute($sql, true);
 	}
-
+	
 	/**
-	 * Set table data.
+	 * Check database table.
 	 *
 	 * @access public
-	 * @param array $data
-	 * @return object
-	 */
-	public function setData($data = []) : object
-	{
-		$this->data = $data;
-		return $this;
-	}
-
-	/**
-	 * Create application database.
-	 *
-	 * @access public
-	 * @param void
+	 * @param string $table
 	 * @return bool
 	 */
-	public function createDatabase()
+	public function hasTable(?string $table = null) : bool
+	{
+		if ( $table ) $this->table = $table;
+		$sql = "SHOW TABLES LIKE '{$this->table}';";
+		return (bool)$this->execute($sql, true);
+	}
+
+	/**
+	 * Get database table columns.
+	 *
+	 * @access public
+	 * @param string $table
+	 * @return array
+	 */
+	public function columns(?string $table = null) : array
+	{
+		if ( $table ) $this->table = $table;
+		$sql  = "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS ";
+		$sql .= "WHERE TABLE_NAME = '{$this->table}' ";
+		$sql .= "ORDER BY ORDINAL_POSITION;";
+		$this->resetBind();
+		return $this->getColumn($sql);
+	}
+
+	/**
+	 * Get database tables.
+	 *
+	 * @access public
+	 * @return array
+	 */
+	public function tables() : array
+	{
+		$this->resetBind();
+		return $this->getColumn('SHOW TABLES;');
+	}
+	
+	/**
+	 * Setup database.
+	 *
+	 * @access public
+	 * @return bool
+	 */
+	public function setup() : bool
 	{
 	    try {
-	    	$dsn = "mysql:host={$this->access['host']};port={$this->access['port']};charset=utf8mb4";
-	        $pdo = new PDO($dsn, $this->root['user'], $this->root['pswd'], [
-	        	PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES {$this->access['charset']}"
-	        ]);
-	        $sql = "CREATE DATABASE IF NOT EXISTS `{$this->access['db']}`;";
-	        $query = $pdo->prepare($sql);
-	        $query->execute();
-	        $query = $pdo->prepare("ALTER DATABASE `{$this->access['db']}` COLLATE utf8_general_ci;");
-	        $query->execute();
+	    	$dsn = "mysql:host={$this->access['host']};port={$this->access['port']}";
+	        $pdo = new PDO($dsn, $this->root['user'], $this->root['pswd']);
+	        $sql  = "CREATE DATABASE IF NOT EXISTS `{$this->access['db']}` ";
+	        $sql .= "CHARACTER SET {$this->access['charset']} ";
+	        $sql .= "COLLATE {$this->access['collate']};";
+			$query = $pdo->prepare($sql);
+	        return (bool)$query->execute();
 	    }
 	    catch (PDOException $e) {
 	        die("ERROR : {$e->getMessage()}");
 	    }
 	}
-	
+
 	/**
-	 * Check table.
-	 *
-	 * @access public
-	 * @param string $table
-	 * @return bool
+	 * Execute query,
+	 * Returns anything.
+	 * 
+	 * @access protected
+	 * @param string $sql
+	 * @param bool $reset
+	 * @return mixed
 	 */
-	public function hasTable($table = '')
+	protected function execute(string $sql, bool $reset = false)
 	{
-		$sql = "SHOW TABLES LIKE '{$table}';";
-		return (bool)$this->db->query($sql);
+		$this->verify();
+		if ( $reset ) $this->resetBind();
+		$sql = $this->formatSpace($sql);
+		return $this->db->query($sql, $this->getBind());
 	}
 
 	/**
-	 * Get tables.
-	 *
-	 * @access public
-	 * @param void
+	 * Execute single query,
+	 * Returns field value.
+	 * 
+	 * @access protected
+	 * @param string $sql
+	 * @return mixed
+	 */
+	protected function getSingle(string $sql)
+	{
+		$this->verify();
+		$sql = $this->formatSpace($sql);
+		return $this->db->single($sql, $this->getBind());
+	}
+
+	/**
+	 * Execute column query,
+	 * Returns column.
+	 * 
+	 * @access protected
+	 * @param string $sql
 	 * @return array
 	 */
-	public function getTables() : array
+	protected function getColumn(string $sql) : array
 	{
-		return (array)$this->db->query('show tables;');
+		$this->verify();
+		$sql = $this->formatSpace($sql);
+		return (array)$this->db->column($sql, $this->getBind());
 	}
 	
 	/**
-	 * @access private
+	 * Execute row query,
+	 * Returns row.
+	 * 
+	 * @access protected
 	 * @param string $sql
-	 * @param array $bind
-	 * @return mixed
+	 * @param int $mode
+	 * @return array
 	 */
-	private function execute($sql, $bind = null)
+	protected function getRow(string $sql, int $mode = 2) : array
 	{
-		$bind = ($bind) ? $bind : $this->data;
-		// Reset data
-		$this->data = [];
-		return $this->db->query($sql,$bind);
+		$this->verify();
+		$sql = $this->formatSpace($sql);
+		$row = $this->db->row($sql, $this->getBind(), $mode);
+		$this->row = ($row) ? $row : [];
+		return $this->row;
+	}
+
+	/**
+	 * Get insert query string.
+	 * 
+	 * @access private
+	 * @return string
+	 */
+	private function getInsertQuery() : string
+	{
+		$sql = "INSERT INTO `{$this->table}` ";
+		if ( !empty($this->bind) ) {
+			$columns = $this->getColumnsString();
+			$values  = $this->getValueString();
+			$sql .= "({$columns}) VALUES ({$values})";
+
+		} else {
+			$sql .= "() VALUES ()";
+		}
+		return $sql;
+	}
+	
+	/**
+	 * Get select query string.
+	 * 
+	 * @access private
+	 * @param mixed $columns
+	 * @param bool $distinct
+	 * @return string
+	 */
+	private function getSelectQuery($columns = '*', ?bool $distinct = null) : string
+	{
+		if ( $distinct == true && $columns !== '*' ) {
+			$distinct = 'DISTINCT';
+		}
+		$sql  = "SELECT {$distinct} {$this->formatColumns($columns)} ";
+		$sql .= "FROM `{$this->table}`";
+		return $sql;
+	}
+
+	/**
+	 * Get where query string.
+	 * 
+	 * @access private
+	 * @param bool $single
+	 * @return string
+	 */
+	private function getWhereQuery($single = false) : string
+	{
+		if ( $single ) {
+			$comparator = $this->getComparator(
+				$this->getValueType($this->key)
+			);
+			return "WHERE `{$this->key}` {$comparator} :{$this->key}";
+		}
+		$sql = '';
+		if ( !empty($this->bind) ) {
+			$sql .= 'WHERE ';
+			foreach ($this->getColumns() as $key => $column) {
+
+				$comparator = $this->getComparator($column['type']);
+
+				// Set binded data
+				$unbind = false;
+				$value = ":{$column['name']}";
+				
+				// Set static data
+				if ( $column['type'] == 'true' ) {
+					$value = 'TRUE';
+					$unbind = true;
+
+				} elseif ( $column['type'] == 'false' ) {
+					$value = 'FALSE';
+					$unbind = true;
+
+				} elseif ( $column['type'] == 'null' ) {
+					$value = 'NULL';
+					$unbind = true;
+				}
+
+				// Unbind data
+				if ( $unbind ) {
+					unset($this->bind[$column['name']]);
+				}
+
+				$sql .= "`{$column['name']}` {$comparator} {$value} AND ";
+			}
+			$sql = rtrim($sql, ' AND ');
+		}
+		return $sql;
+	}
+
+	/**
+	 * Get where date query string.
+	 * 
+	 * @access private
+	 * @param int $days
+	 * @param string $col date
+	 * @param string $operator
+	 * @return string
+	 */
+	private function getWhereDateQuery(int $days, string $col = 'date', string $operator = '<=') : string
+	{
+		$days = ($days) ? $days : 1;
+		$where = $this->getWhereQuery();
+		if ( empty($where) ) {
+			$where = 'WHERE ';
+
+		} else {
+			$where .= ' AND ';
+		}
+		$where .= "( {$days} {$operator} DATEDIFF(NOW(), `{$col}`) )";
+		return $where;
+	}
+
+	/**
+	 * Get where duplicated query string.
+	 * 
+	 * @access private
+	 * @param array $columns
+	 * @return string
+	 */
+	private function getWhereDuplicatedQuery(array $columns = []) : string
+	{
+		$sql = "WHERE i1.`{$this->key}` > i2.`{$this->key}`";
+		foreach ($columns as $key => $column) {
+			if ( $column !== $this->key ) {
+				$sql .= " AND i1.`{$column}` = i2.`{$column}` ";
+			}
+		}
+		return $sql;
+	}
+
+	/**
+	 * Parse custom where query string.
+	 * 
+	 * @access private
+	 * @param array $where
+	 * @return string
+	 */
+	private function parseWhereQuery(array $where = []) : string
+	{
+		$sql = '';
+		if ( !empty($where) ) {
+			$sql .= 'WHERE ';
+			foreach ($where as $key => $value) {
+				$type = $this->getValueType($value);
+				if ( $type == 'char' ) {
+					$value = "'{$value}'";
+				}
+				$sql .= "`{$key}` {$this->getComparator($type)} {$value} AND ";
+			}
+			$sql = rtrim($sql, ' AND ');
+		}
+		return $sql;
+	}
+	
+	/**
+	 * Get update query string.
+	 * 
+	 * @access private
+	 * @return string
+	 */
+	private function getUpdateQuery() : string
+	{
+		$sql = "UPDATE `{$this->table}`";
+		$update = '';
+		foreach($this->getColumns() as $column) {
+			// Ignore primary key
+			if ( $column['name'] !== $this->key ) {
+				$update .= "`{$column['name']}` = :{$column['name']}, ";
+			}
+		}
+		if ( !empty($update) ) {
+			$update = rtrim($update, ', ');
+			$sql .= " SET {$update}";
+		}
+		return $sql;
+	}
+	
+	/**
+	 * Get delete query string.
+	 * 
+	 * @access private
+	 * @return string
+	 */
+	private function getDeleteQuery() : string
+	{
+		$sql = "DELETE FROM `{$this->table}`";
+		return $sql;
+	}
+	
+	/**
+	 * Get delete duplicated query string.
+	 * 
+	 * @access private
+	 * @return string
+	 */
+	private function getDeleteDuplicatedQuery() : string
+	{
+		$sql = "DELETE i1 FROM `{$this->table}` i1, `{$this->table}` i2";
+		return $sql;
+	}
+
+	/**
+	 * Get count query string.
+	 *
+	 * @access private
+	 * @param string $column
+	 * @param bool $distinct
+	 * @return string
+	 */
+	private function getCountQuery(?string $column = null, bool $distinct = false) : string
+	{
+		if ( !$column ) $column = ($this->key) ? $this->key : '*';
+		if ( $distinct ) {
+			$column = "DISTINCT {$column}";
+		}
+		$sql  = "SELECT COUNT({$column}) FROM `{$this->table}` ";
+		$sql .= "{$this->getWhereQuery()};";
+		return $sql;
+	}
+
+	/**
+	 * Get sort query string.
+	 *
+	 * @access private
+	 * @param string $sort
+	 * @return string
+	 */
+	private function getSortQuery($sort = []) : string
+	{
+		$sql = '';
+		if ( !empty($sort) ) {
+			$sorted = [];
+			foreach ($sort as $key => $value) {
+				$sorted[] = "`{$key}` {$value}";
+			}
+			$sql .= 'ORDER BY ' . implode(', ', $sorted);
+		}
+		return $sql;
+	}
+
+	/**
+	 * Get limit query string.
+	 *
+	 * @access private
+	 * @param int $limit
+	 * @return string
+	 */
+	private function getLimitQuery(?int $limit = 0) : string
+	{
+		$sql = '';
+		if ( $limit ) {
+			$sql .= "LIMIT {$limit}";
+		}
+		return $sql;
+	}
+	
+	/**
+	 * Get columns names with types from bind.
+	 * 
+	 * @access private
+	 * @return array
+	 */
+	private function getColumns() : array
+	{
+		$columns = [];
+		foreach ($this->bind as $name => $value) {
+			$columns[] = [
+				'name' => $name,
+				'type' => $this->getValueType($value)
+			];
+		}
+		return $columns;
+	}
+	
+	/**
+	 * Get columns as string.
+	 * 
+	 * @access private
+	 * @return string
+	 */
+	private function getColumnsString() : string
+	{
+		return $this->formatColumns(
+			$this->getColumns()
+		);
+	}
+	
+	/**
+	 * Format columns string (Binded || Custom).
+	 * 
+	 * @access private
+	 * @param mixed $columns
+	 * @return string
+	 */
+	private function formatColumns($columns) : string
+	{
+		if ( $this->isType('string', $columns) ) {
+			$columns = $this->stripSpace($columns);
+			if ( $columns == '*' || empty($columns) ) {
+				return '*';
+			}
+			if ( $this->searchString($columns, ',') ) {
+				$columns = explode(',', $columns);
+
+			} else {
+				return "`{$columns}`";
+			}
+		}
+
+		if ( $this->isType('array', $columns) && !empty($columns) ) {
+			$wrapper = [];
+			foreach ($columns as $key => $column) {
+				if ( isset($column['name']) ) {
+					// Binded columns
+					$wrapper[$key] = "`{$column['name']}`";
+
+				} else {
+					// Custom columns
+					$wrapper[$key] = "`{$column}`";
+				}
+			}
+			return implode(',', $wrapper);
+		}
+
+		return '*';
+	}
+	
+	/**
+	 * Get values string.
+	 *
+	 * @access private
+	 * @return string
+	 */
+	private function getValueString() : string
+	{
+		$value = [];
+		foreach ($this->getColumns() as $key => $column) {
+			$value[$key] = $column['name'];
+		}
+		return ':' . implode(',:', $value);
+	}
+	
+	/**
+	 * Get binded data before reset.
+	 *
+	 * @access private
+	 * @return array
+	 */
+	private function getBind() : array
+	{
+		$bind = $this->bind;
+		$this->resetBind();
+		return $bind;
+	}
+	
+	/**
+	 * Reset binded data.
+	 *
+	 * @access private
+	 * @return void
+	 */
+	private function resetBind()
+	{
+		$this->bind = [];
+	}
+
+	/**
+	 * Get value type [num, true, false, null, char].
+	 * 
+	 * @access private
+	 * @param mixed $value
+	 * @return string
+	 */
+	private function getValueType($value = null) : string
+	{
+		if ( $this->isType('int', $value) || $this->isType('float', $value)  ) {
+			return 'num';
+
+		} elseif ( $this->isType('true', $value) ) {
+			return 'true';
+
+		} elseif ( $this->isType('false', $value) ) {
+			return 'false';
+
+		} elseif ( $this->isType('null', $value) ) {
+			return 'null';
+		}
+
+		return 'char';
+	}
+
+	/**
+	 * Get comparator by value type, to avoid result conflit.
+	 * 
+	 * @access private
+	 * @param mixed $type
+	 * @return string
+	 */
+	private function getComparator(string $type = 'char') : string
+	{
+		if ( $type == 'num' ) {
+			return '=';
+
+		} elseif ( $type == 'true' || $type == 'false' || $type == 'null' ) {
+			return 'is';
+		}
+
+		return 'LIKE';
+	}
+
+	/**
+	 * Verify object instance.
+	 *
+	 * @access private
+	 * @return void
+	 * @throws OrmException
+	 */
+	private function verify()
+	{
+		if ( !$this->db ) {
+			throw new OrmException(
+				OrmException::invalidDbObject()
+			);
+		}
 	}
 }

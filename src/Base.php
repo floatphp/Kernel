@@ -1,12 +1,11 @@
 <?php
 /**
- * @author     : JIHAD SINNAOUR
+ * @author     : Jakiboy
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.0.2
- * @category   : PHP framework
- * @copyright  : (c) 2017 - 2023 Jihad Sinnaour <mail@jihadsinnaour.com>
- * @link       : https://www.floatphp.com
+ * @version    : 1.1.0
+ * @copyright  : (c) 2018 - 2024 Jihad Sinnaour <mail@jihadsinnaour.com>
+ * @link       : https://floatphp.com
  * @license    : MIT
  *
  * This file if a part of FloatPHP Framework.
@@ -16,238 +15,105 @@ declare(strict_types=1);
 
 namespace FloatPHP\Kernel;
 
-use FloatPHP\Classes\{
-	Filesystem\Arrayify,
-	Filesystem\Stringify,
-	Filesystem\TypeCheck,
-	Filesystem\Translation, 
-    Html\Hook,
-    Html\Shortcode, 
-    Http\Session,
-    Http\Server,
-    Http\Request,
-    Security\Tokenizer
-};
-use FloatPHP\Helpers\Filesystem\{
-	Cache, Transient
+use FloatPHP\Helpers\{
+	Connection\Transient,
+	Filesystem\Cache,
+	Filesystem\Translator
 };
 
 class Base
 {
-	use TraitConfiguration;
+	use TraitConfiguration,
+		TraitException,
+		\FloatPHP\Helpers\Framework\inc\TraitHookable,
+		\FloatPHP\Helpers\Framework\inc\TraitPermissionable,
+		\FloatPHP\Helpers\Framework\inc\TraitRequestable,
+		\FloatPHP\Helpers\Framework\inc\TraitAuthenticatable;
 
-	/**
-	 * @param void
-	 */
-	public function __construct()
+    /**
+	 * Get token.
+	 * 
+     * @access protected
+     * @param string $source
+     * @return string
+     */
+	protected function getToken(?string $source = null) : string
 	{
-		// Init configuration
-		$this->initConfig();
-	}
-	
-	/**
-	 * Prevent object clone
-	 *
-	 * @param void
-	 */
-    public function __clone()
-    {
-        die(__METHOD__.': Clone denied');
-    }
+		// Init token data
+		$data = $this->applyFilter('token-data', []);
 
-	/**
-	 * Prevent object serialization
-	 *
-	 * @param void
-	 */
-    public function __wakeup()
-    {
-        die(__METHOD__.': Unserialize denied');
-    }
+		// Set default token data
+		$data['source'] = (string)$source;
+		$data['url'] = $this->getServerCurrentUrl();
+		$data['ip'] = $this->getServerIp();
 
-	/**
-	 * Hook a method on a specific action
-	 *
-	 * @access protected
-	 * @param string $hook
-	 * @param callable $method
-	 * @param int $priority
-	 * @param int $args
-	 * @return true
-	 */
-	protected function addAction($hook, $method, $priority = 10, $args = 1)
-	{
-		return Hook::getInstance()->addAction($hook,$method,$priority,$args);
-	}
-
-	/**
-	 * Remove a method from a specified action hook
-	 *
-	 * @access protected
-	 * @param string $hook
-	 * @param callable $method
-	 * @param int $priority
-	 * @return bool
-	 */
-	protected function removeAction($hook, $method, $priority = 10)
-	{
-		return Hook::getInstance()->removeAction($hook,$method,$priority);
-	}
-
-	/**
-	 * Add a method from a specified action hook
-	 *
-	 * @access protected
-	 * @param string $tag
-	 * @param mixed $args
-	 * @return true
-	 */
-	protected function doAction($tag, $args = null)
-	{
-		return Hook::getInstance()->doAction($tag,$args);
-	}
-
-	/**
-	 * Check if any filter has been registered for action
-	 *
-	 * @access protected
-	 * @param string $tag
-	 * @param mixed $args
-	 * @return bool
-	 */
-	protected function hasAction($tag, $args = null)
-	{
-		return Hook::getInstance()->hasAction($tag,$args);
-	}
-
-	/**
-	 * Hook a function or method to a specific filter action
-	 *
-	 * @access protected
-	 * @param string $hook
-	 * @param callable $method
-	 * @param int $priority
-	 * @param int $args
-	 * @return true
-	 */
-	protected function addFilter($hook, $method, $priority = 10, $args = 1)
-	{
-		return Hook::getInstance()->addFilter($hook,$method,$priority,$args);
-	}
-
-	/**
-	 * Remove a function from a specified filter hook
-	 *
-	 * @access protected
-	 * @param string $hook
-	 * @param callable $method
-	 * @param int $priority
-	 * @return bool
-	 */
-	protected function removeFilter($hook, $method, $priority = 10) : bool
-	{
-		return Hook::getInstance()->removeFilter($hook,$method,$priority);
-	}
-
-	/**
-	 * Calls the callback functions 
-	 * that have been added to a filter hook
-	 *
-	 * @access protected
-	 * @param string $hook
-	 * @param mixed $value
-	 * @param mixed $args
-	 * @return mixed
-	 */
-	protected function applyFilter($hook, $value, $args = null)
-	{
-		return Hook::getInstance()->applyFilter($hook,$value,$args);
-	}
-
-	/**
-	 * Check if any filter has been registered for filter
-	 *
-	 * @access protected
-	 * @param string $hook
-	 * @param callable $method
-	 * @return bool
-	 */
-	protected function hasFilter($hook, $method = false) : bool
-	{
-		return Hook::getInstance()->hasFilter($hook,$method);
-	}
-
-	/**
-	 * @access protected
-	 * @param void
-	 * @return bool
-	 */
-	protected function isLoggedIn() : bool
-	{
-		if ( Session::isRegistered() && !Session::isExpired() ) {
-			return true;
+		// Set user token data
+		if ( $this->isAuthenticated() ) {
+			$data['user'] = $this->getSession($this->getSessionId());
 		}
-		return false;
+
+		// Save token
+		$data = $this->serialize($data);
+		$token = $this->generateToken(10);
+		$transient = new Transient();
+		$transient->setTemp($token, $data, $this->getAccessExpire());
+
+		return $token;
 	}
 
 	/**
+	 * Get language.
+	 * 
 	 * @access protected
-	 * @param void
 	 * @return string
 	 */
-	protected function getLanguage()
+	protected function getLanguage() : string
 	{
-		if ( Arrayify::hasKey('lang',(array)Request::get()) ) {
-			$lang = Request::get('lang');
-		    Session::set('--lang',$lang);
-
-		} elseif ( Arrayify::hasKey('lang',(array)Session::get()) && $this->isLoggedIn() ) {
-		    $lang = Session::get('--lang');
-
-		} else {
-		    $lang = Session::get('--default-lang');
+		if ( $this->hasRequest('--lang') ) {
+			return $this->getRequest('--lang');
 		}
-		return $this->applyFilter('--default-lang', $lang);
+        if ( !($lang = $this->getSession('--lang')) ) {
+            $lang = $this->getSession('--default-lang');
+        }
+        return (string)$lang;
 	}
 
 	/**
-	 * Translate string,
-	 * May require quotes escaping.
+	 * Translate string, May require quotes escaping.
 	 *
 	 * @access protected
 	 * @param string $string
 	 * @return string
 	 */
-	protected function translate($string = '') : string
+	protected function translate(string $string) : string
 	{
-		// Cache translation
+		if ( !($length = strlen($string)) ) {
+			return $string;
+		}
+
+		$slug = $string;
+		foreach ($this->matchEveryString('/([A-Z])/', $slug) as $upper) {
+			$slug = $this->replaceString($upper, "{$upper}1-", $slug);
+		}
+		$slug = $this->slugify($slug);
+		$slug = $this->limitString($slug);
+
 		$cache = new Cache();
-
-		// Translation cache id
-		$length = strlen($string);
 		$lang = $this->getLanguage();
-		$uppercases = Stringify::matchAll('/([A-Z])/', $string);
-		$translateId = '';
+		$key = $cache->generateKey('i18n', false, [
+			'lang'   => $lang,
+			'length' => $length,
+			'slug'   => $slug
+		]);
 
-		foreach ($uppercases as $uppercase) {
-			$translateId = Stringify::replace($uppercase, "{$uppercase}-1", $string);
-		}
-
-		if ( empty($translateId) ) {
-			$translateId = $string;
-		}
-
-		$translateId = Stringify::slugify("translation-{$lang}-{$length}-{$translateId}");
-		$translation = $cache->get($translateId);
-
+		$translation = $cache->get($key);
 		if ( !$cache->isCached() ) {
-			$path = $this->applyFilter('translation-path', $this->getTranslatePath());
-			$translator = new Translation($lang, $path);
+			$translator = new Translator($lang);
 			$translation = $translator->translate($string);
 			$cache->set($translation, 'translation');
 		}
-		
-		return ($translation) ? $translation : (string)$string;
+
+		return (string)$translation;
 	}
 
 	/**
@@ -266,8 +132,7 @@ class Base
     }
 
 	/**
-	 * Translate string including variables,
-	 * May require quotes escaping.
+	 * Translate string including variables.
 	 *
 	 * @access protected
 	 * @param string $string
@@ -276,17 +141,13 @@ class Base
 	 */
 	protected function translateVars(string $string, $vars = null) : string
 	{
-		if ( TypeCheck::isArray($vars) ) {
-			return vsprintf(
-				$this->translate($string),
-				$vars
-			);
+		if ( $this->isType('array', $vars) ) {
+			return vsprintf($this->translate($string), $vars);
 
 		} else {
 			$vars = (string)$vars;
-			return sprintf($this->translate(
-				Stringify::replace($vars, '%s', $string)
-			), $vars);
+			$string = $this->replaceString($vars, '%s', $string);
+			return sprintf($this->translate($string), $vars);
 		}
 	}
 
@@ -299,8 +160,8 @@ class Base
 	 */
 	protected function translateDeepStrings(array $strings)
 	{
-		Arrayify::walkRecursive($strings, function(&$string) {
-			if ( TypeCheck::isString($string) ) {
+		$this->recursiveArray($strings, function(&$string) {
+			if ( $this->isType('string', $string) ) {
 				$string = $this->translate($string);
 			}
 		});
@@ -308,7 +169,7 @@ class Base
 	}
 
 	/**
-	 * Load translated strings (admin/front).
+	 * Load translated strings.
 	 *
 	 * @access protected
 	 * @param string $type
@@ -316,7 +177,7 @@ class Base
 	 */
 	protected function loadStrings($type = 'admin')
 	{
-		$strings = $this->applyFilter('strings', $this->getStrings());
+		$strings = $this->getStrings();
 		switch ($type) {
 			case 'admin':
 				return $this->translateDeepStrings(
@@ -331,111 +192,5 @@ class Base
 				break;
 		}
 		return $this->translateDeepStrings($strings);
-	}
-
-    /**
-     * @access protected
-     * @param string $source
-     * @return mixed
-     */
-	protected function getToken($source = '')
-	{
-		// Init token data
-		$data = $this->applyFilter('token-data',[]);
-
-		// Set default token data
-		$data['source'] = $source;
-		$data['url'] = Server::getCurrentUrl();
-		$data['ip'] = Server::getIp();
-
-		// Set user token data
-		if ( $this->isLoggedIn() ) {
-			$data['user'] = Session::get($this->getSessionId());
-		}
-
-		// Save token
-		$data = Stringify::serialize($data);
-		$token = Tokenizer::generate(10);
-		$transient = new Transient();
-		$transient->setTemp($token,$data,$this->getAccessExpire());
-		return $token;
-	}
-
-
-	/**
-	 * Register a shortcode handler
-	 *
-	 * @access protected
-	 * @param string $tag
-	 * @param callable $callback
-	 * @return void
-	 */
-	protected function addShortcode($tag, $callback)
-	{
-		return Shortcode::getInstance()->addShortcode($tag,$callback);
-	}
-
-	/**
-	 * Search content for shortcodes 
-	 * and filter shortcodes through their hooks
-	 *
-	 * @access protected
-	 * @param string $content
-	 * @param bool $ignoreHTML
-	 * @return void
-	 */
-	protected function renderShortcode($content, $ignoreHTML = false)
-	{
-		echo $this->doShortcode($content,$ignoreHTML);
-	}
-
-	/**
-	 * Search content for shortcodes 
-	 * and filter shortcodes through their hooks
-	 *
-	 * @access protected
-	 * @param string $content
-	 * @param bool $ignoreHTML
-	 * @return string
-	 */
-	protected function doShortcode($content, $ignoreHTML = false)
-	{
-		return Shortcode::getInstance()->doShortcode($content,$ignoreHTML);
-	}
-
-	/**
-	 * Removes hook for shortcode
-	 *
-	 * @access protected
-	 * @param string $tag
-	 * @return bool
-	 */
-	protected function removeShortcode($tag)
-	{
-		return Shortcode::getInstance()->removeShortcode($tag);
-	}
-
-	/**
-	 * Checks Whether a registered shortcode exists named $tag
-	 *
-	 * @access protected
-	 * @param string $tag
-	 * @return bool
-	 */
-	protected function shortcodeExists($tag)
-	{
-		return Shortcode::getInstance()->shortcodeExists($tag);
-	}
-
-	/**
-	 * Checks Whether a registered shortcode exists named $tag
-	 *
-	 * @access protected
-	 * @param string $tag
-	 * @return bool
-	 */
-	protected function hasShortcode($tag)
-	{
-		return Shortcode::getInstance()->hasShortcode($tag);
 	}
 }

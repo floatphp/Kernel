@@ -1,12 +1,11 @@
 <?php
 /**
- * @author     : JIHAD SINNAOUR
+ * @author     : Jakiboy
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.0.2
- * @category   : PHP framework
- * @copyright  : (c) 2017 - 2023 Jihad Sinnaour <mail@jihadsinnaour.com>
- * @link       : https://www.floatphp.com
+ * @version    : 1.1.0
+ * @copyright  : (c) 2018 - 2024 Jihad Sinnaour <mail@jihadsinnaour.com>
+ * @link       : https://floatphp.com
  * @license    : MIT
  *
  * This file if a part of FloatPHP Framework.
@@ -17,30 +16,25 @@ declare(strict_types=1);
 namespace FloatPHP\Kernel;
 
 use FloatPHP\Interfaces\Kernel\AuthenticationInterface;
-use FloatPHP\Classes\{
-    Http\Session, Http\Request,
-    Security\Password,
-    Filesystem\Arrayify
-};
 
 abstract class AbstractAuthController extends BaseController
 {
 	/**
 	 * @access public
-	 * @param void
 	 * @return void
 	 */
 	abstract public function login();
 
 	/**
+	 * Check whether current user is authenticated.
+	 * 
 	 * @access public
-	 * @param void
 	 * @return bool
 	 */
 	public function isAuthenticated() : bool
 	{
-		if ( Session::isSetted($this->getSessionId()) ) {
-			return $this->isLoggedIn();
+		if ( $this->getSession($this->getSessionId()) ) {
+			return $this->isValidSession();
 		}
 		return false;
 	}
@@ -57,70 +51,63 @@ abstract class AbstractAuthController extends BaseController
 		$this->verifyRequest(true);
 
 		// Get authentication
-		$args = Arrayify::merge([
-			'username' => false,
-			'password' => false
-		],$args);
-
-		if ( !$args['username'] ) {
-			$args['username'] = Request::get('username');
-		}
-		if ( !$args['password'] ) {
-			$args['password'] = Request::get('password');
-		}
+		$args = $this->mergeArray([
+			'username' => $this->getRequest('username'),
+			'password' => $this->getRequest('password')
+		], $args);
 
 		// Authenticate override
-		$this->doAction('authenticate',$args['username']);
+		$this->doAction('authenticate', $args['username']);
 
 		// Verify authentication
 		if ( ($user = $auth->getUser($args['username'])) ) {
 
 			// Check password
-			if ( Password::isValid($args['password'],$user['password']) ) {
+			if ( $this->isPassword($args['password'], $user['password']) ) {
 
 				// Check password format
-				if ( $this->applyFilter('authenticate-strong-password',false) ) {
-					if ( !Password::isStrong($args['password']) ) {
-						// Authenticate failed response
-						$msg = $this->applyFilter('authenticate-password-message','Strong password required');
+				if ( $this->applyFilter('authenticate-strong-password', false) ) {
+					if ( !$this->isStrongPassword($args['password']) ) {
+						// Authenticate failed
+						$msg = $this->applyFilter('authenticate-password-message', 'Strong password required');
 						$msg = $this->translate($msg);
-						$this->setResponse($msg,[],'warning');
+						$this->setResponse($msg, [], 'warning');
 					}
 				}
 
 				// Register session
-				Session::register($this->getAccessExpire());
+				$this->registerSession($this->getAccessExpire());
 
-				// Check session registred
-				if ( $this->isLoggedIn() ) {
+				// Check valid session
+				if ( $this->isValidSession() ) {
 
 					if ( $auth->hasSecret($args['username']) ) {
-						Session::set('--verify',$args['username']);
-						// Authenticate accepted response
-						$msg = $this->applyFilter('authenticate-accepted-message','Accepted');
+						$this->setSession('--verify', $args['username']);
+						// Authenticate accepted
+						$msg = $this->applyFilter('authenticate-accepted-message', 'Accepted');
 						$msg = $this->translate($msg);
-						$this->setResponse($msg,[],'accepted',202);
+						$this->setResponse($msg, [], 'accepted', 202);
 
 					} else {
-						Session::set($auth->getKey(),$user[$auth->getKey()]);
-						// Authenticate success response
-						$msg = $this->applyFilter('authenticate-success-message','Connected');
+						$this->setSession($auth->getKey(),$user[$auth->getKey()]);
+						// Authenticate success
+						$msg = $this->applyFilter('authenticate-success-message', 'Connected');
 						$msg = $this->translate($msg);
 						$this->setResponse($msg);
 					}
 
 				} else {
-					Session::end();
+					$this->endSession();
 				}
 			}
 		}
 
 		// Authenticate failed override
-		$this->doAction('authenticate-failed',$args['username']);
+		$this->doAction('authenticate-failed', $args['username']);
 
-		// Authenticate failed response
-		$msg = $this->applyFilter('authenticate-error-message','Authentication failed');
+		// Authenticate failed
+		$msg = $this->applyFilter('authenticate-error-message', 'Authentication failed');
 		$msg = $this->translate($msg);
-		$this->setResponse($msg,[],'error',401);
+		$this->setResponse($msg, [], 'error', 401);
 	}
 }

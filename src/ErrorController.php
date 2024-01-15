@@ -1,12 +1,11 @@
 <?php
 /**
- * @author     : JIHAD SINNAOUR
+ * @author     : Jakiboy
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.0.2
- * @category   : PHP framework
- * @copyright  : (c) 2017 - 2023 Jihad Sinnaour <mail@jihadsinnaour.com>
- * @link       : https://www.floatphp.com
+ * @version    : 1.1.0
+ * @copyright  : (c) 2018 - 2024 Jihad Sinnaour <mail@jihadsinnaour.com>
+ * @link       : https://floatphp.com
  * @license    : MIT
  *
  * This file if a part of FloatPHP Framework.
@@ -25,7 +24,8 @@ class ErrorController extends FrontController
 	 * @param string $message
 	 * @param string $error
 	 * @param bool $render
-	 * @return void
+	 * @uses initConfig()
+	 * @uses resetConfig()
 	 */
 	public function __construct($code = 404, $error = null, $render = true)
 	{

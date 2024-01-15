@@ -1,12 +1,11 @@
 <?php
 /**
- * @author     : JIHAD SINNAOUR
+ * @author     : Jakiboy
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.0.2
- * @category   : PHP framework
- * @copyright  : (c) 2017 - 2023 Jihad Sinnaour <mail@jihadsinnaour.com>
- * @link       : https://www.floatphp.com
+ * @version    : 1.1.0
+ * @copyright  : (c) 2018 - 2024 Jihad Sinnaour <mail@jihadsinnaour.com>
+ * @link       : https://floatphp.com
  * @license    : MIT
  *
  * This file if a part of FloatPHP Framework.
@@ -19,80 +18,79 @@ namespace FloatPHP\Kernel;
 class Model extends Orm
 {
 	/**
-	 * @param array $data
+	 * Init ORM.
 	 */
-	public function __construct($data = [])
+	public function __construct()
 	{
-		parent::__construct($data);
+		parent::__construct();
 	}
-
+    
     /**
-     * Get object from table by Id.
+     * Add object | Forced bind (Create).
      *
      * @access public
-     * @param int $Id
+     * @param array $bind
      * @return mixed
      */
-    public function get($Id = 0)
+    public function add(array $data)
     {
-        $this->{$this->key} = (int)$Id;
-        return $this->find();
-    }
-
-    /**
-     * Check object exists in table by Id.
-     *
-     * @access public
-     * @param int $Id
-     * @return bool
-     */
-    public function exists($Id = 0) : bool
-    {
-        return (bool)$this->count([
-            $this->key => (int)$Id
-        ]);
-    }
-
-    /**
-     * Add object to table.
-     * Returns Id if added.
-     *
-     * @access public
-     * @param array $data
-     * @return mixed
-     */
-    public function add(array $data = [])
-    {
-        $this->data = $data;
-        if ( $this->create() ) {
-            return (int)$this->db->lastInsertId();
+        if ( $this->bind($data)->create() ) {
+            return $this->lastInsertId();
         }
         return false;
     }
 
     /**
-     * Update object table.
+     * Get object by Id | Forced bind (Read).
+     *
+     * @access public
+     * @param mixed $id
+     * @return mixed
+     */
+    public function get($id)
+    {
+        return $this->bind([
+            $this->key => $id
+        ])->read();
+    }
+
+    /**
+     * Save object | Forced bind (Update).
      *
      * @access public
      * @param array $data
      * @return bool
      */
-    public function update(array $data = []) : bool
+    public function save(array $data) : bool
     {
-        $this->data = $data;
-        return (bool)$this->save();
+        return $this->bind($data)->update();
     }
 
     /**
-     * Remove object from table by Id.
+     * Remove object by Id | Forced bind (Delete).
      *
      * @access public
-     * @param int $clientId
+     * @param mixed $id
      * @return bool
      */
-    public function remove($Id = 0) : bool
+    public function remove($id) : bool
     {
-        $this->{$this->key} = (int)$Id;
-        return (bool)$this->delete();
+        return $this->bind([
+            $this->key => $id
+        ])->delete();
+    }
+
+    /**
+     * Check object exists by Id | Forced bind (Count).
+     *
+     * @access public
+     * @param mixed $id
+     * @return bool
+     */
+    public function exists($id) : bool
+    {
+        return (bool)$this->bind([
+            $this->key => $id
+        ])->count();
     }
 }

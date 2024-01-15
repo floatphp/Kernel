@@ -1,12 +1,11 @@
 <?php
 /**
- * @author     : JIHAD SINNAOUR
+ * @author     : Jakiboy
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.0.2
- * @category   : PHP framework
- * @copyright  : (c) 2017 - 2023 Jihad Sinnaour <mail@jihadsinnaour.com>
- * @link       : https://www.floatphp.com
+ * @version    : 1.1.0
+ * @copyright  : (c) 2018 - 2024 Jihad Sinnaour <mail@jihadsinnaour.com>
+ * @link       : https://floatphp.com
  * @license    : MIT
  *
  * This file if a part of FloatPHP Framework.
@@ -16,17 +15,14 @@ declare(strict_types=1);
 
 namespace FloatPHP\Kernel;
 
-use FloatPHP\Classes\Filesystem\{
-    File, Json
-};
 use FloatPHP\Helpers\Framework\{
-    Installer, Validator, Permission
+    Installer, Validator
 };
 
 class Module extends BaseController
 {
 	/**
-	 * @param void
+	 * @uses initConfig()
 	 */
 	public function __construct()
 	{
@@ -39,14 +35,14 @@ class Module extends BaseController
 
 	/**
 	 * @access public
-	 * @param mixed $roles
+	 * @param mixed $role
 	 * @return bool
 	 */
-	public function hasPermissions($roles = false) : bool
+	public function hasPermissions($role = false) : bool
 	{
 		if ( $this->isPermissions() ) {
-			if ( $roles ) {
-				return Permission::hasRole($roles);
+			if ( $role ) {
+				return $this->hasRole($role);
 			}
 		}
 		return true;
@@ -56,7 +52,6 @@ class Module extends BaseController
 	 * Get modules routes.
 	 *
 	 * @access public
-	 * @param void
 	 * @param array
 	 */
 	public function getModulesRoutes()
@@ -64,7 +59,7 @@ class Module extends BaseController
 		$wrapper = [];
 		if ( $this->getModules() ) {
 			foreach ( $this->getModules() as $key => $name ) {
-				$config = Json::parse("{$name}/module.json", true);
+				$config = $this->parseJson("{$name}/module.json", true);
 				if ( $config['enable'] == true ) {
 					foreach ($config['router'] as $route) {
 						$wrapper[] = $route;
@@ -111,22 +106,20 @@ class Module extends BaseController
 	 * Get modules routes.
 	 *
 	 * @access private
-	 * @param void
 	 * @param array
 	 */
 	private function loadModules()
 	{
 		foreach ( $this->getModules() as $name ) {
-			$config = Json::parse("{$name}/module.json");
+			$config = $this->parseJson("{$name}/module.json");
 			Validator::checkModuleConfig($config);
 			if ( $config->migrate ) {
-				$installer = new Installer();
-				$installer->migrate("{$name}/migrate");
+				(new Installer())->migrate("{$name}/migrate");
 			}
 			if ( $config->enable ) {
 				$basename = basename($name);
 				$namespace = "{$this->getModuleNamespace()}{$basename}\\{$basename}";
-				if ( File::exists("{$name}/{$basename}Module.php") ) {
+				if ( $this->hasFile("{$name}/{$basename}Module.php") ) {
 					$module = "{$namespace}Module";
 					new $module;
 				}

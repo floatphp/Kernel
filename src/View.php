@@ -1,12 +1,11 @@
 <?php
 /**
- * @author     : JIHAD SINNAOUR
+ * @author     : Jakiboy
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.0.2
- * @category   : PHP framework
- * @copyright  : (c) 2017 - 2023 Jihad Sinnaour <mail@jihadsinnaour.com>
- * @link       : https://www.floatphp.com
+ * @version    : 1.1.0
+ * @copyright  : (c) 2018 - 2024 Jihad Sinnaour <mail@jihadsinnaour.com>
+ * @link       : https://floatphp.com
  * @license    : MIT
  *
  * This file if a part of FloatPHP Framework.
@@ -17,13 +16,9 @@ declare(strict_types=1);
 namespace FloatPHP\Kernel;
 
 use FloatPHP\Classes\{
-    Filesystem\Stringify, Filesystem\Arrayify, Filesystem\Json, 
     Filesystem\Exception as ErrorHandler,
-    Http\Session, 
-    Html\Template
 };
-use FloatPHP\Helpers\Framework\Permission;
-use \Exception;
+use FloatPHP\Helpers\Html\Template;
 
 class View extends Base
 {
@@ -42,7 +37,7 @@ class View extends Base
      * @param array $callables
 	 * @return void
 	 */
-	protected function setCallables($callables = [])
+	protected function setCallables(array $callables = [])
 	{
 		$this->callables = $callables;
 	}
@@ -54,7 +49,7 @@ class View extends Base
      * @param array $content
      * @return void
      */
-    protected function setContent($content = [])
+    protected function setContent(array $content = [])
     {
         $this->content = $content;
     }
@@ -69,7 +64,7 @@ class View extends Base
      */
     protected function render($content = [], $tpl = 'system/default')
     {
-        echo $this->assign(Arrayify::merge($this->content, $content), $tpl);
+        echo $this->assign($content, $tpl);
     }
 
     /**
@@ -84,7 +79,7 @@ class View extends Base
 	{
         // Set View environment
         $path = $this->applyFilter('view-path', $this->getViewPath());
-        $env = Template::getEnvironment($path,[
+        $env = Template::getEnvironment($path, [
             'cache' => "{$this->getCachePath()}/view",
             'debug' => $this->isDebug()
         ]);
@@ -100,97 +95,130 @@ class View extends Base
         $env->addFunction(Template::extend('dump', function($var) {
             var_dump($var);
         }));
+
         $env->addFunction(Template::extend('die', function($var = null) {
             die($var);
         }));
+
         $env->addFunction(Template::extend('exit', function($status = null) {
             exit($status);
         }));
+
         $env->addFunction(Template::extend('getSession', function($var = null) {
-            return Session::get($var);
+            return $this->getSession($var);
         }));
-        $env->addFunction(Template::extend('hasCapability', function($capability = null, $userId = null) {
-            return Permission::hasCapability($capability, $userId);
-        }));
+
         $env->addFunction(Template::extend('hasRole', function($role = null, $userId = null) {
-            return Permission::hasRole($role, $userId);
+            return $this->hasRole($role, $userId);
         }));
+
+        $env->addFunction(Template::extend('hasCapability', function($capability = null, $userId = null) {
+            return $this->hasCapability($capability, $userId);
+        }));
+
         $env->addFunction(Template::extend('getLanguage', function() {
             return $this->getLanguage();
         }));
-        $env->addFunction(Template::extend('isLoggedIn', function() {
-			return $this->isLoggedIn();
+
+        $env->addFunction(Template::extend('isValidSession', function() {
+			return $this->isValidSession();
         }));
+
         $env->addFunction(Template::extend('isDebug', function() {
             return $this->isDebug();
         }));
+
         $env->addFunction(Template::extend('getConfig', function($config = '') {
             return $this->getConfig($config);
         }));
+
         $env->addFunction(Template::extend('getRoot', function() {
             return $this->getRoot();
         }));
+
         $env->addFunction(Template::extend('getBaseRoute', function() {
             return $this->getBaseRoute(false);
         }));
+
         $env->addFunction(Template::extend('getBaseUrl', function() {
             return $this->getBaseUrl();
         }));
+
         $env->addFunction(Template::extend('getAssetUrl', function() {
             return $this->getAssetUrl();
         }));
+
         $env->addFunction(Template::extend('getFrontUploadUrl', function() {
             return $this->getFrontUploadUrl();
         }));
+
         $env->addFunction(Template::extend('getLoginUrl', function() {
             return $this->getLoginUrl();
         }));
+
         $env->addFunction(Template::extend('getAdminUrl', function() {
             return $this->getAdminUrl();
         }));
+
         $env->addFunction(Template::extend('getVerifyUrl', function() {
             return $this->getVerifyUrl();
         }));
-        $env->addFunction(Template::extend('getToken', function($action = '') {
-			return $this->getToken($action);
+
+        $env->addFunction(Template::extend('getTimeout', function() {
+			return $this->getTimeout();
         }));
+
+        $env->addFunction(Template::extend('getToken', function($source = '') {
+            return $this->getToken($source);
+        }));
+
         $env->addFunction(Template::extend('decodeJSON', function($json = '') {
-            return Json::decode($json);
+            return $this->decodeJson($json);
         }));
+
         $env->addFunction(Template::extend('encodeJSON', function($array = []) {
-            return Json::encode($array);
+            return $this->encodeJson($array);
         }));
+
         $env->addFunction(Template::extend('serialize', function($data = []) {
-            return Stringify::serialize($data);
+            return $this->serialize($data);
         }));
+
         $env->addFunction(Template::extend('unserialize', function($string = '') {
-            return Stringify::unserialize($string);
+            return $this->unserialize($string);
         }));
+
         $env->addFunction(Template::extend('doAction', function($hook = '', $args = []) {
             $this->doAction($hook, $args);
         }));
+
         $env->addFunction(Template::extend('hasAction', function($hook = '', $args = []) {
             $this->hasAction($hook, $args);
         }));
+
         $env->addFunction(Template::extend('applyFilter', function($hook = '', $method = '') {
             return $this->applyFilter($hook , $method);
         }));
+
         $env->addFunction(Template::extend('hasFilter', function($hook = '', $method = '') {
             return $this->hasFilter($hook, $method);
         }));
+
         $env->addFunction(Template::extend('doShortcode', function($shortcode = '', $ignoreHTML = false) {
             return $this->doShortcode($shortcode, $ignoreHTML);
         }));
+
         $env->addFunction(Template::extend('translate', function($string = '') {
             return $this->translate($string);
         }));
 
         // Return rendered view
         try {
+            $content = $this->mergeArray($this->content, $content);
             $view = $env->load("{$tpl}{$this->getViewExtension()}");
-            return $view->render(Arrayify::merge($this->content, $content));
+            return $view->render($content);
             
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             ErrorHandler::clearLastError();
         }
 

@@ -1,12 +1,11 @@
 <?php
 /**
- * @author     : JIHAD SINNAOUR
+ * @author     : Jakiboy
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.0.2
- * @category   : PHP framework
- * @copyright  : (c) 2017 - 2023 Jihad Sinnaour <mail@jihadsinnaour.com>
- * @link       : https://www.floatphp.com
+ * @version    : 1.1.0
+ * @copyright  : (c) 2018 - 2024 Jihad Sinnaour <mail@jihadsinnaour.com>
+ * @link       : https://floatphp.com
  * @license    : MIT
  *
  * This file if a part of FloatPHP Framework.
@@ -16,37 +15,36 @@ declare(strict_types=1);
 
 namespace FloatPHP\Kernel;
 
-use FloatPHP\Classes\{
-    Http\Session, Http\Cookie
-};
-use FloatPHP\Helpers\Framework\Permission;
-
 class BackendController extends BaseController
 {
 	/**
+	 * Check whether user (current) has permissions.
+	 * 
 	 * @access public
-	 * @param mixed $roles
+	 * @param mixed $role
 	 * @return bool
 	 */
-	public function hasPermissions($roles = false) : bool
+	public function hasPermissions($role = false) : bool
 	{
 		if ( $this->isPermissions() ) {
-			if ( $roles ) {
-				return Permission::hasRole($roles);
+			if ( $role ) {
+				return $this->hasRole($role);
 			}
 		}
 		return true;
 	}
 
 	/**
+	 * User logout.
+	 * 
 	 * @access public
-	 * @param void
 	 * @return void
 	 */
 	public function logout()
 	{
-		Session::end();
-		Cookie::clear();
-		die();
+		$this->verifyRequest();
+		$this->clearCookie();
+		$this->endSession();
+		$this->redirect($this->getLoginUrl());
 	}
 }

@@ -1,12 +1,11 @@
 <?php
 /**
- * @author     : JIHAD SINNAOUR
+ * @author     : Jakiboy
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.0.2
- * @category   : PHP framework
- * @copyright  : (c) 2017 - 2023 Jihad Sinnaour <mail@jihadsinnaour.com>
- * @link       : https://www.floatphp.com
+ * @version    : 1.1.0
+ * @copyright  : (c) 2018 - 2024 Jihad Sinnaour <mail@jihadsinnaour.com>
+ * @link       : https://floatphp.com
  * @license    : MIT
  *
  * This file if a part of FloatPHP Framework.
@@ -16,17 +15,14 @@ declare(strict_types=1);
 
 namespace FloatPHP\Kernel;
 
-use FloatPHP\Classes\{
-    Filesystem\TypeCheck,
-    Filesystem\Stringify,
-    Filesystem\File,
-    Filesystem\Json, 
-    Http\Server
-};
 use FloatPHP\Helpers\Framework\Validator;
+use FloatPHP\Classes\Http\Server;
 
 trait TraitConfiguration
 {
+	use \FloatPHP\Helpers\Framework\inc\TraitIO,
+		\FloatPHP\Helpers\Framework\inc\TraitFormattable;
+
 	/**
 	 * @access private
 	 * @var object $global
@@ -34,30 +30,55 @@ trait TraitConfiguration
 	 */
 	private $global = false;
 	private $routes = [];
+	
+	/**
+	 * Init configuration.
+	 */
+	public function __construct()
+	{
+		$this->initConfig();
+	}
+
+	/**
+	 * Prevent object clone.
+	 */
+    public function __clone()
+    {
+        die(__METHOD__ . ': Clone denied');
+    }
+
+	/**
+	 * Prevent object serialization.
+	 */
+    public function __wakeup()
+    {
+        die(__METHOD__ . ': Unserialize denied');
+    }
 
 	/**
 	 * Set config Json file,
 	 * Allow parent config access.
 	 *
 	 * @access protected
-	 * @param void
 	 * @return void
 	 */
 	protected function initConfig()
 	{
-		// Parse Config file
-		if ( File::exists(($path = $this->getConfigFile())) ) {
-			Validator::checkConfig(($config = Json::parse($path)));
+		// Parse config file
+		if ( $this->hasFile(($path = $this->getConfigFile())) ) {
+			Validator::checkConfig(($config = $this->parseJson($path)));
 			$this->global = $config;
 
 		} else {
-			// Parse Default Config
-			$this->global = Json::parse(dirname(__FILE__).'/bin/config.default.json');
+			// Parse default config
+			$this->global = $this->parseJson(
+				dirname(__FILE__) . '/bin/config.default.json'
+			);
 		}
 
 		// Set routes config
-		if ( File::exists(($path = $this->getRoutesFile())) ) {
-			Validator::checkRouteConfig(($routes = Json::parse($path, true)));
+		if ( $this->hasFile(($path = $this->getRoutesFile())) ) {
+			Validator::checkRouteConfig(($routes = $this->parseJson($path, true)));
 			$this->routes = $routes;
 		}
 	}
@@ -66,7 +87,6 @@ trait TraitConfiguration
 	 * Reset config.
 	 *
 	 * @access protected
-	 * @param void
 	 * @return void
 	 */
 	protected function resetConfig()
@@ -95,27 +115,27 @@ trait TraitConfiguration
 	 *
 	 * @access protected
 	 * @param array $options
+	 * @param string $section
 	 * @param int $args
-	 * @return void
+	 * @return bool
 	 */
-	protected function updateConfig($options = [], $section = 'options', $args = 64|128|256)
+	protected function updateConfig(array $options = [], string $section = 'options', int $args = 64|128|256) : bool
 	{
-		$config = Json::parse($this->getConfigFile(), true);
+		$config = $this->parseJson($this->getConfigFile(), true);
 		foreach ($options as $option => $value) {
 			if ( isset($config[$section][$option]) ) {
 				$config[$section][$option] = $value;
 			}
 		}
-		$config = Json::format($config, $args);
-		File::w($this->getConfigFile(), $config);
+		$config = $this->formatJson($config, $args);
+		return $this->writeFile($this->getConfigFile(), $config);
 	}
 
 	/**
-	 * Get global config file path.
+	 * Get config file path.
 	 *
 	 * @access protected
-	 * @param void
-	 * @return array
+	 * @return string
 	 */
 	protected function getConfigFile() : string
 	{
@@ -130,11 +150,11 @@ trait TraitConfiguration
 	 * @param bool $isArray
 	 * @return mixed
 	 */
-	protected function loadConfig($config = '', $isArray = false)
+	protected function loadConfig(string $config, bool $isArray = false)
 	{
 		$dir = "{$this->getAppDir()}/Storage/config";
-		if ( File::exists( ($json = "{$dir}/{$config}.json") ) ) {
-			return Json::decode(File::r($json), $isArray);
+		if ( $this->hasFile( ($json = "{$dir}/{$config}.json") ) ) {
+			return $this->decodeJson($this->readfile($json), $isArray);
 		}
 		return false;
 	}
@@ -143,20 +163,18 @@ trait TraitConfiguration
 	 * Get app dir.
 	 *
 	 * @access protected
-	 * @param void
 	 * @return string
 	 */
 	protected function getAppDir() : string
 	{
 		global $appDir;
-		return Stringify::formatPath($appDir, true);
+		return $this->formatPath($appDir, true);
 	}
 
 	/**
 	 * Get dir root.
 	 *
 	 * @access protected
-	 * @param void
 	 * @return string
 	 */
 	protected function getRoot() : string
@@ -175,12 +193,12 @@ trait TraitConfiguration
 	{
 		$path = "{$this->global->path->base}";
 		if ( !empty($path) ) {
-			$path = ltrim($path,'/');
-			$path = rtrim($path,'/');
+			$path = ltrim($path, '/');
+			$path = rtrim($path, '/');
 			if ( $trailingSlash ) {
-				$path = Stringify::trailingSlash($path);
+				$path = $this->trailingSlash($path);
 			}
-			$path = Stringify::formatPath($path);
+			$path = $this->formatPath($path);
 		}
 		return $path;
 	}
@@ -189,7 +207,6 @@ trait TraitConfiguration
 	 * Get routes.
 	 *
 	 * @access protected
-	 * @param void
 	 * @return array
 	 */
 	protected function getRoutes() : array
@@ -201,96 +218,91 @@ trait TraitConfiguration
 	 * Get controller namespace.
 	 *
 	 * @access protected
-	 * @param void
 	 * @return string
 	 */
 	protected function getControllerNamespace() : string
 	{
 		$namespace = "{$this->global->namespace->controller}";
-		return Stringify::replace('/', '\\', $namespace);
+		return $this->replaceString('/', '\\', $namespace);
 	}
 
 	/**
 	 * Get module namespace.
 	 *
 	 * @access protected
-	 * @param void
 	 * @return string
 	 */
 	protected function getModuleNamespace() : string
 	{
 		$namespace = "{$this->global->namespace->module}";
-		return Stringify::replace('/','\\',$namespace);
+		return $this->replaceString('/', '\\', $namespace);
 	}
 
 	/**
 	 * Get database access.
 	 *
 	 * @access protected
-	 * @param void
 	 * @return array
 	 */
-	protected function getDatabaseAccess() : array
+	protected function getDbAccess() : array
 	{
-		$access = File::parseIni($this->getDatabaseFile(),true);
-		Validator::checkDatabaseAccess($access);
-		return [
-			'db'      => $access['default']['db']      ?? '',
-			'host'    => $access['default']['host']    ?? 'localhost',
-			'port'    => $access['default']['port']    ?? 3306,
-			'user'    => $access['default']['user']    ?? '',
-			'pswd'    => $access['default']['pswd']    ?? '',
-			'charset' => $access['default']['charset'] ?? ''
-		];
+		$access = $this->parseIni($this->getDatabaseFile(), true);
+		Validator::checkDatabaseConfig($access);
+		return $this->mergeArray([
+            'db'      => '',
+            'host'    => 'localhost',
+            'port'    => 3306,
+            'user'	  => '',
+            'pswd'    => '',
+            'charset' => 'utf8',
+            'collate' => 'utf8_general_ci'
+        ], $access['default']);
 	}
 
 	/**
 	 * Get database root access.
 	 *
 	 * @access protected
-	 * @param void
 	 * @return array
 	 */
-	protected function getDatabaseRootAccess() : array
+	protected function getDbRootAccess() : array
 	{
-		$access = File::parseIni($this->getDatabaseFile(),true);
-		Validator::checkDatabaseAccess($access);
-		return [
-			'user' => $access['root']['user'] ?? 'root',
-			'pswd' => $access['root']['pswd'] ?? ''
-		];
+		$access = $this->parseIni($this->getDatabaseFile(), true);
+		Validator::checkDatabaseConfig($access);
+		return $this->mergeArray([
+            'user' => '',
+            'pswd' => ''
+        ], $access['root']);
 	}
 
 	/**
 	 * Get cache path.
 	 *
 	 * @access protected
-	 * @param void
 	 * @return string
 	 */
 	protected function getCachePath() : string
 	{
 		$path = "{$this->getRoot()}/{$this->global->path->cache}";
-		return Stringify::formatPath($path, true);
+		return $this->formatPath($path, true);
 	}
 
 	/**
 	 * Get view path.
 	 *
 	 * @access protected
-	 * @param void
 	 * @return array
 	 */
 	protected function getViewPath() : array
 	{
 		$path = $this->global->path->view;
-		if ( TypeCheck::isArray($path) ) {
+		if ( $this->isType('array', $path) ) {
 			foreach ($path as $key => $view) {
-				$path[$key] = Stringify::formatPath("{$this->getRoot()}/{$view}",1);
+				$path[$key] = $this->formatPath("{$this->getRoot()}/{$view}", true);
 			}
 		} else {
 			$path = "{$this->getRoot()}/{$this->global->path->view}";
-			$path = Stringify::formatPath($path, true);
+			$path = $this->formatPath($path, true);
 		}
 		return (array)$path;
 	}
@@ -299,72 +311,66 @@ trait TraitConfiguration
 	 * Get translation path.
 	 *
 	 * @access protected
-	 * @param void
 	 * @return string
 	 */
 	protected function getTranslatePath() : string
 	{
 		$path = "{$this->getRoot()}/{$this->global->path->translation}";
-		return Stringify::formatPath($path, true);
+		return $this->formatPath($path, true);
 	}
 
 	/**
 	 * Get logs path.
 	 *
 	 * @access protected
-	 * @param void
 	 * @return string
 	 */
 	protected function getLoggerPath() : string
 	{
 		$path = "{$this->getRoot()}/{$this->global->path->logs}";
-		return Stringify::formatPath($path, true);
+		return $this->formatPath($path, true);
 	}
 
 	/**
 	 * Get migrate path.
 	 *
 	 * @access protected
-	 * @param void
 	 * @return string
 	 */
 	protected function getMigratePath() : string
 	{
 		$path = "{$this->getRoot()}/{$this->global->path->migrate}";
-		return Stringify::formatPath($path, true);
+		return $this->formatPath($path, true);
 	}
 
 	/**
 	 * Get modules path.
 	 *
 	 * @access protected
-	 * @param void
 	 * @return string
 	 */
 	protected function getModulesPath() : string
 	{
 		$path = "{$this->getRoot()}/{$this->global->path->modules}";
-		return Stringify::formatPath($path, true);
+		return $this->formatPath($path, true);
 	}
 
 	/**
 	 * Get modules url.
 	 *
 	 * @access protected
-	 * @param void
 	 * @return string
 	 */
 	protected function getModulesUrl() : string
 	{
 		$path = "{$this->getBaseUrl()}/{$this->global->path->modules}";
-		return Stringify::formatPath($path, true);
+		return $this->formatPath($path, true);
 	}
 
 	/**
 	 * Get modules.
 	 *
 	 * @access protected
-	 * @param void
 	 * @return array
 	 */
 	protected function getModules() : array
@@ -376,14 +382,13 @@ trait TraitConfiguration
 	 * Get modules config.
 	 *
 	 * @access protected
-	 * @param void
 	 * @return array
 	 */
 	protected function getModulesConfig() : array
 	{
 		$list = [];
 		foreach ( $this->getModules() as $name ) {
-			$config = Json::parse("{$name}/module.json");
+			$config = $this->parseJson("{$name}/module.json");
 			$list[] = [
 				'name'        => $config->name,
 				'description' => $config->description,
@@ -395,10 +400,20 @@ trait TraitConfiguration
 	}
 
 	/**
+	 * Get timeout.
+	 *
+	 * @access protected
+	 * @return int
+	 */
+	protected function getTimeout() : int
+	{
+		return $this->global->options->timeout;
+	}
+
+	/**
 	 * Get expire.
 	 *
 	 * @access protected
-	 * @param void
 	 * @return int
 	 */
 	protected function getCacheTTL() : int
@@ -410,7 +425,6 @@ trait TraitConfiguration
 	 * Get view extension.
 	 *
 	 * @access protected
-	 * @param void
 	 * @return string
 	 */
 	protected function getViewExtension() : string
@@ -422,105 +436,99 @@ trait TraitConfiguration
 	 * Get base url.
 	 *
 	 * @access protected
-	 * @param void
 	 * @return string
 	 */
 	protected function getBaseUrl() : string
 	{
 		$url = Server::getBaseUrl();
 		$route = $this->getBaseRoute();
-		return Stringify::untrailingSlash("{$url}/{$route}");
+		return $this->untrailingSlash("{$url}/{$route}");
 	}
 
 	/**
 	 * Get assets url.
 	 *
 	 * @access protected
-	 * @param void
 	 * @return string
 	 */
 	protected function getAssetUrl() : string
 	{
 		$url = "{$this->getBaseUrl()}{$this->global->path->assets}";
-		return Stringify::untrailingSlash($url);
+		return $this->untrailingSlash($url);
 	}
 
 	/**
 	 * Get assets path.
 	 *
 	 * @access protected
-	 * @param void
 	 * @return string
 	 */
 	protected function getAssetPath() : string
 	{
 		$path = "{$this->getRoot()}/{$this->global->path->assets}";
-		return Stringify::formatPath($path, true);
+		return $this->formatPath($path, true);
 	}
 
 	/**
 	 * Get front upload url.
 	 *
 	 * @access protected
-	 * @param void
 	 * @return string
 	 */
 	protected function getFrontUploadUrl() : string
 	{
 		$url = "{$this->getBaseUrl()}{$this->global->path->upload->front}";
-		return Stringify::untrailingSlash($url);
+		return $this->untrailingSlash($url);
 	}
 
 	/**
 	 * Get front upload path.
 	 *
 	 * @access protected
-	 * @param void
 	 * @return string
 	 */
 	protected function getFrontUploadPath() : string
 	{
 		$path = "{$this->getRoot()}/{$this->global->path->upload->front}";
-		return Stringify::formatPath($path, true);
+		return $this->formatPath($path, true);
 	}
 
 	/**
 	 * Get upload url.
 	 *
 	 * @access protected
-	 * @param void
 	 * @return string
 	 */
 	protected function getAdminUploadUrl() : string
 	{
 		$url = "{$this->getBaseUrl()}{$this->global->path->upload->admin}";
-		return Stringify::untrailingSlash($url);
+		return $this->untrailingSlash($url);
 	}
 
 	/**
 	 * Get admin upload path.
 	 *
 	 * @access protected
-	 * @param void
+	 * @param string $path
 	 * @return string
 	 */
-	protected function getAdminUploadPath() : string
+	protected function getAdminUploadPath(?string $path = null) : string
 	{
-		$path = "{$this->getRoot()}/{$this->global->path->upload->admin}";
-		return Stringify::formatPath($path, true);
+		$path = "{$this->getRoot()}/{$this->global->path->upload->admin}/{$path}";
+		return $this->formatPath($path, true);
 	}
 
 	/**
-	 * Get admin storage path.
+	 * Get admin path.
 	 *
 	 * @access protected
 	 * @param string $path
 	 * @return string
 	 */
-	protected function getStoragePath($path = 'Storage') : string
+	protected function getAdminPath(?string $path = null) : string
 	{
 		$path = "{$this->getAppDir()}/{$path}";
-		return Stringify::formatPath($path, true);
+		return $this->formatPath($path, true);
 	}
 
 	/**
@@ -530,42 +538,39 @@ trait TraitConfiguration
 	 * @param string $path
 	 * @return string
 	 */
-	protected function getPublicPath($path = 'public') : string
+	protected function getPublicPath(?string $path = null) : string
 	{
-		return "{$this->getRoot()}/{$path}";
+		return "{$this->getRoot()}/public/{$path}";
 	}
 
 	/**
 	 * Get routes file path.
 	 *
 	 * @access protected
-	 * @param void
-	 * @return array
+	 * @return string
 	 */
 	protected function getRoutesFile() : string
 	{
 		$path = "{$this->getRoot()}/{$this->global->path->routes}";
-		return Stringify::formatPath($path, true);
+		return $this->formatPath($path, true);
 	}
 
 	/**
 	 * Get database file path.
 	 *
 	 * @access protected
-	 * @param void
-	 * @return array
+	 * @return string
 	 */
 	protected function getDatabaseFile() : string
 	{
 		$path = "{$this->getRoot()}/{$this->global->path->db}";
-		return Stringify::formatPath($path, true);
+		return $this->formatPath($path, true);
 	}
 
 	/**
 	 * Get admin url.
 	 *
 	 * @access protected
-	 * @param void
 	 * @return string
 	 */
 	protected function getAdminUrl() : string
@@ -577,7 +582,6 @@ trait TraitConfiguration
 	 * Get verify url.
 	 *
 	 * @access protected
-	 * @param void
 	 * @return string
 	 */
 	protected function getVerifyUrl() : string
@@ -589,7 +593,6 @@ trait TraitConfiguration
 	 * Get login url.
 	 *
 	 * @access protected
-	 * @param void
 	 * @return string
 	 */
 	protected function getLoginUrl() : string
@@ -598,10 +601,20 @@ trait TraitConfiguration
 	}
 
 	/**
+	 * Get API base url.
+	 *
+	 * @access protected
+	 * @return string
+	 */
+	protected function getApiBaseUrl() : string
+	{
+		return "{$this->global->url->api}";
+	}
+
+	/**
 	 * Get API username.
 	 *
 	 * @access protected
-	 * @param void
 	 * @return string
 	 */
 	protected function getApiUsername() : string
@@ -613,7 +626,6 @@ trait TraitConfiguration
 	 * Get API password.
 	 *
 	 * @access protected
-	 * @param void
 	 * @return string
 	 */
 	protected function getApiPassword() : string
@@ -625,7 +637,6 @@ trait TraitConfiguration
 	 * Get allowed Access.
 	 *
 	 * @access protected
-	 * @param void
 	 * @return array
 	 */
 	protected function getAllowedAccess() : array
@@ -637,7 +648,6 @@ trait TraitConfiguration
 	 * Get denied Access.
 	 *
 	 * @access protected
-	 * @param void
 	 * @return array
 	 */
 	protected function getDeniedAccess() : array
@@ -649,7 +659,6 @@ trait TraitConfiguration
 	 * Get session ID.
 	 *
 	 * @access protected
-	 * @param void
 	 * @return string
 	 */
 	protected function getSessionId() : string
@@ -661,7 +670,6 @@ trait TraitConfiguration
 	 * Get access expire.
 	 *
 	 * @access protected
-	 * @param void
 	 * @return int
 	 */
 	protected function getAccessExpire() : int
@@ -690,7 +698,6 @@ trait TraitConfiguration
 	 * Get permissions status.
 	 *
 	 * @access protected
-	 * @param void
 	 * @return bool
 	 */
 	protected function isPermissions() : bool
@@ -702,7 +709,6 @@ trait TraitConfiguration
 	 * Get debug status.
 	 *
 	 * @access protected
-	 * @param void
 	 * @return bool
 	 */
 	protected function isDebug() : bool
@@ -714,12 +720,35 @@ trait TraitConfiguration
 	 * Get strings.
 	 *
 	 * @access protected
-	 * @param void
 	 * @return array
 	 */
 	protected function getStrings()
 	{
 		$strings = $this->loadConfig('strings', true);
 		return ($strings) ? (array)$strings : (array)$this->global->strings;
+	}
+
+	/**
+	 * Get vars.
+	 *
+	 * @access protected
+	 * @return array
+	 */
+	protected function getVars()
+	{
+		$vars = $this->loadConfig('vars', true);
+		return ($vars) ? (array)$vars : (array)$this->global->vars;
+	}
+
+	/**
+	 * Get menu.
+	 *
+	 * @access protected
+	 * @return array
+	 */
+	protected function getMenu()
+	{
+		$menu = $this->loadConfig('menu', true);
+		return ($menu) ? (array)$menu : (array)$this->global->menu;
 	}
 }
