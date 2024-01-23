@@ -117,7 +117,7 @@ class Module extends BaseController
 				(new Installer())->migrate("{$name}/migrate");
 			}
 			if ( $config->enable ) {
-				$basename = basename($name);
+				$basename = $this->basename($name);
 				$namespace = "{$this->getModuleNamespace()}{$basename}\\{$basename}";
 				if ( $this->hasFile("{$name}/{$basename}Module.php") ) {
 					$module = "{$namespace}Module";
