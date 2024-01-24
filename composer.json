@@ -1,6 +1,6 @@
 {
   "name": "floatphp/kernel",
-  "version" : "1.1.0",
+  "version" : "1.1.1",
   "type": "library",
   "description": "FloatPHP Kernel Components",
   "keywords": ["php","micro-framework","framework","PSR","ORM","jakiboy","composer"],
@@ -19,11 +19,11 @@
     "ext-intl": "*",
     "twig/twig": "^3.8.0",
     "justinrainbow/json-schema": "^5.2.13",
-    "floatphp/classes": "^1.1.0",
-    "floatphp/helpers": "^1.1.0",
-    "floatphp/interfaces": "^1.1.0",
-    "floatphp/exceptions": "^1.1.0",
-    "floatphp/cli": "^1.1.0"
+    "floatphp/classes": "^1.1.1",
+    "floatphp/helpers": "^1.1.1",
+    "floatphp/interfaces": "^1.1.1",
+    "floatphp/exceptions": "^1.1.1",
+    "floatphp/cli": "^1.1.1"
   },
   "autoload": {
     "psr-4" : {
