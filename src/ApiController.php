@@ -33,18 +33,18 @@ class ApiController extends BaseController
 		if ( $this->applyFilter('basic-authentication', true) ) {
 			if ( $this->isBasicAuth() ) {
 
-				$username = $this->getBasicAuthUser();
-				$password = $this->getBasicAuthPwd();
+				$user = $this->getBasicAuthUser();
+				$pswd = $this->getBasicAuthPwd();
 
 	        	// API authenticate override
 				$this->doAction('api-authenticate', [
-					'username' => $username,
+					'username' => $user,
 					'address'  => $this->getServerIp(),
 					'method'   => 'basic'
 				]);
 
-			    if ( $username == $this->getApiUsername() 
-			      && $password == $this->getApiPassword() ) {
+			    if ( $user == $this->getApiUsername() 
+			      && $pswd == $this->getApiPassword() ) {
 				    return true;
 			    }
 			}
@@ -74,22 +74,22 @@ class ApiController extends BaseController
 	 */
 	protected function isGranted(string $token) : bool
 	{
-        $access   = $this->getTokenAccess($token, $this->getSecret(true));
-        $username = $this->matchString($this->getTokenPattern(), $access, 1);
-        $password = $this->matchString($this->getTokenPattern(), $access, 2);
+        $access = $this->getTokenAccess($token, $this->getSecret(true));
+        $user = $access['user'] ?? false;
+        $pswd = $access['pswd'] ?? false;
 
-        if ( $username && $password ) {
+        if ( $user && $pswd ) {
 
         	// API authenticate override
 			$this->doAction('api-authenticate', [
-				'username' => $username,
+				'username' => $user,
 				'address'  => $this->getServerIp(),
 				'method'   => 'token'
 			]);
 
 			// Match authentication
-			if ( $username == $this->getApiUsername() 
-			  && $password == $this->getApiPassword() ) {
+			if ( $user == $this->getApiUsername() 
+			  && $pswd == $this->getApiPassword() ) {
 			    return true;
 			}
         }
