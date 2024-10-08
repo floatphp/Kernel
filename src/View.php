@@ -3,7 +3,7 @@
  * @author     : Jakiboy
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.1.1
+ * @version    : 1.1.0
  * @copyright  : (c) 2018 - 2024 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://floatphp.com
  * @license    : MIT
@@ -73,9 +73,9 @@ class View extends Base
      * @access protected
 	 * @param array $content
      * @param string $tpl
-	 * @return mixed
+	 * @return string
 	 */
-	protected function assign($content = [], $tpl = 'system/default')
+	protected function assign($content = [], $tpl = 'system/default') : string
 	{
         // Set View environment
         $path = $this->applyFilter('view-path', $this->getViewPath());
@@ -217,11 +217,14 @@ class View extends Base
             $content = $this->mergeArray($this->content, $content);
             $view = $env->load("{$tpl}{$this->getViewExtension()}");
             return $view->render($content);
-            
+
         } catch (\Exception $e) {
+            if ( $this->isDebug() ) {
+                die($e->getMessage());
+            }
             ErrorHandler::clearLastError();
         }
 
-        return false;
+        return '{}';
 	}
 }
