@@ -111,7 +111,8 @@ class BaseController extends View
 		if ( !empty($token) ) {
 
 			$transient = new Transient();
-			$data = $this->unserialize($transient->getTemp($token));
+			$data = (string)$transient->getTemp($token);
+			$data = $this->unserialize($data);
 
 			// Override
 			$this->doAction('verify-token', $data);
