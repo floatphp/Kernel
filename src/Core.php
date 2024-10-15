@@ -25,24 +25,27 @@ final class Core
 		\FloatPHP\Helpers\Framework\inc\TraitSessionable;
 
 	/**
+	 * Init Core.
+	 *
 	 * @param array $config
 	 */
 	public function __construct(array $config = [])
 	{
-		$config = (new Installer())->parse($config);
+		$config = (new Installer())->default($config);
 
-		// FloatPHP setup
+		// Setup
 		if ( $config['--disable-setup'] !== true ) {
 			if ( !Installer::isInstalled() ) {
-				(new Installer())->setup();
+				$db = ($config['--disable-database'] === true) ? false : true;
+				(new Installer())->setup($db);
 			}
 		}
 
-		// FloatPHP X-Powered-By header
+		// X-Powered-By header
 		if ( $config['--disable-powered-by'] !== true ) {
 			header('X-Powered-By:FloatPHP');
 		}
-		
+
 		// Start session
 		if ( $config['--disable-session'] !== true ) {
 			$this->startSession();
@@ -54,7 +57,7 @@ final class Core
 			$this->throwError(503);
 		}
 
-		// FloatPHP timezone
+		// Timezone
 		$this->setDefaultTimezone($config['--default-timezone']);
 
 		// Start routing

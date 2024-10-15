@@ -24,7 +24,7 @@ class Model extends Orm
 	{
 		parent::__construct();
 	}
-    
+
     /**
      * Add object | Forced bind (Create).
      *

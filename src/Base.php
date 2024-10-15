@@ -99,21 +99,17 @@ class Base
 		$slug = $this->limitString($slug);
 
 		$cache = new Cache();
-		$lang = $this->getLanguage();
-		$key = $cache->generateKey('i18n', false, [
-			'lang'   => $lang,
-			'length' => $length,
-			'slug'   => $slug
-		]);
+		$lang  = $this->getLanguage();
+		$key   = "i18n-{$lang}-{$length}-{$slug}";
 
-		$translation = $cache->get($key);
-		if ( !$cache->isCached() ) {
+		$data = $cache->get($key, $status);
+		if ( !$status ) {
 			$translator = new Translator($lang);
-			$translation = $translator->translate($string);
-			$cache->set($translation, 'translation');
+			$data = $translator->translate($string);
+			$cache->set($key, $data, 0);
 		}
 
-		return (string)$translation;
+		return (string)$data;
 	}
 
 	/**
