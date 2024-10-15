@@ -45,7 +45,7 @@ abstract class AbstractAuthController extends BaseController
 	 * @param array $args
 	 * @return void
 	 */
-	protected function authenticate(AuthenticationInterface $auth, $args = [])
+	protected function authenticate(AuthenticationInterface $auth, array $args = [])
 	{
 		// Security
 		$this->verifyRequest(true);
@@ -56,18 +56,21 @@ abstract class AbstractAuthController extends BaseController
 			'password' => $this->getRequest('password')
 		], $args);
 
+		$username = (string)$args['username'];
+		$password = (string)$args['password'];
+
 		// Authenticate override
-		$this->doAction('authenticate', $args['username']);
+		$this->doAction('authenticate', $username);
 
 		// Verify authentication
-		if ( ($user = $auth->getUser($args['username'])) ) {
+		if ( ($user = $auth->getUser($username)) ) {
 
 			// Check password
-			if ( $this->isPassword($args['password'], $user['password']) ) {
+			if ( $this->isPassword($password, $user['password']) ) {
 
 				// Check password format
 				if ( $this->applyFilter('authenticate-strong-password', false) ) {
-					if ( !$this->isStrongPassword($args['password']) ) {
+					if ( !$this->isStrongPassword($password) ) {
 						// Authenticate failed
 						$msg = $this->applyFilter('authenticate-password-message', 'Strong password required');
 						$msg = $this->translate($msg);
@@ -81,8 +84,8 @@ abstract class AbstractAuthController extends BaseController
 				// Check valid session
 				if ( $this->isValidSession() ) {
 
-					if ( $auth->hasSecret($args['username']) ) {
-						$this->setSession('--verify', $args['username']);
+					if ( $auth->hasSecret($username) ) {
+						$this->setSession('--verify', $username);
 						// Authenticate accepted
 						$msg = $this->applyFilter('authenticate-accepted-message', 'Accepted');
 						$msg = $this->translate($msg);
@@ -103,7 +106,7 @@ abstract class AbstractAuthController extends BaseController
 		}
 
 		// Authenticate failed override
-		$this->doAction('authenticate-failed', $args['username']);
+		$this->doAction('authenticate-failed', $username);
 
 		// Authenticate failed
 		$msg = $this->applyFilter('authenticate-error-message', 'Authentication failed');
