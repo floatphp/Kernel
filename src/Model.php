@@ -26,22 +26,23 @@ class Model extends Orm
 	}
 
     /**
-     * Add object | Forced bind (Create).
+     * Add item.
      *
      * @access public
      * @param array $bind
-     * @return mixed
+     * @return bool
      */
-    public function add(array $data)
+    public function add(array $data, ?int $id = null) : bool
     {
         if ( $this->bind($data)->create() ) {
-            return $this->lastInsertId();
+            $id = $this->lastInsertId();
+            return true;
         }
         return false;
     }
 
     /**
-     * Get object by Id | Forced bind (Read).
+     * Get item by Id.
      *
      * @access public
      * @param mixed $id
@@ -55,7 +56,7 @@ class Model extends Orm
     }
 
     /**
-     * Save object | Forced bind (Update).
+     * Save item.
      *
      * @access public
      * @param array $data
@@ -67,7 +68,7 @@ class Model extends Orm
     }
 
     /**
-     * Remove object by Id | Forced bind (Delete).
+     * Remove item by Id.
      *
      * @access public
      * @param mixed $id
@@ -81,7 +82,7 @@ class Model extends Orm
     }
 
     /**
-     * Check object exists by Id | Forced bind (Count).
+     * Check item exists by Id.
      *
      * @access public
      * @param mixed $id
