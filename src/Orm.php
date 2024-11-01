@@ -438,7 +438,7 @@ class Orm implements OrmInterface
 		$sql .= "{$this->getSortQuery($sort)};";
 		return (array)$this->execute($sql, true);
 	}
-	
+
 	/**
 	 * Get min value.
 	 *
