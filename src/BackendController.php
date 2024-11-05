@@ -19,7 +19,7 @@ class BackendController extends BaseController
 {
 	/**
 	 * Check whether user (current) has permissions.
-	 * 
+	 *
 	 * @access public
 	 * @param mixed $role
 	 * @return bool
@@ -36,7 +36,7 @@ class BackendController extends BaseController
 
 	/**
 	 * User logout.
-	 * 
+	 *
 	 * @access public
 	 * @return void
 	 */
