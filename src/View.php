@@ -15,31 +15,30 @@ declare(strict_types=1);
 
 namespace FloatPHP\Kernel;
 
-use FloatPHP\Classes\{
-    Filesystem\Exception as ErrorHandler,
+use FloatPHP\Interfaces\Kernel\{
+    ViewInterface, CallableInterface
 };
-use FloatPHP\Helpers\Html\Template;
 
-class View extends Base
+class View extends Base implements ViewInterface
 {
+    use \FloatPHP\Helpers\Framework\inc\TraitViewable;
+
     /**
-     * @access protected
+     * @access private
      * @var array $callables
      * @var array $content
      */
-    protected $callables = false;
-    protected $content = [];
+    private $callables = [];
+    private $content = [];
 
 	/**
-	 * Define custom callables.
-	 *
-	 * @access protected
-     * @param array $callables
-	 * @return void
+	 * @inheritdoc
 	 */
-	protected function setCallables(array $callables = [])
+	public function setCallables(?CallableInterface $callable = null)
 	{
-		$this->callables = $callables;
+        $default   = $this->getDefaultCallables();
+        $callables = ($callable) ? $callable->getCallables() : [];
+		$this->callables = $this->mergeArray($default, $callables);
 	}
 
     /**
@@ -55,176 +54,177 @@ class View extends Base
     }
 
     /**
-     * Render view.
-     *
-     * @access protected
-	 * @param array $content
-     * @param string $tpl
-     * @return void
+     * @inheritdoc
      */
-    protected function render($content = [], $tpl = 'system/default')
+    public function render(string $file = 'default', array $content = [], bool $end = false)
     {
-        echo $this->assign($content, $tpl);
+        echo $this->assign($file, $content);
+        if ( $end ) {
+            die;
+        }
     }
 
-    /**
-     * Aassign content to view.
-     *
-     * @access protected
-	 * @param array $content
-     * @param string $tpl
-	 * @return string
+	/**
+	 * @inheritdoc
 	 */
-	protected function assign($content = [], $tpl = 'system/default') : string
+	public function assign(string $file = 'default', array $content = []) : string
 	{
-        // Set View environment
-        $path = $this->applyFilter('view-path', $this->getViewPath());
-        $env = Template::getEnvironment($path, [
+        // Get environment
+        $env = $this->getEnvironment($this->getPath(), [
             'cache' => "{$this->getCachePath()}/view",
             'debug' => $this->isDebug()
         ]);
 
-        // Set custom callables
-        if ( $this->callables ) {
-            foreach ($this->callables as $name => $callable) {
-                $env->addFunction(Template::extend($name, $callable));
-            }
+        // Set callables
+        if ( !$this->callables ) {
+            $this->setCallables();
         }
-    
-		// Add view global functions
-        $env->addFunction(Template::extend('dump', function($var) {
-            var_dump($var);
-        }));
 
-        $env->addFunction(Template::extend('die', function($var = null) {
-            die($var);
-        }));
-
-        $env->addFunction(Template::extend('exit', function($status = null) {
-            exit($status);
-        }));
-
-        $env->addFunction(Template::extend('getSession', function($var = null) {
-            return $this->getSession($var);
-        }));
-
-        $env->addFunction(Template::extend('hasRole', function($role = null, $userId = null) {
-            return $this->hasRole($role, $userId);
-        }));
-
-        $env->addFunction(Template::extend('hasCapability', function($capability = null, $userId = null) {
-            return $this->hasCapability($capability, $userId);
-        }));
-
-        $env->addFunction(Template::extend('getLanguage', function() {
-            return $this->getLanguage();
-        }));
-
-        $env->addFunction(Template::extend('isValidSession', function() {
-			return $this->isValidSession();
-        }));
-
-        $env->addFunction(Template::extend('isDebug', function() {
-            return $this->isDebug();
-        }));
-
-        $env->addFunction(Template::extend('getConfig', function($config = '') {
-            return $this->getConfig($config);
-        }));
-
-        $env->addFunction(Template::extend('getRoot', function() {
-            return $this->getRoot();
-        }));
-
-        $env->addFunction(Template::extend('getBaseRoute', function() {
-            return $this->getBaseRoute(false);
-        }));
-
-        $env->addFunction(Template::extend('getBaseUrl', function() {
-            return $this->getBaseUrl();
-        }));
-
-        $env->addFunction(Template::extend('getAssetUrl', function() {
-            return $this->getAssetUrl();
-        }));
-
-        $env->addFunction(Template::extend('getFrontUploadUrl', function() {
-            return $this->getFrontUploadUrl();
-        }));
-
-        $env->addFunction(Template::extend('getLoginUrl', function() {
-            return $this->getLoginUrl();
-        }));
-
-        $env->addFunction(Template::extend('getAdminUrl', function() {
-            return $this->getAdminUrl();
-        }));
-
-        $env->addFunction(Template::extend('getVerifyUrl', function() {
-            return $this->getVerifyUrl();
-        }));
-
-        $env->addFunction(Template::extend('getTimeout', function() {
-			return $this->getTimeout();
-        }));
-
-        $env->addFunction(Template::extend('getToken', function($source = '') {
-            return $this->getToken($source);
-        }));
-
-        $env->addFunction(Template::extend('decodeJSON', function($json = '') {
-            return $this->decodeJson($json);
-        }));
-
-        $env->addFunction(Template::extend('encodeJSON', function($array = []) {
-            return $this->encodeJson($array);
-        }));
-
-        $env->addFunction(Template::extend('serialize', function($data = []) {
-            return $this->serialize($data);
-        }));
-
-        $env->addFunction(Template::extend('unserialize', function($string = '') {
-            return $this->unserialize($string);
-        }));
-
-        $env->addFunction(Template::extend('doAction', function($hook = '', $args = []) {
-            $this->doAction($hook, $args);
-        }));
-
-        $env->addFunction(Template::extend('hasAction', function($hook = '', $args = []) {
-            $this->hasAction($hook, $args);
-        }));
-
-        $env->addFunction(Template::extend('applyFilter', function($hook = '', $method = '') {
-            return $this->applyFilter($hook , $method);
-        }));
-
-        $env->addFunction(Template::extend('hasFilter', function($hook = '', $method = '') {
-            return $this->hasFilter($hook, $method);
-        }));
-
-        $env->addFunction(Template::extend('doShortcode', function($shortcode = '', $ignoreHTML = false) {
-            return $this->doShortcode($shortcode, $ignoreHTML);
-        }));
-
-        $env->addFunction(Template::extend('translate', function($string = '') {
-            return $this->translate($string);
-        }));
+        // Load callables
+        foreach ($this->callables as $name => $callable) {
+            $env->addFunction($this->extend($name, $callable));
+        }
 
         // Return rendered view
         try {
-            $content = $this->mergeArray($this->content, $content);
-            $view = $env->load("{$tpl}{$this->getViewExtension()}");
+            $view = $env->load("{$file}{$this->getViewExtension()}");
             return $view->render($content);
 
-        } catch (\Exception $e) {
+        } catch (\Exception | \RuntimeException $e) {
             if ( $this->isDebug() ) {
                 die($e->getMessage());
             }
-            ErrorHandler::clearLastError();
+            $this->clearLastError();
         }
 
         return '{}';
 	}
+
+    /**
+     * Get default callables.
+     *
+     * @access protected
+     * @return array
+     */
+    protected function getDefaultCallables() : array
+    {
+        $global = [
+			'dump' => function($var) {
+                var_dump($var);
+            },
+			'die' => function(?string $string = null) {
+                die($string);
+            },
+			'isDebug' => function() : bool {
+                return $this->isDebug();
+            },
+			'getConfig' => function(?string $key = null) {
+                return $this->getConfig($key);
+            },
+			'getRoot' => function(?string $sub = null) : string {
+                return $this->getRoot($sub);
+            },
+            'getBaseRoute' => function() {
+                return $this->getBaseRoute(false);
+            },
+            'getFrontUploadUrl' => function() {
+                return $this->getFrontUploadUrl();
+            },
+            'getLoginUrl' => function() {
+                return $this->getLoginUrl();
+            },
+            'getAdminUrl' => function() {
+                return $this->getAdminUrl();
+            },
+            'getVerifyUrl' => function() {
+                return $this->getVerifyUrl();
+            },
+			'getBaseUrl' => function() : string {
+                return $this->getBaseUrl();
+            },
+			'getAssetUrl' => function() : string {
+                return $this->getAssetUrl();
+            },
+            'getTimeout' => function() {
+                return $this->getTimeout();
+            },
+            'getToken' => function($source = '') {
+                return $this->getToken($source);
+            },
+            'getLanguage' => function() {
+                return $this->getLanguage();
+            },
+            'isValidSession' => function() {
+                return $this->isValidSession();
+            },
+            'hasRole' => function($role = null, $userId = null) {
+                return $this->hasRole($role, $userId);
+            },
+            'hasCapability' => function($capability = null, $userId = null) {
+                return $this->hasCapability($capability, $userId);
+            },
+			'translate' => function(?string $string) : string {
+                return $this->translate($string);
+            },
+			'translateVar' => function(string $string, $vars = null) : string {
+                return $this->translateVar($string, $vars);
+            },
+			'unJson' => function(string $value, bool $isArray = false) {
+                return $this->decodeJson($value, $isArray);
+            },
+			'toJson' => function($value) {
+                return $this->encodeJson($value);
+            },
+			'serialize' => function($value) {
+                return $this->serialize($value);
+            },
+			'unserialize' => function(string $value) {
+                return $this->unserialize($value);
+            },
+			'limitString' => function(?string $string, int $limit) {
+                return $this->limitString($string, $limit);
+            },
+			'hasFilter' => function(string $hook, $callback = false) {
+                return $this->hasFilter($hook, $callback);
+            },
+			'applyFilter' => function(string $hook, $value, ...$args) {
+                return $this->applyFilter($hook, $value, ...$args);
+            },
+			'hasAction' => function(string $hook, $callback = false) {
+                return $this->hasAction($hook, $callback);
+            },
+			'doAction' => function(string $hook, ...$args) {
+                $this->doAction($hook, ...$args);
+            },
+			'doShortcode' => function($shortcode = '', $ignoreHTML = false) {
+                $this->doShortcode($shortcode, $ignoreHTML);
+            }
+        ];
+
+        if ( $this->isAdmin() ) {
+            return $this->mergeArray([], $global);
+        }
+
+        return $this->mergeArray([
+			'exit' => function(?int $status = null) {
+                exit($status);
+            },
+			'getSession' => function(?string $key = null) {
+                return $this->getSession($key);
+            }
+        ], $global);
+    }
+
+    /**
+     * Get template path (Overridden),
+     * [Filter: template-path].
+     *
+     * @access protected
+     * @return mixed
+     */
+    protected function getPath()
+    {
+        $path = $this->getViewPath();
+        return $this->applyFilter('template-path', $path);
+    }
 }
