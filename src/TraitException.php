@@ -22,13 +22,13 @@ trait TraitException
 
 	/**
 	 * Throw error controller.
-	 * 
+	 *
 	 * @access public
 	 * @param int $code
 	 * @param string $message
 	 * @return void
 	 */
-	public function throwError($code = 404, $message = null)
+	public function throwError(int $code = 404, ?string $message = null)
 	{
 		$render = true;
 		if ( $this->hasItem('method', $this, 'getApiBaseUrl') ) {
