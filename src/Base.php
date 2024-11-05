@@ -28,6 +28,7 @@ class Base
 		\FloatPHP\Helpers\Framework\inc\TraitHookable,
 		\FloatPHP\Helpers\Framework\inc\TraitPermissionable,
 		\FloatPHP\Helpers\Framework\inc\TraitRequestable,
+		\FloatPHP\Helpers\Framework\inc\TraitThrowable,
 		\FloatPHP\Helpers\Framework\inc\TraitAuthenticatable;
 
     /**
@@ -128,23 +129,25 @@ class Base
     }
 
 	/**
-	 * Translate string including variables.
+	 * Translate string with variables.
+	 * May require quotes escaping.
 	 *
-	 * @access protected
+	 * @access public
 	 * @param string $string
 	 * @param mixed $vars
 	 * @return string
 	 */
-	protected function translateVars(string $string, $vars = null) : string
+	public function translateVar(string $string, $vars = null) : string
 	{
 		if ( $this->isType('array', $vars) ) {
 			return vsprintf($this->translate($string), $vars);
-
-		} else {
-			$vars = (string)$vars;
+		}
+		if ( $this->isType('string', $vars) ) {
+			$vars = $this->replaceString('/\s+/', $this->translate('{Empty}'), $vars, true);
 			$string = $this->replaceString($vars, '%s', $string);
 			return sprintf($this->translate($string), $vars);
 		}
+		return $string;
 	}
 
 	/**
@@ -171,7 +174,7 @@ class Base
 	 * @param string $type
 	 * @return array
 	 */
-	protected function loadStrings($type = 'admin')
+	protected function loadStrings(string $type = 'admin') : array
 	{
 		$strings = $this->getStrings();
 		switch ($type) {
