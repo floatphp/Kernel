@@ -43,7 +43,8 @@ final class Core
 
 		// X-Powered-By header
 		if ( $config['--disable-powered-by'] !== true ) {
-			header('X-Powered-By:FloatPHP');
+			$generator = $config['--powered-by'] ?? 'FloatPHP';
+			header("X-Powered-By: {$generator}");
 		}
 
 		// Start session
