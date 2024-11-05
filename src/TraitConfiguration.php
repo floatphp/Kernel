@@ -30,7 +30,7 @@ trait TraitConfiguration
 	 */
 	private $global = false;
 	private $routes = [];
-	
+
 	/**
 	 * Init configuration.
 	 */
@@ -42,18 +42,18 @@ trait TraitConfiguration
 	/**
 	 * Prevent object clone.
 	 */
-    public function __clone()
-    {
-        die(__METHOD__ . ': Clone denied');
-    }
+	public function __clone()
+	{
+	    die(__METHOD__ . ': Clone denied');
+	}
 
 	/**
 	 * Prevent object serialization.
 	 */
-    public function __wakeup()
-    {
-        die(__METHOD__ . ': Unserialize denied');
-    }
+	public function __wakeup()
+	{
+	    die(__METHOD__ . ': Unserialize denied');
+	}
 
 	/**
 	 * Set config Json file,
@@ -714,6 +714,18 @@ trait TraitConfiguration
 	protected function isDebug() : bool
 	{
 		return $this->global->options->debug;
+	}
+
+	/**
+	 * Get admin status.
+	 *
+	 * @access protected
+	 * @return bool
+	 */
+	protected function isAdmin() : bool
+	{
+		$url = Server::getBaseUrl();
+		return $this->searchString($url, '/admin/');
 	}
 
 	/**
