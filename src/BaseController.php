@@ -15,13 +15,22 @@ declare(strict_types=1);
 
 namespace FloatPHP\Kernel;
 
-use FloatPHP\Classes\{
-    Http\Response
-};
+use FloatPHP\Classes\Http\Response;
 use FloatPHP\Helpers\Connection\Transient;
 
 class BaseController extends View
 {
+	/**
+	 * redirectIndex : [GET] /index.php
+	 *
+	 * @access public
+	 * @return void
+	 */
+	public function redirectIndex()
+	{
+		$this->redirect();
+	}
+
 	/**
 	 * Check whether user has access.
 	 *
