@@ -3,7 +3,7 @@
  * @author     : Jakiboy
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.1.0
+ * @version    : 1.2.x
  * @copyright  : (c) 2018 - 2024 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://floatphp.com
  * @license    : MIT
@@ -34,11 +34,13 @@ class Module extends BaseController
 	}
 
 	/**
+	 * Check permission.
+	 *
 	 * @access public
-	 * @param mixed $role
+	 * @param string $role
 	 * @return bool
 	 */
-	public function hasPermissions($role = false) : bool
+	public function hasPermissions(?string $role = null) : bool
 	{
 		if ( $this->isPermissions() ) {
 			if ( $role ) {
@@ -74,15 +76,15 @@ class Module extends BaseController
 	 * Add module js.
 	 *
 	 * @access protected
-	 * @param string $js
+	 * @param string $path
 	 * @param string $hook
 	 * @return void
 	 */
-	protected function addJS($js, $hook = 'add-js')
+	protected function addJS(string $path, string $hook = 'add-js')
 	{
-		$this->addAction($hook, function() use($js) {
-			$tpl = $this->applyFilter('module-view-js', 'system/js');
-			$this->render(['js' => "{$this->getModulesUrl()}/{$js}"], $tpl);
+		$this->addAction($hook, function() use($path) {
+			$file = $this->applyFilter('module-view-js', 'system/js');
+			$this->render($file, ['js' => "{$this->getModulesUrl()}/{$path}"]);
 		});
 	}
 
@@ -90,15 +92,15 @@ class Module extends BaseController
 	 * Add module css.
 	 *
 	 * @access protected
-	 * @param string $css
+	 * @param string $path
 	 * @param string $hook
 	 * @return void
 	 */
-	protected function addCSS($css, $hook = 'add-css')
+	protected function addCSS(string $path, string $hook = 'add-css')
 	{
-		$this->addAction($hook, function() use($css){
-			$tpl = $this->applyFilter('module-view-css', 'system/css');
-			$this->render(['css' => "{$this->getModulesUrl()}/{$css}"], $tpl);
+		$this->addAction($hook, function() use($path){
+			$file = $this->applyFilter('module-view-css', 'system/css');
+			$this->render($file, ['css' => "{$this->getModulesUrl()}/{$path}"]);
 		});
 	}
 

@@ -3,7 +3,7 @@
  * @author     : Jakiboy
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.1.0
+ * @version    : 1.2.x
  * @copyright  : (c) 2018 - 2024 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://floatphp.com
  * @license    : MIT
@@ -40,7 +40,7 @@ final class Middleware
 		$this->initConfig();
 
 		// Prepare router from config
-		$router->setBasePath($this->getBaseRoute());
+		$router->setBase($this->getBaseRoute());
 
 		// Set global router
 		$router->addRoutes($this->getRoutes());
@@ -133,10 +133,10 @@ final class Middleware
 	private function doInstance()
 	{
 		// Parse
-		$class = $this->parseClass();
+		$class  = $this->parseClass();
 		$method = $this->parseMethod();
-		$var = $this->parseVar();
-		$role = $this->parsePermissions();
+		$var    = $this->parseVar();
+		$role   = $this->parsePermissions();
 
 		// Secure access
 		$instance = new $class();

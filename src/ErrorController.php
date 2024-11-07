@@ -3,7 +3,7 @@
  * @author     : Jakiboy
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.1.0
+ * @version    : 1.2.x
  * @copyright  : (c) 2018 - 2024 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://floatphp.com
  * @license    : MIT
@@ -40,16 +40,16 @@ class ErrorController extends FrontController
 
 		if ( $render ) {
 
-			$type     = $this->applyFilter('error-response-type', 'text/html;charset=utf-8');
-			$template = $this->applyFilter('error-template', '/system/error');
-			$error    = $this->applyFilter('error', $this->translate($error));
+			$type  = $this->applyFilter('error-response-type', 'text/html;charset=utf-8');
+			$file  = $this->applyFilter('error-template', '/system/error');
+			$error = $this->applyFilter('error', $this->translate($error));
 
 			Response::setHttpHeaders($code, $type);
-			$this->render([
+			$this->render($file, [
 				'status' => $message,
 				'code'   => $code,
 				'error'  => $error
-			], $template);
+			]);
 			
 			die();
 

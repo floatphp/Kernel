@@ -3,7 +3,7 @@
  * @author     : Jakiboy
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.1.0
+ * @version    : 1.2.x
  * @copyright  : (c) 2018 - 2024 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://floatphp.com
  * @license    : MIT
@@ -93,9 +93,12 @@ class Base
 		}
 
 		$slug = $string;
-		foreach ($this->matchEveryString('/([A-Z])/', $slug) as $upper) {
+		$this->matchEveryString('/([A-Z])/', $slug, $matches, -1);
+
+		foreach ($matches as $upper) {
 			$slug = $this->replaceString($upper, "{$upper}1-", $slug);
 		}
+
 		$slug = $this->slugify($slug);
 		$slug = $this->limitString($slug);
 

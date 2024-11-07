@@ -3,7 +3,7 @@
  * @author     : Jakiboy
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.1.0
+ * @version    : 1.2.x
  * @copyright  : (c) 2018 - 2024 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://floatphp.com
  * @license    : MIT
@@ -86,8 +86,8 @@ class BaseController extends View
 	protected function addJS(string $js, string $hook = 'add-js')
 	{
 		$this->addAction($hook, function() use($js) {
-			$tpl = $this->applyFilter('view-js', 'system/js');
-			$this->render(['js' => $js], $tpl);
+			$file = $this->applyFilter('view-js', 'system/js');
+			$this->render($file, ['js' => $js]);
 		});
 	}
 
@@ -102,8 +102,8 @@ class BaseController extends View
 	protected function addCSS(string $css, string $hook = 'add-css')
 	{
 		$this->addAction($hook, function() use($css){
-			$tpl = $this->applyFilter('view-css', 'system/css');
-			$this->render(['css' => $css], $tpl);
+			$file = $this->applyFilter('view-css', 'system/css');
+			$this->render($file, ['css' => $css]);
 		});
 	}
 
