@@ -34,7 +34,7 @@ trait TraitException
 		if ( $this->hasItem('method', $this, 'getApiBaseUrl') ) {
 			$url = $this->getServer('request-uri');
 			$api = $this->getApiBaseUrl();
-			if ( $this->searchString($url, $api) || $this->hasRequest() ) {
+			if ( $this->searchString($url, $api) ) {
 				$render = false;
 			}
 		}

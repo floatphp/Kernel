@@ -115,9 +115,9 @@ class BaseController extends View
      * @param string $action
      * @param bool
      */
-	protected function verifyToken(string $token = '', string $source = '')
+	protected function verifyToken(?string $token = null, ?string $source = null)
 	{
-		if ( !empty($token) ) {
+		if ( $token ) {
 
 			$transient = new Transient();
 			$data = (string)$transient->getTemp($token);
@@ -154,7 +154,7 @@ class BaseController extends View
 	 * Verify current request.
 	 * 
 	 * @access protected
-	 * @param bool $force Token validation
+	 * @param bool $force, Token validation
 	 * @return void
 	 */
 	protected function verifyRequest(bool $force = false)
@@ -189,23 +189,30 @@ class BaseController extends View
 
 	/**
 	 * Sanitize current request.
-	 * 
+	 *
 	 * @access protected
-	 * @param bool $verify Request
-	 * @param bool $force Token validation
-	 * @return mixed
+	 * @param bool $verify, Request
+	 * @param bool $force, Token validation
+	 * @return array
 	 */
-	protected function sanitizeRequest(bool $verify = true, bool $force = false)
+	protected function sanitizeRequest(bool $verify = true, bool $force = false) : array
 	{
-		if ( $verify ) $this->verifyRequest($force);
-
 		$request = $this->getRequest();
-		$excepts = $this->applyFilter('sanitize-request', [
-			'submit',
-			'--token',
-			'--source',
-			'--ignore'
-		]);
+		$excepts = [
+			'PHPSESSID', 'COOKIES'
+		];
+
+		if ( !$force ) {
+			$excepts = $this->mergeArray([
+				'submit', '--token', '--source', '--ignore'
+			], $excepts);
+		}
+
+		if ( $verify ) {
+			$this->verifyRequest($force);
+		}
+
+		$excepts = $this->applyFilter('sanitize-request', $excepts);
 
 		foreach ($excepts as $except) {
 			if ( isset($request[$except]) ) {
@@ -213,7 +220,7 @@ class BaseController extends View
 			}
 		}
 
-		return $request;
+		return $request ?: [];
 	}
 
 	/**
