@@ -15,10 +15,9 @@ declare(strict_types=1);
 
 namespace FloatPHP\Kernel;
 
-use FloatPHP\Helpers\{
-	Connection\Transient,
-	Filesystem\Cache,
-	Filesystem\Translator
+use FloatPHP\Helpers\Connection\Transient;
+use FloatPHP\Helpers\Filesystem\{
+	Cache, Translator
 };
 
 class Base
