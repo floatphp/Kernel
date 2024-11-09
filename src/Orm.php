@@ -332,6 +332,25 @@ class Orm implements OrmInterface
 	}
 
 	/**
+	 * Search column using binded data,
+	 * Returns 1D array.
+	 *
+	 * @access public
+	 * @param string $column
+	 * @param array $sort
+	 * @param int $limit
+	 * @return array
+	 */
+	public function searchColumn(string $column, array $sort = [], ?int $limit = 0) : array
+	{
+		$sql  = "{$this->getSelectQuery($column)} ";
+		$sql .= "{$this->getWhereQuery()} ";
+		$sql .= "{$this->getSortQuery($sort)} ";
+		$sql .= "{$this->getLimitQuery($limit)};";
+		return $this->getColumn($sql);
+	}
+
+	/**
 	 * Select distinct rows using binded data.
 	 *
 	 * @access public

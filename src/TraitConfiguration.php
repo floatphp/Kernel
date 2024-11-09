@@ -172,14 +172,19 @@ trait TraitConfiguration
 	}
 
 	/**
-	 * Get dir root.
+	 * Get dynamic root path.
 	 *
 	 * @access protected
+	 * @param string $sub
 	 * @return string
 	 */
-	protected function getRoot() : string
+	protected function getRoot(?string $sub = null) : string
 	{
-		return dirname($this->getAppDir());
+		$path = dirname($this->getAppDir());
+		if ( $sub ) {
+			$path .= "/{$sub}";
+		}
+		return $this->formatPath($path);
 	}
 
 	/**
@@ -438,11 +443,14 @@ trait TraitConfiguration
 	 * @access protected
 	 * @return string
 	 */
-	protected function getBaseUrl() : string
+	protected function getBaseUrl(?string $sub = null) : string
 	{
 		$url = Server::getBaseUrl();
-		$route = $this->getBaseRoute();
-		return $this->untrailingSlash("{$url}/{$route}");
+		$url = "{$url}/{$this->getBaseRoute()}";
+		if ( $sub ) {
+			$url .= "/{$sub}";
+		}
+		return $this->formatPath($url, true);
 	}
 
 	/**
@@ -467,6 +475,20 @@ trait TraitConfiguration
 	{
 		$path = "{$this->getRoot()}/{$this->global->path->assets}";
 		return $this->formatPath($path, true);
+	}
+
+	/**
+	 * Get public url.
+	 *
+	 * @access protected
+	 * @param string $path
+	 * @return string
+	 */
+	protected function getPublicUrl(?string $path = null) : string
+	{
+		return $this->formatPath(
+			"{$this->getBaseUrl()}/public/{$path}"
+		);
 	}
 
 	/**
@@ -540,7 +562,9 @@ trait TraitConfiguration
 	 */
 	protected function getPublicPath(?string $path = null) : string
 	{
-		return "{$this->getRoot()}/public/{$path}";
+		return $this->formatPath(
+			"{$this->getRoot()}/public/{$path}"
+		);
 	}
 
 	/**
