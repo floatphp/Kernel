@@ -147,6 +147,7 @@ class BaseController extends View
 				return true;
 			}
 		}
+
 		return false;
 	}
 

@@ -101,6 +101,7 @@ class Base
 		$slug = $this->slugify($slug);
 		$slug = $this->limitString($slug);
 
+		Cache::$debug = false;
 		$cache = new Cache();
 		$lang  = $this->getLanguage();
 		$key   = "i18n-{$lang}-{$length}-{$slug}";
