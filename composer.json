@@ -1,6 +1,6 @@
 {
   "name": "floatphp/kernel",
-  "version" : "1.2.3",
+  "version" : "1.2.4",
   "type": "library",
   "description": "FloatPHP Kernel Components",
   "keywords": ["php","micro-framework","framework","PSR","ORM","jakiboy","composer"],
