@@ -74,7 +74,7 @@ class ApiController extends BaseController
 	 */
 	protected function isGranted(string $token) : bool
 	{
-        $access = $this->getTokenAccess($token, $this->getSecret(true));
+        $access = $this->getAccessToken($token, $this->getSecret(true));
         $user = $access['user'] ?? false;
         $pswd = $access['pswd'] ?? false;
 
