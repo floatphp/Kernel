@@ -16,7 +16,6 @@ declare(strict_types=1);
 namespace FloatPHP\Kernel;
 
 use FloatPHP\Classes\Http\Response;
-use FloatPHP\Helpers\Connection\Transient;
 
 class BaseController extends View
 {
@@ -109,60 +108,69 @@ class BaseController extends View
 
     /**
 	 * Verify token against request data.
-	 * 
+	 *
      * @access protected
      * @param string $token
      * @param string $action
      * @param bool
      */
-	protected function verifyToken(?string $token = null, ?string $source = null)
+	protected function verifyToken(?string $token = null, ?string $action = null) : bool
 	{
-		if ( $token ) {
+		// Get token session
+		$session = $this->getSession('--token') ?: [];
 
-			$transient = new Transient();
-			$data = (string)$transient->getTemp($token);
-			$data = $this->unserialize($data);
+		// Get token data
+		$data = $session[$token] ?? [];
 
-			// Override
-			$this->doAction('verify-token', $data);
+		// Apply default data
+		$data = $this->mergeArray([
+			'action' => '',
+			'url'    => false,
+			'ip'     => false,
+			'user'   => false
+		], $data);
 
-			// Verify token data
-			if ( $data ) {
-				if ( $this->isValidSession() ) {
-					if ( isset($data['user']) ) {
-						if ( $this->getSession($this->getSessionId()) !== $data['user'] ) {
-							return false;
-						}
-					}
-				}
-				if ( $source !== $data['source'] ) {
-					return false;
-				}
-				if ( $this->getServerIp() !== $data['ip'] ) {
-					return false;
-				}
-				if ( $this->getServer('http-referer') !== $data['url'] ) {
-					return false;
-				}
-				return true;
+		// Override verification
+		$this->doAction('verify-token', $data);
+
+		// Verify authenticated user
+		if ( $this->isAuthenticated() ) {
+			$user = $this->getSession($this->getSessionId());
+			if ( $user !== $data['user'] ) {
+				return false;
 			}
 		}
 
-		return false;
+		// Verify action
+		if ( $action !== $data['action'] ) {
+			return false;
+		}
+
+		// Verify IP
+		if ( $this->getServerIp() !== $data['ip'] ) {
+			return false;
+		}
+
+		// Verify URL
+		if ( $this->getServer('http-referer') !== $data['url'] ) {
+			return false;
+		}
+
+		return $this->verifyHash($token, $data);
 	}
 
 	/**
 	 * Verify current request.
-	 * 
+	 *
 	 * @access protected
 	 * @param bool $force, Token validation
 	 * @return void
 	 */
 	protected function verifyRequest(bool $force = false)
 	{
-		$token  = $this->applyFilter('verify-request-token', '--token');
-		$source = $this->applyFilter('verify-request-source', '--source');
-		$ignore = $this->applyFilter('verify-request-ignore', '--ignore');
+		$token  = (string)$this->applyFilter('verify-request-token', '--token');
+		$action = (string)$this->applyFilter('verify-request-action', '--action');
+		$ignore = (string)$this->applyFilter('verify-request-ignore', '--ignore');
 
 		if ( $force ) {
 			if ( !$this->hasRequest($token) ) {
@@ -173,8 +181,8 @@ class BaseController extends View
 		}
 
 		if ( $this->hasRequest($token) ) {
-			$source = $this->hasRequest($source) ? $this->getRequest($source) : '';
-			if ( !$this->verifyToken($this->getRequest($token), $source) ) {
+			$action = $this->hasRequest($action) ? $this->getRequest($action) : '';
+			if ( !$this->verifyToken($this->getRequest($token), $action) ) {
 				$msg = $this->applyFilter('invalid-request-token', 'Invalid request token');
 				$msg = $this->translate($msg);
 				$this->setResponse($msg, [], 'error', 401);
@@ -205,7 +213,7 @@ class BaseController extends View
 
 		if ( !$force ) {
 			$excepts = $this->mergeArray([
-				'submit', '--token', '--source', '--ignore'
+				'submit', '--token', '--action', '--ignore'
 			], $excepts);
 		}
 

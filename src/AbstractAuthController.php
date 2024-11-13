@@ -69,17 +69,19 @@ abstract class AbstractAuthController extends BaseController
 			if ( $this->isPassword($password, $user['password']) ) {
 
 				// Check password format
-				if ( $this->applyFilter('authenticate-strong-password', false) ) {
+				if ( $this->applyFilter('auth-strong-password', false) ) {
 					if ( !$this->isStrongPassword($password) ) {
 						// Authenticate failed
-						$msg = $this->applyFilter('authenticate-password-message', 'Strong password required');
+						$msg = $this->applyFilter('auth-password-message', 'Strong password required');
 						$msg = $this->translate($msg);
 						$this->setResponse($msg, [], 'warning');
 					}
 				}
 
 				// Register session
-				$this->registerSession($this->getAccessExpire());
+				$this->registerSession(
+					$this->getAccessExpire()
+				);
 
 				// Check valid session
 				if ( $this->isValidSession() ) {
@@ -87,14 +89,14 @@ abstract class AbstractAuthController extends BaseController
 					if ( $auth->hasSecret($username) ) {
 						$this->setSession('--verify', $username);
 						// Authenticate accepted
-						$msg = $this->applyFilter('authenticate-accepted-message', 'Accepted');
+						$msg = $this->applyFilter('auth-accepted-message', 'Accepted');
 						$msg = $this->translate($msg);
 						$this->setResponse($msg, [], 'accepted', 202);
 
 					} else {
 						$this->setSession($auth->getKey(),$user[$auth->getKey()]);
 						// Authenticate success
-						$msg = $this->applyFilter('authenticate-success-message', 'Connected');
+						$msg = $this->applyFilter('auth-success-message', 'Connected');
 						$msg = $this->translate($msg);
 						$this->setResponse($msg);
 					}
@@ -106,10 +108,10 @@ abstract class AbstractAuthController extends BaseController
 		}
 
 		// Authenticate failed override
-		$this->doAction('authenticate-failed', $username);
+		$this->doAction('auth-failed', $username);
 
 		// Authenticate failed
-		$msg = $this->applyFilter('authenticate-error-message', 'Authentication failed');
+		$msg = $this->applyFilter('auth-error-message', 'Authentication failed');
 		$msg = $this->translate($msg);
 		$this->setResponse($msg, [], 'error', 401);
 	}

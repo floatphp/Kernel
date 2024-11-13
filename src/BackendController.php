@@ -15,8 +15,33 @@ declare(strict_types=1);
 
 namespace FloatPHP\Kernel;
 
+use FloatPHP\Helpers\Connection\User;
+use FloatPHP\Helpers\Framework\Debugger;
+
 class BackendController extends BaseController
 {
+	/**
+	 * @inheritdoc
+	 */
+	public function __construct(array $content = [])
+	{
+		// Init configuration
+		$this->initConfig();
+
+		// Set view global content
+		$id = (int)$this->getSession('userId');
+		$content = $this->mergeArray([
+			[
+				'user'      => (new User)->get($id),
+				'execution' => Debugger::getExecutionTime()
+			]
+		], $content);
+		$this->setContent($content);
+
+		// Allow non-blocking requests
+		$this->closeSession();
+	}
+
 	/**
 	 * Check whether user (current) has permissions.
 	 *

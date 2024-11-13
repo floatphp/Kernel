@@ -15,10 +15,7 @@ declare(strict_types=1);
 
 namespace FloatPHP\Kernel;
 
-use FloatPHP\Helpers\Connection\Transient;
-use FloatPHP\Helpers\Filesystem\{
-	Cache, Translator
-};
+use FloatPHP\Helpers\Filesystem\Translator;
 
 class Base
 {
@@ -31,39 +28,54 @@ class Base
 		\FloatPHP\Helpers\Framework\inc\TraitAuthenticatable;
 
     /**
-	 * Get token.
-	 * 
+	 * Get token (CSRF).
+	 *
      * @access protected
-     * @param string $source
+     * @param string $action
      * @return string
      */
-	protected function getToken(?string $source = null) : string
+	protected function getToken(?string $action = null) : string
 	{
-		// Init token data
+		// Set filtered token data
 		$data = $this->applyFilter('token-data', []);
 
-		// Set default token data
-		$data['source'] = (string)$source;
-		$data['url'] = $this->getServerCurrentUrl();
-		$data['ip'] = $this->getServerIp();
+		// Apply default data
+		$data = $this->mergeArray([
+			'action' => (string)$action,
+			'url'    => $this->getServerCurrentUrl(),
+			'ip'     => $this->getServerIp(),
+			'user'   => false
+		], $data);
 
-		// Set user token data
+		$this->startSession();
+
+		// Set authenticated user data
 		if ( $this->isAuthenticated() ) {
-			$data['user'] = $this->getSession($this->getSessionId());
+			$data['user'] = $this->getSession(
+				$this->getSessionId()
+			);
 		}
 
-		// Save token
-		$data = $this->serialize($data);
-		$token = $this->generateToken(10);
-		$transient = new Transient();
-		$transient->setTemp($token, $data, $this->getAccessExpire());
+		// Generate session token from data
+		$token = $this->generateHash($data);
+
+		// Get session token data
+		$session = $this->getSession('--token') ?: [];
+
+		// Set session token data
+		if ( !isset($session[$token])) {
+			$session[$token] = $data;
+			$this->setSession('--token', $session);
+		}
+
+		$this->closeSession();
 
 		return $token;
 	}
 
 	/**
 	 * Get language.
-	 * 
+	 *
 	 * @access protected
 	 * @return string
 	 */
@@ -79,7 +91,8 @@ class Base
 	}
 
 	/**
-	 * Translate string, May require quotes escaping.
+	 * Translate string,
+	 * May require quotes escaping.
 	 *
 	 * @access protected
 	 * @param string $string
@@ -87,33 +100,12 @@ class Base
 	 */
 	protected function translate(string $string) : string
 	{
-		if ( !($length = strlen($string)) ) {
-			return $string;
+		if ( $string ) {
+			$lang = $this->getLanguage();
+			return (new Translator($lang))->translate($string);
 		}
 
-		$slug = $string;
-		$this->matchEveryString('/([A-Z])/', $slug, $matches, -1);
-
-		foreach ($matches as $upper) {
-			$slug = $this->replaceString($upper, "{$upper}1-", $slug);
-		}
-
-		$slug = $this->slugify($slug);
-		$slug = $this->limitString($slug);
-
-		Cache::$debug = false;
-		$cache = new Cache();
-		$lang  = $this->getLanguage();
-		$key   = "i18n-{$lang}-{$length}-{$slug}";
-
-		$data = $cache->get($key, $status);
-		if ( !$status ) {
-			$translator = new Translator($lang);
-			$data = $translator->translate($string);
-			$cache->set($key, $data, 0);
-		}
-
-		return (string)$data;
+		return $string;
 	}
 
 	/**
@@ -132,7 +124,7 @@ class Base
     }
 
 	/**
-	 * Translate string with variables.
+	 * Translate string with variables,
 	 * May require quotes escaping.
 	 *
 	 * @access public

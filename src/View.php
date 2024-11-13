@@ -149,7 +149,7 @@ class View extends Base implements ViewInterface
             'getTimeout' => function() {
                 return $this->getTimeout();
             },
-            'getToken' => function($source = '') {
+            'getToken' => function(?string $source = null) {
                 return $this->getToken($source);
             },
             'getLanguage' => function() {
