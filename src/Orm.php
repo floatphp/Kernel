@@ -3,7 +3,7 @@
  * @author     : Jakiboy
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.2.x
+ * @version    : 1.3.x
  * @copyright  : (c) 2018 - 2024 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://floatphp.com
  * @license    : MIT
@@ -50,7 +50,7 @@ class Orm implements OrmInterface
 	/**
 	 * Init database.
 	 * 
-	 * @uses initConfig()
+	 * @access public
 	 */
 	public function __construct()
 	{
@@ -66,14 +66,14 @@ class Orm implements OrmInterface
 			$this->getDbObject($this->access, "{$this->getLoggerPath()}/database");
 		}
 	}
-	
+
 	/**
 	 * Set request bind property.
 	 * 
 	 * @param string $name
 	 * @param mixed $value
 	 */
-	public function __set(string $name, $value)
+	public function __set(string $name, $value) : void
 	{
 		$this->bind[$name] = $value;
 	}
@@ -84,17 +84,17 @@ class Orm implements OrmInterface
 	 * @param string $name
 	 * @return mixed
 	 */
-	public function __get(string $name)
+	public function __get(string $name) : mixed
 	{
 		return $this->row[$name] ?? null;
 	}
 
-    /**
-     * Disable database connection.
-     *
-     * @access public
-     * @return object
-     */
+	/**
+	 * Disable database connection.
+	 *
+	 * @access public
+	 * @return object
+	 */
 	public function noConnect() : object
 	{
 		$this->connect = false;
@@ -145,7 +145,7 @@ class Orm implements OrmInterface
 		$this->key = $key;
 		return $this;
 	}
-	
+
 	/**
 	 * Create row using data or binded data.
 	 *
@@ -170,9 +170,9 @@ class Orm implements OrmInterface
 	public function read($id = null) : array
 	{
 		if ( $id ) $this->{$this->key} = $id;
-		$sql  = "{$this->getSelectQuery()} ";
-		$sql .= "{$this->getWhereQuery(true)} ";
-		$sql .= "{$this->getLimitQuery(1)};";
+		$sql = "{$this->getSelectQuery()} ";
+		$sql .= "{$this->getWhereQuery(single: true)} ";
+		$sql .= "{$this->getLimitQuery(limit: 1)};";
 		return $this->getRow($sql);
 	}
 
@@ -184,7 +184,7 @@ class Orm implements OrmInterface
 	 */
 	public function readAny()
 	{
-		$sql  = "{$this->getSelectQuery()} ";
+		$sql = "{$this->getSelectQuery()} ";
 		$sql .= "{$this->getWhereQuery()};";
 		return $this->execute($sql);
 	}
@@ -199,8 +199,8 @@ class Orm implements OrmInterface
 	public function update($id = null) : bool
 	{
 		if ( $id ) $this->{$this->key} = $id;
-		$sql  = "{$this->getUpdateQuery()} ";
-		$sql .= "{$this->getWhereQuery(true)};";
+		$sql = "{$this->getUpdateQuery()} ";
+		$sql .= "{$this->getWhereQuery(single: true)};";
 		return (bool)$this->execute($sql);
 	}
 
@@ -213,7 +213,7 @@ class Orm implements OrmInterface
 	 */
 	public function updateAny(array $where = []) : int
 	{
-		$sql  = "{$this->getUpdateQuery()} ";
+		$sql = "{$this->getUpdateQuery()} ";
 		$sql .= "{$this->parseWhereQuery($where)};";
 		return (int)$this->execute($sql);
 	}
@@ -228,9 +228,9 @@ class Orm implements OrmInterface
 	public function delete($id = null) : bool
 	{
 		if ( $id ) $this->{$this->key} = $id;
-		$sql  = "{$this->getDeleteQuery()} ";
-		$sql .= "{$this->getWhereQuery(true)} ";
-		$sql .= "{$this->getLimitQuery(1)};";
+		$sql = "{$this->getDeleteQuery()} ";
+		$sql .= "{$this->getWhereQuery(single: true)} ";
+		$sql .= "{$this->getLimitQuery(limit: 1)};";
 		return (bool)$this->execute($sql);
 	}
 
@@ -242,14 +242,14 @@ class Orm implements OrmInterface
 	 */
 	public function deleteAny() : int
 	{
-		$sql  = "{$this->getDeleteQuery()} ";
+		$sql = "{$this->getDeleteQuery()} ";
 		$sql .= "{$this->getWhereQuery()};";
 		return (int)$this->execute($sql);
 	}
 
-    /**
-     * Get last inserted Id.
-     *
+	/**
+	 * Get last inserted Id.
+	 *
 	 * @access public
 	 * @return int
 	 */
@@ -269,34 +269,22 @@ class Orm implements OrmInterface
 	 * @param int $mode
 	 * @return mixed
 	 */
-	public function query(string $sql, ?array $bind = null, ?string $type = null, ?int $mode = null)
+	public function query(string $sql, ?array $bind = null, ?string $type = null, ?int $mode = null) : mixed
 	{
 		if ( $bind ) {
 			$this->bind($bind);
 		}
-		
-		switch ($type) {
-			case 'single':
-				return $this->getSingle($sql);
-				break;
-
-			case 'column':
-				return $this->getColumn($sql);
-				break;
-
-			case 'row':
-				return $this->getRow($sql, $mode);
-				break;
-
-			default:
-				return $this->execute($sql);
-				break;
-		}
+		return match ($type) {
+			'single' => $this->getSingle($sql),
+			'column' => $this->getColumn($sql),
+			'row'    => $this->getRow($sql),
+			default  => $this->execute($sql),
+		};
 	}
 
 	/**
 	 * Search rows using binded data,
-	 * a [readAny] aliase with custom columns, sort and limit.
+	 * [readAny] aliase with custom columns, sort and limit.
 	 *
 	 * @access public
 	 * @param mixed $columns
@@ -306,7 +294,7 @@ class Orm implements OrmInterface
 	 */
 	public function search($columns = '*', array $sort = [], ?int $limit = 0) : array
 	{
-		$sql  = "{$this->getSelectQuery($columns)} ";
+		$sql = "{$this->getSelectQuery($columns)} ";
 		$sql .= "{$this->getWhereQuery()} ";
 		$sql .= "{$this->getSortQuery($sort)} ";
 		$sql .= "{$this->getLimitQuery($limit)};";
@@ -315,7 +303,7 @@ class Orm implements OrmInterface
 
 	/**
 	 * Search row using binded data,
-	 * a [read] aliase with custom columns and sort.
+	 * [read] aliase with custom columns and sort.
 	 *
 	 * @access public
 	 * @param mixed $columns
@@ -324,10 +312,10 @@ class Orm implements OrmInterface
 	 */
 	public function searchOne($columns = '*', array $sort = []) : array
 	{
-		$sql  = "{$this->getSelectQuery($columns)} ";
+		$sql = "{$this->getSelectQuery($columns)} ";
 		$sql .= "{$this->getWhereQuery()} ";
 		$sql .= "{$this->getSortQuery($sort)} ";
-		$sql .= "{$this->getLimitQuery(1)};";
+		$sql .= "{$this->getLimitQuery(limit: 1)};";
 		return $this->getRow($sql);
 	}
 
@@ -343,7 +331,7 @@ class Orm implements OrmInterface
 	 */
 	public function searchColumn(string $column, array $sort = [], ?int $limit = 0) : array
 	{
-		$sql  = "{$this->getSelectQuery($column)} ";
+		$sql = "{$this->getSelectQuery($column)} ";
 		$sql .= "{$this->getWhereQuery()} ";
 		$sql .= "{$this->getSortQuery($sort)} ";
 		$sql .= "{$this->getLimitQuery($limit)};";
@@ -360,7 +348,7 @@ class Orm implements OrmInterface
 	 */
 	public function distinct($columns, array $sort = []) : array
 	{
-		$sql  = "{$this->getSelectQuery($columns, true)} ";
+		$sql = "{$this->getSelectQuery($columns, distinct: true)} ";
 		$sql .= "{$this->getWhereQuery()} ";
 		$sql .= "{$this->getSortQuery($sort)};";
 		return (array)$this->execute($sql);
@@ -377,7 +365,7 @@ class Orm implements OrmInterface
 	 */
 	public function olderThan(int $days, $columns = '*', string $col = 'date') : array
 	{
-		$sql  = "{$this->getSelectQuery($columns)} ";
+		$sql = "{$this->getSelectQuery($columns)} ";
 		$sql .= "{$this->getWhereDateQuery($days, $col)} ";
 		$sql .= "{$this->getSortQuery([$col => 'DESC'])};";
 		return (array)$this->execute($sql);
@@ -393,7 +381,7 @@ class Orm implements OrmInterface
 	 */
 	public function deleteOlderThan(int $days, string $col = 'date') : int
 	{
-		$sql  = "{$this->getDeleteQuery()} ";
+		$sql = "{$this->getDeleteQuery()} ";
 		$sql .= "{$this->getWhereDateQuery($days, $col)} ";
 		return (int)$this->execute($sql);
 	}
@@ -409,8 +397,8 @@ class Orm implements OrmInterface
 	 */
 	public function newerThan(int $days, $columns = '*', string $col = 'date') : array
 	{
-		$sql  = "{$this->getSelectQuery($columns)} ";
-		$sql .= "{$this->getWhereDateQuery($days, $col, '>=')} ";
+		$sql = "{$this->getSelectQuery($columns)} ";
+		$sql .= "{$this->getWhereDateQuery($days, $col, operator: '>=')} ";
 		$sql .= "{$this->getSortQuery([$col => 'DESC'])};";
 		return (array)$this->execute($sql);
 	}
@@ -425,8 +413,8 @@ class Orm implements OrmInterface
 	 */
 	public function deleteNewerThan(int $days, string $col = 'date') : int
 	{
-		$sql  = "{$this->getDeleteQuery()} ";
-		$sql .= "{$this->getWhereDateQuery($days, $col, '>=')} ";
+		$sql = "{$this->getDeleteQuery()} ";
+		$sql .= "{$this->getWhereDateQuery($days, $col, operator: '>=')} ";
 		return (int)$this->execute($sql);
 	}
 
@@ -439,7 +427,7 @@ class Orm implements OrmInterface
 	 */
 	public function keepOne(array $columns = []) : int
 	{
-		$sql  = "{$this->getDeleteDuplicatedQuery()} ";
+		$sql = "{$this->getDeleteDuplicatedQuery()} ";
 		$sql .= "{$this->getWhereDuplicatedQuery($columns)} ";
 		return (int)$this->execute($sql, true);
 	}
@@ -453,7 +441,7 @@ class Orm implements OrmInterface
 	 */
 	public function all($columns = '*', array $sort = []) : array
 	{
-		$sql  = "{$this->getSelectQuery($columns)} ";
+		$sql = "{$this->getSelectQuery($columns)} ";
 		$sql .= "{$this->getSortQuery($sort)};";
 		return (array)$this->execute($sql, true);
 	}
@@ -465,7 +453,7 @@ class Orm implements OrmInterface
 	 * @param string $field
 	 * @return mixed
 	 */
-	public function min(string $field)
+	public function min(string $field) : mixed
 	{
 		$sql = "SELECT min({$field}) FROM `{$this->table}`;";
 		return $this->getSingle($sql);
@@ -478,7 +466,7 @@ class Orm implements OrmInterface
 	 * @param string $field
 	 * @return mixed
 	 */
-	public function max(string $field)
+	public function max(string $field) : mixed
 	{
 		$sql = "SELECT max({$field}) FROM `{$this->table}`;";
 		return $this->getSingle($sql);
@@ -491,7 +479,7 @@ class Orm implements OrmInterface
 	 * @param string $field
 	 * @return mixed
 	 */
-	public function avg(string $field)
+	public function avg(string $field) : mixed
 	{
 		$sql = "SELECT avg({$field}) FROM `{$this->table}`;";
 		return $this->getSingle($sql);
@@ -504,7 +492,7 @@ class Orm implements OrmInterface
 	 * @param string $field
 	 * @return mixed
 	 */
-	public function sum(string $field)
+	public function sum(string $field) : mixed
 	{
 		$sql = "SELECT sum({$field}) FROM `{$this->table}`;";
 		return $this->getSingle($sql);
@@ -543,13 +531,13 @@ class Orm implements OrmInterface
 	 * @param string $table
 	 * @return mixed
 	 */
-	public function resetId(?string $table = null)
+	public function resetId(?string $table = null) : mixed
 	{
 		if ( $table ) $this->table = $table;
 		$sql = "ALTER TABLE `{$this->table}` AUTO_INCREMENT = 1;";
 		return $this->execute($sql, true);
 	}
-	
+
 	/**
 	 * Check database table.
 	 *
@@ -574,7 +562,7 @@ class Orm implements OrmInterface
 	public function columns(?string $table = null) : array
 	{
 		if ( $table ) $this->table = $table;
-		$sql  = "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS ";
+		$sql = "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS ";
 		$sql .= "WHERE TABLE_NAME = '{$this->table}' ";
 		$sql .= "ORDER BY ORDINAL_POSITION;";
 		$this->resetBind();
@@ -592,7 +580,7 @@ class Orm implements OrmInterface
 		$this->resetBind();
 		return $this->getColumn('SHOW TABLES;');
 	}
-	
+
 	/**
 	 * Setup database.
 	 *
@@ -601,18 +589,21 @@ class Orm implements OrmInterface
 	 */
 	public function setup() : bool
 	{
-	    try {
-	    	$dsn = "mysql:host={$this->access['host']};port={$this->access['port']}";
-	        $pdo = new PDO($dsn, $this->root['user'], $this->root['pswd']);
-	        $sql  = "CREATE DATABASE IF NOT EXISTS `{$this->access['db']}` ";
-	        $sql .= "CHARACTER SET {$this->access['charset']} ";
-	        $sql .= "COLLATE {$this->access['collate']};";
+		try {
+
+			$dsn = "mysql:host={$this->access['host']};port={$this->access['port']}";
+			$pdo = new PDO($dsn, $this->root['user'], $this->root['pswd']);
+
+			$sql = "CREATE DATABASE IF NOT EXISTS `{$this->access['name']}` ";
+			$sql .= "CHARACTER SET {$this->access['charset']} ";
+			$sql .= "COLLATE {$this->access['collate']};";
+
 			$query = $pdo->prepare($sql);
-	        return (bool)$query->execute();
-	    }
-	    catch (PDOException $e) {
-	        die("ERROR : {$e->getMessage()}");
-	    }
+			return (bool)$query->execute();
+
+		} catch (PDOException $e) {
+			die("ERROR : {$e->getMessage()}");
+		}
 	}
 
 	/**
@@ -624,7 +615,7 @@ class Orm implements OrmInterface
 	 * @param bool $reset
 	 * @return mixed
 	 */
-	protected function execute(string $sql, bool $reset = false)
+	protected function execute(string $sql, bool $reset = false) : mixed
 	{
 		$this->verify();
 		if ( $reset ) $this->resetBind();
@@ -640,7 +631,7 @@ class Orm implements OrmInterface
 	 * @param string $sql
 	 * @return mixed
 	 */
-	protected function getSingle(string $sql)
+	protected function getSingle(string $sql) : mixed
 	{
 		$this->verify();
 		$sql = $this->formatSpace($sql);
@@ -661,7 +652,7 @@ class Orm implements OrmInterface
 		$sql = $this->formatSpace($sql);
 		return (array)$this->db->column($sql, $this->getBind());
 	}
-	
+
 	/**
 	 * Execute row query,
 	 * Returns row.
@@ -691,7 +682,7 @@ class Orm implements OrmInterface
 		$sql = "INSERT INTO `{$this->table}` ";
 		if ( !empty($this->bind) ) {
 			$columns = $this->getColumnsString();
-			$values  = $this->getValueString();
+			$values = $this->getValueString();
 			$sql .= "({$columns}) VALUES ({$values})";
 
 		} else {
@@ -699,7 +690,7 @@ class Orm implements OrmInterface
 		}
 		return $sql;
 	}
-	
+
 	/**
 	 * Get select query string.
 	 * 
@@ -713,7 +704,7 @@ class Orm implements OrmInterface
 		if ( $distinct == true && $columns !== '*' ) {
 			$distinct = 'DISTINCT';
 		}
-		$sql  = "SELECT {$distinct} {$this->formatColumns($columns)} ";
+		$sql = "SELECT {$distinct} {$this->formatColumns($columns)} ";
 		$sql .= "FROM `{$this->table}`";
 		return $sql;
 	}
@@ -743,7 +734,7 @@ class Orm implements OrmInterface
 				// Set binded data
 				$unbind = false;
 				$value = ":{$column['name']}";
-				
+
 				// Set static data
 				if ( $column['type'] == 'true' ) {
 					$value = 'TRUE';
@@ -834,7 +825,7 @@ class Orm implements OrmInterface
 		}
 		return $sql;
 	}
-	
+
 	/**
 	 * Get update query string.
 	 * 
@@ -845,7 +836,7 @@ class Orm implements OrmInterface
 	{
 		$sql = "UPDATE `{$this->table}`";
 		$update = '';
-		foreach($this->getColumns() as $column) {
+		foreach ($this->getColumns() as $column) {
 			// Ignore primary key
 			if ( $column['name'] !== $this->key ) {
 				$update .= "`{$column['name']}` = :{$column['name']}, ";
@@ -857,7 +848,7 @@ class Orm implements OrmInterface
 		}
 		return $sql;
 	}
-	
+
 	/**
 	 * Get delete query string.
 	 * 
@@ -869,7 +860,7 @@ class Orm implements OrmInterface
 		$sql = "DELETE FROM `{$this->table}`";
 		return $sql;
 	}
-	
+
 	/**
 	 * Get delete duplicated query string.
 	 * 
@@ -892,11 +883,12 @@ class Orm implements OrmInterface
 	 */
 	private function getCountQuery(?string $column = null, bool $distinct = false) : string
 	{
-		if ( !$column ) $column = ($this->key) ? $this->key : '*';
+		$column = $column ?: $this->key ?: '*';
+
 		if ( $distinct ) {
 			$column = "DISTINCT {$column}";
 		}
-		$sql  = "SELECT COUNT({$column}) FROM `{$this->table}` ";
+		$sql = "SELECT COUNT({$column}) FROM `{$this->table}` ";
 		$sql .= "{$this->getWhereQuery()};";
 		return $sql;
 	}
@@ -905,10 +897,10 @@ class Orm implements OrmInterface
 	 * Get sort query string.
 	 *
 	 * @access private
-	 * @param string $sort
+	 * @param array $sort
 	 * @return string
 	 */
-	private function getSortQuery($sort = []) : string
+	private function getSortQuery(array $sort = []) : string
 	{
 		$sql = '';
 		if ( !empty($sort) ) {
@@ -936,7 +928,7 @@ class Orm implements OrmInterface
 		}
 		return $sql;
 	}
-	
+
 	/**
 	 * Get columns names with types from bind.
 	 * 
@@ -954,7 +946,7 @@ class Orm implements OrmInterface
 		}
 		return $columns;
 	}
-	
+
 	/**
 	 * Get columns as string.
 	 * 
@@ -967,7 +959,7 @@ class Orm implements OrmInterface
 			$this->getColumns()
 		);
 	}
-	
+
 	/**
 	 * Format columns string (Binded || Custom).
 	 * 
@@ -1007,7 +999,7 @@ class Orm implements OrmInterface
 
 		return '*';
 	}
-	
+
 	/**
 	 * Get values string.
 	 *
@@ -1022,7 +1014,7 @@ class Orm implements OrmInterface
 		}
 		return ':' . implode(',:', $value);
 	}
-	
+
 	/**
 	 * Get binded data before reset.
 	 *
@@ -1035,14 +1027,14 @@ class Orm implements OrmInterface
 		$this->resetBind();
 		return $bind;
 	}
-	
+
 	/**
 	 * Reset binded data.
 	 *
 	 * @access private
 	 * @return void
 	 */
-	private function resetBind()
+	private function resetBind() : void
 	{
 		$this->bind = [];
 	}
@@ -1056,7 +1048,7 @@ class Orm implements OrmInterface
 	 */
 	private function getValueType($value = null) : string
 	{
-		if ( $this->isType('int', $value) || $this->isType('float', $value)  ) {
+		if ( $this->isType('int', $value) || $this->isType('float', $value) ) {
 			return 'num';
 
 		} elseif ( $this->isType('true', $value) ) {
@@ -1098,11 +1090,11 @@ class Orm implements OrmInterface
 	 * @return void
 	 * @throws OrmException
 	 */
-	private function verify()
+	private function verify() : void
 	{
 		if ( !$this->db ) {
 			throw new OrmException(
-				OrmException::invalidDbObject()
+				message: OrmException::invalidDbObject()
 			);
 		}
 	}

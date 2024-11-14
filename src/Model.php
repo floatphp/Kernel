@@ -3,7 +3,7 @@
  * @author     : Jakiboy
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.2.x
+ * @version    : 1.3.x
  * @copyright  : (c) 2018 - 2024 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://floatphp.com
  * @license    : MIT
@@ -17,13 +17,13 @@ namespace FloatPHP\Kernel;
 
 class Model extends Orm
 {
-	/**
-	 * Init ORM.
-	 */
-	public function __construct()
-	{
-		parent::__construct();
-	}
+    /**
+     * Init ORM.
+     */
+    public function __construct()
+    {
+        parent::__construct();
+    }
 
     /**
      * Add item.
@@ -32,7 +32,7 @@ class Model extends Orm
      * @param array $bind
      * @return bool
      */
-    public function add(array $data, ?int $id = null) : bool
+    public function add(array $data, ?int &$id = null) : bool
     {
         if ( $this->bind($data)->create() ) {
             $id = $this->lastInsertId();
@@ -48,7 +48,7 @@ class Model extends Orm
      * @param mixed $id
      * @return mixed
      */
-    public function get($id)
+    public function get($id) : mixed
     {
         return $this->bind([
             $this->key => $id

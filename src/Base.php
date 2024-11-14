@@ -3,7 +3,7 @@
  * @author     : Jakiboy
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.2.x
+ * @version    : 1.3.x
  * @copyright  : (c) 2018 - 2024 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://floatphp.com
  * @license    : MIT
@@ -27,13 +27,13 @@ class Base
 		\FloatPHP\Helpers\Framework\inc\TraitThrowable,
 		\FloatPHP\Helpers\Framework\inc\TraitAuthenticatable;
 
-    /**
+	/**
 	 * Get token (CSRF).
 	 *
-     * @access protected
-     * @param string $action
-     * @return string
-     */
+	 * @access protected
+	 * @param string $action
+	 * @return string
+	 */
 	protected function getToken(?string $action = null) : string
 	{
 		// Set filtered token data
@@ -63,7 +63,7 @@ class Base
 		$session = $this->getSession('--token') ?: [];
 
 		// Set session token data
-		if ( !isset($session[$token])) {
+		if ( !isset($session[$token]) ) {
 			$session[$token] = $data;
 			$this->setSession('--token', $session);
 		}
@@ -84,10 +84,10 @@ class Base
 		if ( $this->hasRequest('--lang') ) {
 			return $this->getRequest('--lang');
 		}
-        if ( !($lang = $this->getSession('--lang')) ) {
-            $lang = $this->getSession('--default-lang');
-        }
-        return (string)$lang;
+		if ( !($lang = $this->getSession('--lang')) ) {
+			$lang = $this->getSession('--default-lang');
+		}
+		return (string)$lang;
 	}
 
 	/**
@@ -111,17 +111,17 @@ class Base
 	/**
 	 * Translate array of strings.
 	 *
-     * @access protected
-     * @param array $strings
-     * @return array
-     */
-    protected function translateArray(array $strings = []) : array
-    {
-        foreach ($strings as $key => $value) {
-            $strings[$key] = $this->translate($value);
-        }
-        return $strings;
-    }
+	 * @access protected
+	 * @param array $strings
+	 * @return array
+	 */
+	protected function translateArray(array $strings = []) : array
+	{
+		foreach ($strings as $key => $value) {
+			$strings[$key] = $this->translate($value);
+		}
+		return $strings;
+	}
 
 	/**
 	 * Translate string with variables,
@@ -152,9 +152,9 @@ class Base
 	 * @param array $strings
 	 * @return array
 	 */
-	protected function translateDeepStrings(array $strings)
+	protected function translateDeepStrings(array $strings) : array
 	{
-		$this->recursiveArray($strings, function(&$string) {
+		$this->recursiveArray($strings, function (&$string) : void {
 			if ( $this->isType('string', $string) ) {
 				$string = $this->translate($string);
 			}

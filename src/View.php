@@ -3,7 +3,7 @@
  * @author     : Jakiboy
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.2.x
+ * @version    : 1.3.x
  * @copyright  : (c) 2018 - 2024 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://floatphp.com
  * @license    : MIT
@@ -16,7 +16,8 @@ declare(strict_types=1);
 namespace FloatPHP\Kernel;
 
 use FloatPHP\Interfaces\Kernel\{
-    ViewInterface, CallableInterface
+    ViewInterface,
+    CallableInterface
 };
 
 class View extends Base implements ViewInterface
@@ -31,15 +32,15 @@ class View extends Base implements ViewInterface
     private $callables = [];
     private $content = [];
 
-	/**
-	 * @inheritdoc
-	 */
-	public function setCallables(?CallableInterface $callable = null)
-	{
-        $default   = $this->getDefaultCallables();
+    /**
+     * @inheritdoc
+     */
+    public function setCallables(?CallableInterface $callable = null) : void
+    {
+        $default = $this->getDefaultCallables();
         $callables = ($callable) ? $callable->getCallables() : [];
-		$this->callables = $this->mergeArray($default, $callables);
-	}
+        $this->callables = $this->mergeArray($default, $callables);
+    }
 
     /**
      * Define global content.
@@ -48,7 +49,7 @@ class View extends Base implements ViewInterface
      * @param array $content
      * @return void
      */
-    protected function setContent(array $content = [])
+    protected function setContent(array $content = []) : void
     {
         $this->content = $content;
     }
@@ -56,19 +57,17 @@ class View extends Base implements ViewInterface
     /**
      * @inheritdoc
      */
-    public function render(string $file = 'default', array $content = [], bool $end = false)
+    public function render(string $file = 'default', array $content = [], bool $end = false) : void
     {
         echo $this->assign($file, $content);
-        if ( $end ) {
-            die;
-        }
+        if ( $end ) die;
     }
 
-	/**
-	 * @inheritdoc
-	 */
-	public function assign(string $file = 'default', array $content = []) : string
-	{
+    /**
+     * @inheritdoc
+     */
+    public function assign(string $file = 'default', array $content = []) : string
+    {
         // Get environment
         $env = $this->getEnvironment($this->getPath(), [
             'cache' => "{$this->getCachePath()}/view",
@@ -99,7 +98,7 @@ class View extends Base implements ViewInterface
         }
 
         return '{}';
-	}
+    }
 
     /**
      * Get default callables.
@@ -110,94 +109,94 @@ class View extends Base implements ViewInterface
     protected function getDefaultCallables() : array
     {
         $global = [
-			'dump' => function($var) {
+            'dump'              => function ($var) : void {
                 var_dump($var);
             },
-			'die' => function(?string $string = null) {
+            'die'               => function (?string $string = null) : never {
                 die($string);
             },
-			'isDebug' => function() : bool {
+            'isDebug'           => function () : bool {
                 return $this->isDebug();
             },
-			'getConfig' => function(?string $key = null) {
+            'getConfig'         => function (?string $key = null) : mixed {
                 return $this->getConfig($key);
             },
-			'getRoot' => function(?string $sub = null) : string {
+            'getRoot'           => function (?string $sub = null) : string {
                 return $this->getRoot($sub);
             },
-            'getBaseRoute' => function() {
-                return $this->getBaseRoute(false);
+            'getBaseRoute'      => function () : string {
+                return $this->getBaseRoute(trailingSlash: false);
             },
-            'getFrontUploadUrl' => function() {
+            'getFrontUploadUrl' => function () : string {
                 return $this->getFrontUploadUrl();
             },
-            'getLoginUrl' => function() {
+            'getLoginUrl'       => function () : string {
                 return $this->getLoginUrl();
             },
-            'getAdminUrl' => function() {
+            'getAdminUrl'       => function () : string {
                 return $this->getAdminUrl();
             },
-            'getVerifyUrl' => function() {
+            'getVerifyUrl'      => function () : string {
                 return $this->getVerifyUrl();
             },
-			'getBaseUrl' => function() : string {
+            'getBaseUrl'        => function () : string {
                 return $this->getBaseUrl();
             },
-			'getAssetUrl' => function() : string {
+            'getAssetUrl'       => function () : string {
                 return $this->getAssetUrl();
             },
-            'getTimeout' => function() {
+            'getTimeout'        => function () : int {
                 return $this->getTimeout();
             },
-            'getToken' => function(?string $source = null) {
-                return $this->getToken($source);
+            'getToken'          => function (?string $source = null) : string {
+                return $this->getToken(action: $source);
             },
-            'getLanguage' => function() {
+            'getLanguage'       => function () : string {
                 return $this->getLanguage();
             },
-            'isValidSession' => function() {
+            'isValidSession'    => function () : bool {
                 return $this->isValidSession();
             },
-            'hasRole' => function($role = null, $userId = null) {
+            'hasRole'           => function ($role = null, $userId = null) : bool {
                 return $this->hasRole($role, $userId);
             },
-            'hasCapability' => function($capability = null, $userId = null) {
+            'hasCapability'     => function ($capability = null, $userId = null) {
                 return $this->hasCapability($capability, $userId);
             },
-			'translate' => function(?string $string) : string {
+            'translate'         => function (?string $string) : string {
                 return $this->translate($string);
             },
-			'translateVar' => function(string $string, $vars = null) : string {
+            'translateVar'      => function (string $string, $vars = null) : string {
                 return $this->translateVar($string, $vars);
             },
-			'unJson' => function(string $value, bool $isArray = false) {
+            'unJson'            => function (string $value, bool $isArray = false) : mixed {
                 return $this->decodeJson($value, $isArray);
             },
-			'toJson' => function($value) {
+            'toJson'            => function ($value) : string {
                 return $this->encodeJson($value);
             },
-			'serialize' => function($value) {
+            'serialize'         => function ($value) : mixed {
                 return $this->serialize($value);
             },
-			'unserialize' => function(string $value) {
+            'unserialize'       => function (string $value) : mixed {
                 return $this->unserialize($value);
             },
-			'limitString' => function(?string $string, int $limit) {
+            'limitString'       => function (?string $string, int $limit) : string {
                 return $this->limitString($string, $limit);
             },
-			'hasFilter' => function(string $hook, $callback = false) {
+            'hasFilter'         => function (string $hook, $callback = false) : bool {
                 return $this->hasFilter($hook, $callback);
             },
-			'applyFilter' => function(string $hook, $value, ...$args) {
+            'applyFilter'       => function (string $hook, $value, ...$args) : mixed {
                 return $this->applyFilter($hook, $value, ...$args);
             },
-			'hasAction' => function(string $hook, $callback = false) {
+            'hasAction'         => function (string $hook, $callback = false) : mixed {
                 return $this->hasAction($hook, $callback);
             },
-			'doAction' => function(string $hook, ...$args) {
+            'doAction'          => function (string $hook, ...$args) : void {
                 $this->doAction($hook, ...$args);
             },
-			'doShortcode' => function($shortcode = '', $ignoreHTML = false) {
+            'doShortcode'       => function ($shortcode = '', $ignoreHTML = false) : void {
                 $this->doShortcode($shortcode, $ignoreHTML);
             }
         ];
@@ -207,10 +206,10 @@ class View extends Base implements ViewInterface
         }
 
         return $this->mergeArray([
-			'exit' => function(?int $status = null) {
+            'exit'       => function (?int $status = null) : never {
                 exit($status);
             },
-			'getSession' => function(?string $key = null) {
+            'getSession' => function (?string $key = null) : mixed {
                 return $this->getSession($key);
             }
         ], $global);
@@ -223,7 +222,7 @@ class View extends Base implements ViewInterface
      * @access protected
      * @return mixed
      */
-    protected function getPath()
+    protected function getPath() : mixed
     {
         $path = $this->getViewPath();
         return $this->applyFilter('template-path', $path);

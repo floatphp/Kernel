@@ -3,7 +3,7 @@
  * @author     : Jakiboy
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.2.x
+ * @version    : 1.3.x
  * @copyright  : (c) 2018 - 2024 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://floatphp.com
  * @license    : MIT
@@ -28,7 +28,7 @@ trait TraitException
 	 * @param string $message
 	 * @return void
 	 */
-	public function throwError(int $code = 404, ?string $message = null)
+	public function throwError(int $code = 404, ?string $message = null) : void
 	{
 		$render = true;
 		if ( $this->hasItem('method', $this, 'getApiBaseUrl') ) {

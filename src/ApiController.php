@@ -3,7 +3,7 @@
  * @author     : Jakiboy
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.2.x
+ * @version    : 1.3.x
  * @copyright  : (c) 2018 - 2024 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://floatphp.com
  * @license    : MIT
@@ -30,35 +30,37 @@ class ApiController extends BaseController
 		$this->initConfig();
 
 		// Basic authentication
-		if ( $this->applyFilter('basic-authentication', true) ) {
+		if ( $this->applyFilter('basic-auth', true) ) {
 			if ( $this->isBasicAuth() ) {
 
 				$user = $this->getBasicAuthUser();
 				$pswd = $this->getBasicAuthPwd();
 
-	        	// API authenticate override
+				// API authenticate override
 				$this->doAction('api-authenticate', [
 					'username' => $user,
 					'address'  => $this->getServerIp(),
 					'method'   => 'basic'
 				]);
 
-			    if ( $user == $this->getApiUsername() 
-			      && $pswd == $this->getApiPassword() ) {
-				    return true;
-			    }
+				if (
+					$user == $this->getApiUsername()
+					&& $pswd == $this->getApiPassword()
+				) {
+					return true;
+				}
 			}
 		}
 
 		// Bearer token authentication
-		if ( $this->applyFilter('bearer-authentication', true) ) {
+		if ( $this->applyFilter('bearer-auth', true) ) {
 			if ( ($token = $this->getBearerToken()) ) {
-	 			return $this->isGranted($token);
+				return $this->isGranted($token);
 			}
 		}
 
 		// Extra authentication
-		if ( $this->applyFilter('extra-authentication', false) ) {
+		if ( $this->applyFilter('extra-auth', false) ) {
 			return $this->applyFilter('extra-authenticated', false);
 		}
 
@@ -74,13 +76,13 @@ class ApiController extends BaseController
 	 */
 	protected function isGranted(string $token) : bool
 	{
-        $access = $this->getAccessToken($token, $this->getSecret(true));
-        $user = $access['user'] ?? false;
-        $pswd = $access['pswd'] ?? false;
+		$access = $this->getAccessToken($token, $this->getSecret(true));
+		$user = $access['user'] ?? false;
+		$pswd = $access['pswd'] ?? false;
 
-        if ( $user && $pswd ) {
+		if ( $user && $pswd ) {
 
-        	// API authenticate override
+			// API authenticate override
 			$this->doAction('api-authenticate', [
 				'username' => $user,
 				'address'  => $this->getServerIp(),
@@ -88,11 +90,13 @@ class ApiController extends BaseController
 			]);
 
 			// Match authentication
-			if ( $user == $this->getApiUsername() 
-			  && $pswd == $this->getApiPassword() ) {
-			    return true;
+			if (
+				$user == $this->getApiUsername()
+				&& $pswd == $this->getApiPassword()
+			) {
+				return true;
 			}
-        }
+		}
 
 		return false;
 	}

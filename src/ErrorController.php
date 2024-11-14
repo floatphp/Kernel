@@ -3,7 +3,7 @@
  * @author     : Jakiboy
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.2.x
+ * @version    : 1.3.x
  * @copyright  : (c) 2018 - 2024 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://floatphp.com
  * @license    : MIT
@@ -20,14 +20,12 @@ use FloatPHP\Classes\Http\Response;
 class ErrorController extends FrontController
 {
 	/**
+	 * @accees public
 	 * @param int $code
-	 * @param string $message
 	 * @param string $error
-	 * @param bool $render
-	 * @uses initConfig()
-	 * @uses resetConfig()
+	 * @param bool $render, Render error message
 	 */
-	public function __construct($code = 404, $error = null, $render = true)
+	public function __construct(int $code = 404, string $error = null, bool $render = true)
 	{
 		// Init configuration
 		$this->initConfig();
@@ -40,8 +38,8 @@ class ErrorController extends FrontController
 
 		if ( $render ) {
 
-			$type  = $this->applyFilter('error-response-type', 'text/html;charset=utf-8');
-			$file  = $this->applyFilter('error-template', '/system/error');
+			$type = $this->applyFilter('error-response-type', 'text/html;charset=utf-8');
+			$file = $this->applyFilter('error-template', '/system/error');
 			$error = $this->applyFilter('error', $this->translate($error));
 
 			Response::setHttpHeaders($code, $type);
@@ -50,7 +48,7 @@ class ErrorController extends FrontController
 				'code'   => $code,
 				'error'  => $error
 			]);
-			
+
 			die();
 
 		} else {
@@ -60,6 +58,6 @@ class ErrorController extends FrontController
 		}
 
 		// Reset configuration
-        $this->resetConfig();
+		$this->resetConfig();
 	}
 }

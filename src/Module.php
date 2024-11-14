@@ -3,7 +3,7 @@
  * @author     : Jakiboy
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.2.x
+ * @version    : 1.3.x
  * @copyright  : (c) 2018 - 2024 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://floatphp.com
  * @license    : MIT
@@ -15,14 +15,12 @@ declare(strict_types=1);
 
 namespace FloatPHP\Kernel;
 
-use FloatPHP\Helpers\Framework\{
-    Installer, Validator
-};
+use FloatPHP\Helpers\Framework\{Installer, Validator};
 
 class Module extends BaseController
 {
 	/**
-	 * @uses initConfig()
+	 * @access public
 	 */
 	public function __construct()
 	{
@@ -56,12 +54,12 @@ class Module extends BaseController
 	 * @access public
 	 * @param array
 	 */
-	public function getModulesRoutes()
+	public function getModulesRoutes() : mixed
 	{
 		$wrapper = [];
 		if ( $this->getModules() ) {
-			foreach ( $this->getModules() as $key => $name ) {
-				$config = $this->parseJson("{$name}/module.json", true);
+			foreach ($this->getModules() as $key => $name) {
+				$config = $this->parseJson("{$name}/module.json", isArray: true);
 				if ( $config['enable'] == true ) {
 					foreach ($config['router'] as $route) {
 						$wrapper[] = $route;
@@ -80,9 +78,9 @@ class Module extends BaseController
 	 * @param string $hook
 	 * @return void
 	 */
-	protected function addJS(string $path, string $hook = 'add-js')
+	protected function addJS(string $path, string $hook = 'add-js') : void
 	{
-		$this->addAction($hook, function() use($path) {
+		$this->addAction($hook, function () use ($path) : void {
 			$file = $this->applyFilter('module-view-js', 'system/js');
 			$this->render($file, ['js' => "{$this->getModulesUrl()}/{$path}"]);
 		});
@@ -96,9 +94,9 @@ class Module extends BaseController
 	 * @param string $hook
 	 * @return void
 	 */
-	protected function addCSS(string $path, string $hook = 'add-css')
+	protected function addCSS(string $path, string $hook = 'add-css') : void
 	{
-		$this->addAction($hook, function() use($path){
+		$this->addAction($hook, function () use ($path) : void {
 			$file = $this->applyFilter('module-view-css', 'system/css');
 			$this->render($file, ['css' => "{$this->getModulesUrl()}/{$path}"]);
 		});
@@ -110,9 +108,9 @@ class Module extends BaseController
 	 * @access private
 	 * @param array
 	 */
-	private function loadModules()
+	private function loadModules() : void
 	{
-		foreach ( $this->getModules() as $name ) {
+		foreach ($this->getModules() as $name) {
 			$config = $this->parseJson("{$name}/module.json");
 			Validator::checkModuleConfig($config);
 			if ( $config->migrate ) {

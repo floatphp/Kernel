@@ -3,7 +3,7 @@
  * @author     : Jakiboy
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.2.x
+ * @version    : 1.3.x
  * @copyright  : (c) 2018 - 2024 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://floatphp.com
  * @license    : MIT
@@ -25,7 +25,7 @@ class BaseController extends View
 	 * @access public
 	 * @return void
 	 */
-	public function redirectIndex()
+	public function redirectIndex() : void
 	{
 		$this->redirect();
 	}
@@ -56,7 +56,7 @@ class BaseController extends View
 				} else {
 					$access = false;
 				}
-				
+
 			} else {
 				// Deny access
 				$denied = $this->applyFilter('access-denied-ip', $this->getDeniedAccess());
@@ -82,9 +82,9 @@ class BaseController extends View
 	 * @param string $hook
 	 * @return void
 	 */
-	protected function addJS(string $js, string $hook = 'add-js')
+	protected function addJS(string $js, string $hook = 'add-js') : void
 	{
-		$this->addAction($hook, function() use($js) {
+		$this->addAction($hook, function () use ($js) {
 			$file = $this->applyFilter('view-js', 'system/js');
 			$this->render($file, ['js' => $js]);
 		});
@@ -98,22 +98,22 @@ class BaseController extends View
 	 * @param string $hook
 	 * @return void
 	 */
-	protected function addCSS(string $css, string $hook = 'add-css')
+	protected function addCSS(string $css, string $hook = 'add-css') : void
 	{
-		$this->addAction($hook, function() use($css){
+		$this->addAction($hook, function () use ($css) {
 			$file = $this->applyFilter('view-css', 'system/css');
 			$this->render($file, ['css' => $css]);
 		});
 	}
 
-    /**
+	/**
 	 * Verify token against request data.
 	 *
-     * @access protected
-     * @param string $token
-     * @param string $action
-     * @param bool
-     */
+	 * @access protected
+	 * @param string $token
+	 * @param string $action
+	 * @param bool
+	 */
 	protected function verifyToken(?string $token = null, ?string $action = null) : bool
 	{
 		// Get token session
@@ -166,15 +166,15 @@ class BaseController extends View
 	 * @param bool $force, Token validation
 	 * @return void
 	 */
-	protected function verifyRequest(bool $force = false)
+	protected function verifyRequest(bool $force = false) : void
 	{
-		$token  = (string)$this->applyFilter('verify-request-token', '--token');
-		$action = (string)$this->applyFilter('verify-request-action', '--action');
-		$ignore = (string)$this->applyFilter('verify-request-ignore', '--ignore');
+		$token = (string)$this->applyFilter('request-token', '--token');
+		$action = (string)$this->applyFilter('request-action', '--action');
+		$ignore = (string)$this->applyFilter('request-ignore', '--ignore');
 
 		if ( $force ) {
 			if ( !$this->hasRequest($token) ) {
-				$msg = $this->applyFilter('invalid-request-signature', 'Invalid request signature');
+				$msg = $this->applyFilter('invalid-signature', 'Invalid request signature');
 				$msg = $this->translate($msg);
 				$this->setResponse($msg, [], 'error', 401);
 			}
@@ -183,14 +183,14 @@ class BaseController extends View
 		if ( $this->hasRequest($token) ) {
 			$action = $this->hasRequest($action) ? $this->getRequest($action) : '';
 			if ( !$this->verifyToken($this->getRequest($token), $action) ) {
-				$msg = $this->applyFilter('invalid-request-token', 'Invalid request token');
+				$msg = $this->applyFilter('invalid-token', 'Invalid request token');
 				$msg = $this->translate($msg);
 				$this->setResponse($msg, [], 'error', 401);
 			}
 		}
 
 		if ( $this->hasRequest($ignore) && !empty($this->getRequest($ignore)) ) {
-			$msg = $this->applyFilter('invalid-request-data', 'Invalid request data');
+			$msg = $this->applyFilter('invalid-data', 'Invalid request data');
 			$msg = $this->translate($msg);
 			$this->setResponse($msg, [], 'error', 401);
 		}
@@ -207,14 +207,10 @@ class BaseController extends View
 	protected function sanitizeRequest(bool $verify = true, bool $force = false) : array
 	{
 		$request = $this->getRequest();
-		$excepts = [
-			'PHPSESSID', 'COOKIES'
-		];
+		$excepts = ['PHPSESSID', 'COOKIES'];
 
 		if ( !$force ) {
-			$excepts = $this->mergeArray([
-				'submit', '--token', '--action', '--ignore'
-			], $excepts);
+			$excepts = $this->mergeArray(['submit', '--token', '--action', '--ignore'], $excepts);
 		}
 
 		if ( $verify ) {
@@ -242,7 +238,7 @@ class BaseController extends View
 	 * @param int $code
 	 * @return void
 	 */
-	protected function setResponse(string $msg = '', $content = [], string $status = 'success', int $code = 200)
+	protected function setResponse(string $msg = '', $content = [], string $status = 'success', int $code = 200) : void
 	{
 		$msg = $this->translate($msg);
 		Response::set($msg, $content, $status, $code);
@@ -258,7 +254,7 @@ class BaseController extends View
 	 * @param int $code
 	 * @return void
 	 */
-	protected function setHttpResponse(string $msg = '', $content = [], string $status = 'success', int $code = 200)
+	protected function setHttpResponse(string $msg = '', $content = [], string $status = 'success', int $code = 200) : void
 	{
 		Response::set($msg, $content, $status, $code);
 	}

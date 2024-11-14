@@ -3,7 +3,7 @@
  * @author     : Jakiboy
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.2.x
+ * @version    : 1.3.x
  * @copyright  : (c) 2018 - 2024 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://floatphp.com
  * @license    : MIT
@@ -44,7 +44,7 @@ trait TraitConfiguration
 	 */
 	public function __clone()
 	{
-	    die(__METHOD__ . ': Clone denied');
+		die(__METHOD__ . ': Clone denied');
 	}
 
 	/**
@@ -52,7 +52,7 @@ trait TraitConfiguration
 	 */
 	public function __wakeup()
 	{
-	    die(__METHOD__ . ': Unserialize denied');
+		die(__METHOD__ . ': Unserialize denied');
 	}
 
 	/**
@@ -119,7 +119,7 @@ trait TraitConfiguration
 	 * @param int $args
 	 * @return bool
 	 */
-	protected function updateConfig(array $options = [], string $section = 'options', int $args = 64|128|256) : bool
+	protected function updateConfig(array $options = [], string $section = 'options', int $args = 64 | 128 | 256) : bool
 	{
 		$config = $this->parseJson($this->getConfigFile(), true);
 		foreach ($options as $option => $value) {
@@ -153,7 +153,7 @@ trait TraitConfiguration
 	protected function loadConfig(string $config, bool $isArray = false)
 	{
 		$dir = "{$this->getAppDir()}/Storage/config";
-		if ( $this->hasFile( ($json = "{$dir}/{$config}.json") ) ) {
+		if ( $this->hasFile(($json = "{$dir}/{$config}.json")) ) {
 			return $this->decodeJson($this->readfile($json), $isArray);
 		}
 		return false;
@@ -254,14 +254,14 @@ trait TraitConfiguration
 		$access = $this->parseIni($this->getDatabaseFile(), true);
 		Validator::checkDatabaseConfig($access);
 		return $this->mergeArray([
-            'db'      => '',
-            'host'    => 'localhost',
-            'port'    => 3306,
-            'user'	  => '',
-            'pswd'    => '',
-            'charset' => 'utf8',
-            'collate' => 'utf8_general_ci'
-        ], $access['default']);
+			'host'    => 'localhost',
+			'port'    => 3306,
+			'name'    => '',
+			'user'    => '',
+			'pswd'    => '',
+			'charset' => 'utf8',
+			'collate' => 'utf8_general_ci'
+		], $access['default']);
 	}
 
 	/**
@@ -275,9 +275,9 @@ trait TraitConfiguration
 		$access = $this->parseIni($this->getDatabaseFile(), true);
 		Validator::checkDatabaseConfig($access);
 		return $this->mergeArray([
-            'user' => '',
-            'pswd' => ''
-        ], $access['root']);
+			'user' => '',
+			'pswd' => ''
+		], $access['root']);
 	}
 
 	/**
@@ -392,7 +392,7 @@ trait TraitConfiguration
 	protected function getModulesConfig() : array
 	{
 		$list = [];
-		foreach ( $this->getModules() as $name ) {
+		foreach ($this->getModules() as $name) {
 			$config = $this->parseJson("{$name}/module.json");
 			$list[] = [
 				'name'        => $config->name,
@@ -758,7 +758,7 @@ trait TraitConfiguration
 	 * @access protected
 	 * @return array
 	 */
-	protected function getStrings()
+	protected function getStrings() : array
 	{
 		$strings = $this->loadConfig('strings', true);
 		return ($strings) ? (array)$strings : (array)$this->global->strings;
@@ -770,10 +770,10 @@ trait TraitConfiguration
 	 * @access protected
 	 * @return array
 	 */
-	protected function getVars()
+	protected function getVars() : array
 	{
 		$vars = $this->loadConfig('vars', true);
-		return ($vars) ? (array)$vars : (array)$this->global->vars;
+		return $vars ?: (array)$this->global->vars;
 	}
 
 	/**
@@ -782,9 +782,9 @@ trait TraitConfiguration
 	 * @access protected
 	 * @return array
 	 */
-	protected function getMenu()
+	protected function getMenu() : mixed
 	{
 		$menu = $this->loadConfig('menu', true);
-		return ($menu) ? (array)$menu : (array)$this->global->menu;
+		return $menu ?: (array)$this->global->menu;
 	}
 }

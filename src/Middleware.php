@@ -3,7 +3,7 @@
  * @author     : Jakiboy
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.2.x
+ * @version    : 1.3.x
  * @copyright  : (c) 2018 - 2024 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://floatphp.com
  * @license    : MIT
@@ -32,7 +32,7 @@ final class Middleware
 	 * Middleware routing system.
 	 *
 	 * @param RouterInterface $router
-	 * @uses $router->addMatchTypes(['name' => 'regex']);
+	 * @see $router->addMatchTypes(['name' => 'regex']);
 	 */
 	public function __construct(RouterInterface $router)
 	{
@@ -59,10 +59,10 @@ final class Middleware
 	 * @access public
 	 * @return void
 	 */
-	public function dispatch()
+	public function dispatch() : void
 	{
 		if ( $this->match ) {
-			
+
 			if ( $this->isCallable() ) {
 				// Callable
 				$this->doCallable();
@@ -117,7 +117,7 @@ final class Middleware
 	 * @access private
 	 * @return void
 	 */
-	private function doCallable()
+	private function doCallable() : void
 	{
 		if ( $this->isType('function', $this->match['target']) ) {
 			$this->match['target']($this->parseVar());
@@ -130,13 +130,13 @@ final class Middleware
 	 * @access private
 	 * @return void
 	 */
-	private function doInstance()
+	private function doInstance() : void
 	{
 		// Parse
-		$class  = $this->parseClass();
+		$class = $this->parseClass();
 		$method = $this->parseMethod();
-		$var    = $this->parseVar();
-		$role   = $this->parsePermissions();
+		$var = $this->parseVar();
+		$role = $this->parsePermissions();
 
 		// Secure access
 		$instance = new $class();
@@ -172,7 +172,7 @@ final class Middleware
 		} elseif ( $this->isApiController($class) ) {
 			if ( $instance->isHttpAuthenticated() ) {
 				$instance->$method($var);
-				
+
 			} else {
 				$this->setResponse('Authorization Required', [], 'error', 401);
 			}
@@ -185,7 +185,7 @@ final class Middleware
 	 * @access private
 	 * @return void
 	 */
-	private function doModuleInstance()
+	private function doModuleInstance() : void
 	{
 		// Parse
 		$class = $this->parseModuleClass();
@@ -287,7 +287,7 @@ final class Middleware
 	 */
 	private function isAuthController($class) : bool
 	{
-		if ( $this->hasItem('parent', $class,__NAMESPACE__ . '\AbstractAuthController') ) {
+		if ( $this->hasItem('parent', $class, __NAMESPACE__ . '\AbstractAuthController') ) {
 			return true;
 
 		} elseif ( $this->hasAuthMiddlewareInterface($class) ) {
@@ -414,7 +414,7 @@ final class Middleware
 		$module = $this->removeString('Module', $class);
 		return $this->getModuleNamespace() . "{$module}\\{$class}";
 	}
-	
+
 	/**
 	 * Parse class.
 	 *
@@ -439,7 +439,7 @@ final class Middleware
 	 */
 	private function parseMethod() : string
 	{
-		$target = explode('@',$this->match['target']);
+		$target = explode('@', $this->match['target']);
 		return $target[1] ?? 'index';
 	}
 
@@ -449,7 +449,7 @@ final class Middleware
 	 * @access private
 	 * @return mixed
 	 */
-	private function parsePermissions()
+	private function parsePermissions() : mixed
 	{
 		return $this->match['permissions'] ?? false;
 	}
@@ -460,7 +460,7 @@ final class Middleware
 	 * @access private
 	 * @return mixed
 	 */
-	private function parseVar()
+	private function parseVar() : mixed
 	{
 		$var = null;
 		if ( !empty($this->match['params']) ) {

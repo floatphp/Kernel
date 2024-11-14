@@ -3,7 +3,7 @@
  * @author     : Jakiboy
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.2.x
+ * @version    : 1.3.x
  * @copyright  : (c) 2018 - 2024 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://floatphp.com
  * @license    : MIT
@@ -38,17 +38,17 @@ abstract class AbstractAuthController extends BaseController
 		}
 		return false;
 	}
-	
+
 	/**
 	 * @access protected
 	 * @param AuthenticationInterface $auth
 	 * @param array $args
 	 * @return void
 	 */
-	protected function authenticate(AuthenticationInterface $auth, array $args = [])
+	protected function authenticate(AuthenticationInterface $auth, array $args = []) : void
 	{
 		// Security
-		$this->verifyRequest(true);
+		$this->verifyRequest(force: true);
 
 		// Get authentication
 		$args = $this->mergeArray([
@@ -69,10 +69,10 @@ abstract class AbstractAuthController extends BaseController
 			if ( $this->isPassword($password, $user['password']) ) {
 
 				// Check password format
-				if ( $this->applyFilter('auth-strong-password', false) ) {
+				if ( $this->applyFilter('auth-strong-pswd', false) ) {
 					if ( !$this->isStrongPassword($password) ) {
 						// Authenticate failed
-						$msg = $this->applyFilter('auth-password-message', 'Strong password required');
+						$msg = $this->applyFilter('auth-pswd-msg', 'Strong password required');
 						$msg = $this->translate($msg);
 						$this->setResponse($msg, [], 'warning');
 					}
@@ -89,14 +89,14 @@ abstract class AbstractAuthController extends BaseController
 					if ( $auth->hasSecret($username) ) {
 						$this->setSession('--verify', $username);
 						// Authenticate accepted
-						$msg = $this->applyFilter('auth-accepted-message', 'Accepted');
+						$msg = $this->applyFilter('auth-accepted-msg', 'Accepted');
 						$msg = $this->translate($msg);
 						$this->setResponse($msg, [], 'accepted', 202);
 
 					} else {
-						$this->setSession($auth->getKey(),$user[$auth->getKey()]);
+						$this->setSession($auth->getKey(), $user[$auth->getKey()]);
 						// Authenticate success
-						$msg = $this->applyFilter('auth-success-message', 'Connected');
+						$msg = $this->applyFilter('auth-success-msg', 'Connected');
 						$msg = $this->translate($msg);
 						$this->setResponse($msg);
 					}
@@ -111,7 +111,7 @@ abstract class AbstractAuthController extends BaseController
 		$this->doAction('auth-failed', $username);
 
 		// Authenticate failed
-		$msg = $this->applyFilter('auth-error-message', 'Authentication failed');
+		$msg = $this->applyFilter('auth-error-msg', 'Authentication failed');
 		$msg = $this->translate($msg);
 		$this->setResponse($msg, [], 'error', 401);
 	}
