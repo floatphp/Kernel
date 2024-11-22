@@ -90,10 +90,7 @@ class ApiController extends BaseController
 			]);
 
 			// Match authentication
-			if (
-				$user == $this->getApiUsername()
-				&& $pswd == $this->getApiPassword()
-			) {
+			if ( $user == $this->getApiUsername() && $pswd == $this->getApiPassword() ) {
 				return true;
 			}
 		}

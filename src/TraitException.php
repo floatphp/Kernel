@@ -31,10 +31,10 @@ trait TraitException
 	public function throwError(int $code = 404, ?string $message = null) : void
 	{
 		$render = true;
-		if ( $this->hasItem('method', $this, 'getApiBaseUrl') ) {
+		if ( $this->hasObject('method', $this, 'getApiBaseUrl') ) {
 			$url = $this->getServer('request-uri');
 			$api = $this->getApiBaseUrl();
-			if ( $this->searchString($url, $api) ) {
+			if ( $this->hasString($url, $api) ) {
 				$render = false;
 			}
 		}

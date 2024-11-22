@@ -119,7 +119,7 @@ class Module extends BaseController
 			if ( $config->enable ) {
 				$basename = $this->basename($name);
 				$namespace = "{$this->getModuleNamespace()}{$basename}\\{$basename}";
-				if ( $this->hasFile("{$name}/{$basename}Module.php") ) {
+				if ( $this->isFile("{$name}/{$basename}Module.php") ) {
 					$module = "{$namespace}Module";
 					new $module;
 				}

@@ -974,7 +974,7 @@ class Orm implements OrmInterface
 			if ( $columns == '*' || empty($columns) ) {
 				return '*';
 			}
-			if ( $this->searchString($columns, ',') ) {
+			if ( $this->hasString($columns, ',') ) {
 				$columns = explode(',', $columns);
 
 			} else {

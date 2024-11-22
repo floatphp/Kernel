@@ -15,19 +15,31 @@ declare(strict_types=1);
 
 namespace FloatPHP\Kernel;
 
-use FloatPHP\Interfaces\Kernel\{
-    ViewInterface,
-    CallableInterface
-};
+use FloatPHP\Interfaces\Kernel\{ViewInterface, CallableInterface};
 
+/**
+ * View controller.
+ *
+ * - Hooking
+ * - Rendering
+ * - Authentication
+ * - Configuration
+ * - Translation
+ * - Formatting
+ * - IO
+ * - Caching
+ * - Requesting
+ * - Viewing
+ * - Throwing
+ */
 class View extends Base implements ViewInterface
 {
     use \FloatPHP\Helpers\Framework\inc\TraitViewable;
 
     /**
      * @access private
-     * @var array $callables
-     * @var array $content
+     * @var array $callables, Custom view functions
+     * @var array $content, Global view content
      */
     private $callables = [];
     private $content = [];

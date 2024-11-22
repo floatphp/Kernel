@@ -65,7 +65,7 @@ trait TraitConfiguration
 	protected function initConfig()
 	{
 		// Parse config file
-		if ( $this->hasFile(($path = $this->getConfigFile())) ) {
+		if ( $this->isFile(($path = $this->getConfigFile())) ) {
 			Validator::checkConfig(($config = $this->parseJson($path)));
 			$this->global = $config;
 
@@ -77,7 +77,7 @@ trait TraitConfiguration
 		}
 
 		// Set routes config
-		if ( $this->hasFile(($path = $this->getRoutesFile())) ) {
+		if ( $this->isFile(($path = $this->getRoutesFile())) ) {
 			Validator::checkRouteConfig(($routes = $this->parseJson($path, true)));
 			$this->routes = $routes;
 		}
@@ -153,7 +153,7 @@ trait TraitConfiguration
 	protected function loadConfig(string $config, bool $isArray = false)
 	{
 		$dir = "{$this->getAppDir()}/Storage/config";
-		if ( $this->hasFile(($json = "{$dir}/{$config}.json")) ) {
+		if ( $this->isFile(($json = "{$dir}/{$config}.json")) ) {
 			return $this->decodeJson($this->readfile($json), $isArray);
 		}
 		return false;
@@ -749,7 +749,7 @@ trait TraitConfiguration
 	protected function isAdmin() : bool
 	{
 		$url = Server::getBaseUrl();
-		return $this->searchString($url, '/admin/');
+		return $this->hasString($url, '/admin/');
 	}
 
 	/**

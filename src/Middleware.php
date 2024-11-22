@@ -287,7 +287,7 @@ final class Middleware
 	 */
 	private function isAuthController($class) : bool
 	{
-		if ( $this->hasItem('parent', $class, __NAMESPACE__ . '\AbstractAuthController') ) {
+		if ( $this->hasObject('parent', $class, __NAMESPACE__ . '\AbstractAuthController') ) {
 			return true;
 
 		} elseif ( $this->hasAuthMiddlewareInterface($class) ) {
@@ -305,7 +305,7 @@ final class Middleware
 	 */
 	private function isFrontClass($class) : bool
 	{
-		return $this->hasItem('parent', $class, __NAMESPACE__ . '\FrontController');
+		return $this->hasObject('parent', $class, __NAMESPACE__ . '\FrontController');
 	}
 
 	/**
@@ -317,7 +317,7 @@ final class Middleware
 	 */
 	private function isBackendClass($class) : bool
 	{
-		return $this->hasItem('parent', $class, __NAMESPACE__ . '\BackendController');
+		return $this->hasObject('parent', $class, __NAMESPACE__ . '\BackendController');
 	}
 
 	/**
@@ -329,7 +329,7 @@ final class Middleware
 	 */
 	private function isApiClass($class) : bool
 	{
-		return $this->hasItem('parent', $class, __NAMESPACE__ . '\ApiController');
+		return $this->hasObject('parent', $class, __NAMESPACE__ . '\ApiController');
 	}
 
 	/**
@@ -341,7 +341,7 @@ final class Middleware
 	 */
 	private function hasBackendInterface($class) : bool
 	{
-		return $this->hasItem('interface', $class, 'BackendInterface');
+		return $this->hasObject('interface', $class, 'BackendInterface');
 	}
 
 	/**
@@ -353,7 +353,7 @@ final class Middleware
 	 */
 	private function hasFrontInterface($class) : bool
 	{
-		if ( $this->hasItem('interface', $class, 'FrontInterface') ) {
+		if ( $this->hasObject('interface', $class, 'FrontInterface') ) {
 			return true;
 		}
 		return false;
@@ -368,7 +368,7 @@ final class Middleware
 	 */
 	private function hasApiInterface($class) : bool
 	{
-		return $this->hasItem('interface', $class, 'ApiInterface');
+		return $this->hasObject('interface', $class, 'ApiInterface');
 	}
 
 	/**
@@ -380,7 +380,7 @@ final class Middleware
 	 */
 	private function hasAuthMiddlewareInterface($class) : bool
 	{
-		return $this->hasItem('interface', $class, 'AuthMiddlewareInterface');
+		return $this->hasObject('interface', $class, 'AuthMiddlewareInterface');
 	}
 
 	/**
@@ -392,7 +392,7 @@ final class Middleware
 	private function isModule() : bool
 	{
 		$module = $this->lowercase($this->match['target']);
-		if ( $this->searchString($module, 'module') ) {
+		if ( $this->hasString($module, 'module') ) {
 			return true;
 		}
 		return false;

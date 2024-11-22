@@ -42,7 +42,7 @@ class BaseController extends View
 		$access = false;
 
 		// Allow local access
-		if ( $this->searchString(['127.0.0.1', '::1'], $ip) ) {
+		if ( $this->hasString(['127.0.0.1', '::1'], $ip) ) {
 			$access = true;
 
 		} else {
@@ -50,7 +50,7 @@ class BaseController extends View
 			// Check allowed IPs
 			$allowed = $this->applyFilter('access-allowed-ip', $this->getAllowedAccess());
 			if ( !empty($allowed) ) {
-				if ( $this->searchString($allowed, $ip) ) {
+				if ( $this->hasString($allowed, $ip) ) {
 					$access = true;
 
 				} else {
@@ -60,7 +60,7 @@ class BaseController extends View
 			} else {
 				// Deny access
 				$denied = $this->applyFilter('access-denied-ip', $this->getDeniedAccess());
-				if ( $this->searchString($denied, $ip) ) {
+				if ( $this->hasString($denied, $ip) ) {
 					$access = false;
 
 				} else {
