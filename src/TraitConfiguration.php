@@ -247,21 +247,25 @@ trait TraitConfiguration
 	 * Get database access.
 	 *
 	 * @access protected
+	 * @param string $type
 	 * @return array
 	 */
-	protected function getDbAccess() : array
+	protected function getDbAccess(string $type = 'default') : array
 	{
-		$access = $this->parseIni($this->getDatabaseFile(), true);
-		Validator::checkDatabaseConfig($access);
-		return $this->mergeArray([
-			'host'    => 'localhost',
-			'port'    => 3306,
-			'name'    => '',
-			'user'    => '',
-			'pswd'    => '',
-			'charset' => 'utf8',
-			'collate' => 'utf8_general_ci'
-		], $access['default']);
+		$file = $this->getDbFile();
+		$extension = $this->getFileExtension($file);
+		$data = [];
+
+		if ( $extension == 'yaml' ) {
+			$data = $this->parseYaml($file, $type) ?: [];
+
+		} elseif ( $extension == 'ini' ) {
+			$data = $this->parseIni($file, true);
+			$data = $data[$type] ?? [];
+		}
+
+		Validator::checkDatabaseConfig($data, $type);
+		return $data;
 	}
 
 	/**
@@ -272,12 +276,7 @@ trait TraitConfiguration
 	 */
 	protected function getDbRootAccess() : array
 	{
-		$access = $this->parseIni($this->getDatabaseFile(), true);
-		Validator::checkDatabaseConfig($access);
-		return $this->mergeArray([
-			'user' => '',
-			'pswd' => ''
-		], $access['root']);
+		return $this->getDbAccess('root');
 	}
 
 	/**
@@ -580,12 +579,12 @@ trait TraitConfiguration
 	}
 
 	/**
-	 * Get database file path.
+	 * Get database config file.
 	 *
 	 * @access protected
 	 * @return string
 	 */
-	protected function getDatabaseFile() : string
+	protected function getDbFile() : string
 	{
 		$path = "{$this->getRoot()}/{$this->global->path->db}";
 		return $this->formatPath($path, true);
