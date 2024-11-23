@@ -76,10 +76,10 @@ class Base
 	/**
 	 * Get language.
 	 *
-	 * @access protected
+	 * @access public
 	 * @return string
 	 */
-	protected function getLanguage() : string
+	public function getLanguage() : string
 	{
 		if ( $this->hasRequest('--lang') ) {
 			return $this->getRequest('--lang');
@@ -94,11 +94,11 @@ class Base
 	 * Translate string,
 	 * May require quotes escaping.
 	 *
-	 * @access protected
+	 * @access public
 	 * @param string $string
 	 * @return string
 	 */
-	protected function translate(string $string) : string
+	public function translate(string $string) : string
 	{
 		if ( $string ) {
 			$lang = $this->getLanguage();
@@ -111,11 +111,11 @@ class Base
 	/**
 	 * Translate array of strings.
 	 *
-	 * @access protected
+	 * @access public
 	 * @param array $strings
 	 * @return array
 	 */
-	protected function translateArray(array $strings = []) : array
+	public function translateArray(array $strings = []) : array
 	{
 		foreach ($strings as $key => $value) {
 			$strings[$key] = $this->translate($value);
