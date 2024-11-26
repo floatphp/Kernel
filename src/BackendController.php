@@ -60,12 +60,12 @@ class BackendController extends BaseController
 	}
 
 	/**
-	 * User logout.
+	 * logout.
 	 *
 	 * @access public
 	 * @return void
 	 */
-	public function logout()
+	public function logout() : void
 	{
 		$this->verifyRequest();
 		$this->clearCookie();
