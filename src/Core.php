@@ -21,8 +21,8 @@ use FloatPHP\Helpers\Framework\Installer;
 final class Core
 {
 	use TraitException,
-		\FloatPHP\Helpers\Framework\inc\TraitDatable,
-		\FloatPHP\Helpers\Framework\inc\TraitSessionable;
+		\FloatPHP\Helpers\Framework\tr\TraitDatable,
+		\FloatPHP\Helpers\Framework\tr\TraitSessionable;
 
 	/**
 	 * Init Core.

@@ -39,38 +39,31 @@ class BaseController extends View
 	public function hasAccess() : bool
 	{
 		$ip = $this->getServerIp();
-		$access = false;
 
 		// Allow local access
-		if ( $this->hasString(['127.0.0.1', '::1'], $ip) ) {
-			$access = true;
+		if ( $this->isDebug() && $this->hasString(['127.0.0.1', '::1'], $ip) ) {
+			return true;
+		}
+
+		// Check allowed IPs
+		$access = false;
+		$allowed = $this->getAllowedAccess();
+		$allowed = $this->applyFilter('access-allowed-ip', $allowed);
+
+		if ( !empty($allowed) ) {
+			$access = $this->hasString($allowed, $ip);
 
 		} else {
 
-			// Check allowed IPs
-			$allowed = $this->applyFilter('access-allowed-ip', $this->getAllowedAccess());
-			if ( !empty($allowed) ) {
-				if ( $this->hasString($allowed, $ip) ) {
-					$access = true;
-
-				} else {
-					$access = false;
-				}
-
-			} else {
-				// Deny access
-				$denied = $this->applyFilter('access-denied-ip', $this->getDeniedAccess());
-				if ( $this->hasString($denied, $ip) ) {
-					$access = false;
-
-				} else {
-					$access = true;
-				}
-			}
+			// Deny access
+			$denied = $this->getDeniedAccess();
+			$denied = $this->applyFilter('access-denied-ip', $denied);
+			$access = !$this->hasString($denied, $ip);
 		}
 
 		$data = ['ip' => $ip, 'access' => $access];
 		$this->doAction('ip-access', $data);
+
 		return $access;
 	}
 

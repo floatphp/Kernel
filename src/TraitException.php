@@ -17,8 +17,8 @@ namespace FloatPHP\Kernel;
 
 trait TraitException
 {
-	use \FloatPHP\Helpers\Framework\inc\TraitFormattable,
-		\FloatPHP\Helpers\Framework\inc\TraitRequestable;
+	use \FloatPHP\Helpers\Framework\tr\TraitFormattable,
+		\FloatPHP\Helpers\Framework\tr\TraitRequestable;
 
 	/**
 	 * Throw error controller.

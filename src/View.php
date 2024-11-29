@@ -34,7 +34,7 @@ use FloatPHP\Interfaces\Kernel\{ViewInterface, CallableInterface};
  */
 class View extends Base implements ViewInterface
 {
-    use \FloatPHP\Helpers\Framework\inc\TraitViewable;
+    use \FloatPHP\Helpers\Framework\tr\TraitViewable;
 
     /**
      * @access private

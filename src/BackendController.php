@@ -31,10 +31,8 @@ class BackendController extends BaseController
 		// Set view global content
 		$id = (int)$this->getSession('userId');
 		$content = $this->mergeArray([
-			[
-				'user'      => (new User)->get($id),
-				'execution' => Debugger::getExecutionTime()
-			]
+			'user'      => (new User)->get($id),
+			'execution' => Debugger::getExecutionTime()
 		], $content);
 		$this->setContent($content);
 

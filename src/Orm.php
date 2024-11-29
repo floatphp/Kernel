@@ -23,7 +23,7 @@ use \PDOException;
 class Orm implements OrmInterface
 {
 	use TraitConfiguration,
-		\FloatPHP\Helpers\Framework\inc\TraitConnectable;
+		\FloatPHP\Helpers\Framework\tr\TraitConnectable;
 
 	/**
 	 * @access private

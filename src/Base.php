@@ -21,11 +21,11 @@ class Base
 {
 	use TraitConfiguration,
 		TraitException,
-		\FloatPHP\Helpers\Framework\inc\TraitHookable,
-		\FloatPHP\Helpers\Framework\inc\TraitPermissionable,
-		\FloatPHP\Helpers\Framework\inc\TraitRequestable,
-		\FloatPHP\Helpers\Framework\inc\TraitThrowable,
-		\FloatPHP\Helpers\Framework\inc\TraitAuthenticatable;
+		\FloatPHP\Helpers\Framework\tr\TraitHookable,
+		\FloatPHP\Helpers\Framework\tr\TraitPermissionable,
+		\FloatPHP\Helpers\Framework\tr\TraitRequestable,
+		\FloatPHP\Helpers\Framework\tr\TraitThrowable,
+		\FloatPHP\Helpers\Framework\tr\TraitAuthenticatable;
 
 	/**
 	 * Get token (CSRF).

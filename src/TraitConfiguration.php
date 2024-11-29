@@ -20,8 +20,8 @@ use FloatPHP\Classes\Http\Server;
 
 trait TraitConfiguration
 {
-	use \FloatPHP\Helpers\Framework\inc\TraitIO,
-		\FloatPHP\Helpers\Framework\inc\TraitFormattable;
+	use \FloatPHP\Helpers\Framework\tr\TraitIO,
+		\FloatPHP\Helpers\Framework\tr\TraitFormattable;
 
 	/**
 	 * @access private
