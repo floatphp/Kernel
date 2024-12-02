@@ -602,7 +602,7 @@ class Orm implements OrmInterface
 			return (bool)$query->execute();
 
 		} catch (PDOException $e) {
-			die("ERROR : {$e->getMessage()}");
+			exit("ERROR : {$e->getMessage()}");
 		}
 	}
 

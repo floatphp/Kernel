@@ -44,7 +44,7 @@ trait TraitConfiguration
 	 */
 	public function __clone()
 	{
-		die(__METHOD__ . ': Clone denied');
+		exit(__METHOD__ . ': Clone denied');
 	}
 
 	/**
@@ -52,7 +52,7 @@ trait TraitConfiguration
 	 */
 	public function __wakeup()
 	{
-		die(__METHOD__ . ': Unserialize denied');
+		exit(__METHOD__ . ': Unserialize denied');
 	}
 
 	/**

@@ -72,7 +72,7 @@ class View extends Base implements ViewInterface
     public function render(string $file = 'default', array $content = [], bool $end = false) : void
     {
         echo $this->assign($file, $content);
-        if ( $end ) die;
+        if ( $end ) exit;
     }
 
     /**
@@ -104,7 +104,7 @@ class View extends Base implements ViewInterface
 
         } catch (\Exception | \RuntimeException $e) {
             if ( $this->isDebug() ) {
-                die($e->getMessage());
+                exit($e->getMessage());
             }
             $this->clearLastError();
         }
@@ -123,9 +123,6 @@ class View extends Base implements ViewInterface
         $global = [
             'dump'              => function ($var) : void {
                 var_dump($var);
-            },
-            'die'               => function (?string $string = null) : never {
-                die($string);
             },
             'isDebug'           => function () : bool {
                 return $this->isDebug();

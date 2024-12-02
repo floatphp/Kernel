@@ -42,14 +42,13 @@ class ErrorController extends FrontController
 			$file = $this->applyFilter('error-template', '/system/error');
 			$error = $this->applyFilter('error', $this->translate($error));
 
-			Response::setHttpHeaders($code, $type);
+			Response::setHttpHeader($code, $type);
 			$this->render($file, [
 				'status' => $message,
 				'code'   => $code,
 				'error'  => $error
 			]);
-
-			die();
+			exit();
 
 		} else {
 

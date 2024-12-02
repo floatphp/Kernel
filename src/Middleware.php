@@ -80,7 +80,7 @@ final class Middleware
 			$this->throwError(404);
 		}
 
-		if ( !Debugger::enabled() ) die();
+		if ( !Debugger::enabled() ) exit();
 	}
 
 	/**
