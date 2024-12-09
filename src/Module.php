@@ -24,10 +24,7 @@ class Module extends BaseController
 	 */
 	public function __construct()
 	{
-		// Init configuration
 		$this->initConfig();
-
-		// Load modules
 		$this->loadModules();
 	}
 
@@ -38,7 +35,7 @@ class Module extends BaseController
 	 * @param string $role
 	 * @return bool
 	 */
-	public function hasPermissions(?string $role = null) : bool
+	public function hasPermissions($role = false) : bool
 	{
 		if ( $this->isPermissions() ) {
 			if ( $role ) {
@@ -78,7 +75,7 @@ class Module extends BaseController
 	 * @param string $hook
 	 * @return void
 	 */
-	protected function addJS(string $path, string $hook = 'add-js') : void
+	protected function addJS(string $path, string $hook = 'js') : void
 	{
 		$this->addAction($hook, function () use ($path) : void {
 			$file = $this->applyFilter('module-view-js', 'system/js');
@@ -94,7 +91,7 @@ class Module extends BaseController
 	 * @param string $hook
 	 * @return void
 	 */
-	protected function addCSS(string $path, string $hook = 'add-css') : void
+	protected function addCSS(string $path, string $hook = 'css') : void
 	{
 		$this->addAction($hook, function () use ($path) : void {
 			$file = $this->applyFilter('module-view-css', 'system/css');
