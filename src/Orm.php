@@ -3,7 +3,7 @@
  * @author     : Jakiboy
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.3.x
+ * @version    : 1.4.x
  * @copyright  : (c) 2018 - 2024 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://floatphp.com
  * @license    : MIT
@@ -27,17 +27,15 @@ class Orm implements OrmInterface
 
 	/**
 	 * @access private
-	 * @var array $access, User access
-	 * @var array $root, Root access
 	 * @var array $bind, Binded data
 	 * @var array $row, Result row data
+	 * @var array $access, Result row data
 	 * @var bool $connect, Database connection
 	 */
-	private $access;
-	private $root;
 	private $bind = [];
 	private $row = [];
-	private $connect = true;
+	private $access = [];
+	private static $connect = true;
 
 	/**
 	 * @access protected
@@ -49,22 +47,17 @@ class Orm implements OrmInterface
 
 	/**
 	 * Init database.
-	 * 
+	 *
 	 * @access public
 	 */
 	public function __construct()
 	{
-		// Init configuration
-		$this->initConfig();
-
-		// Set access
 		$this->access = $this->getDbAccess();
-		$this->root = $this->getDbRootAccess();
-
-		// Connect database
-		if ( $this->connect ) {
-			$this->getDbObject($this->access, "{$this->getLoggerPath()}/database");
+		if ( self::$connect ) {
+			$log = $this->getLoggerPath('database');
+			$this->getDbObject($this->access, $log);
 		}
+		self::$connect = true;
 	}
 
 	/**
@@ -87,18 +80,6 @@ class Orm implements OrmInterface
 	public function __get(string $name) : mixed
 	{
 		return $this->row[$name] ?? null;
-	}
-
-	/**
-	 * Disable database connection.
-	 *
-	 * @access public
-	 * @return object
-	 */
-	public function noConnect() : object
-	{
-		$this->connect = false;
-		return $this;
 	}
 
 	/**
@@ -591,8 +572,10 @@ class Orm implements OrmInterface
 	{
 		try {
 
+			$root = $this->getDbRootAccess();
+
 			$dsn = "mysql:host={$this->access['host']};port={$this->access['port']}";
-			$pdo = new PDO($dsn, $this->root['user'], $this->root['pswd']);
+			$pdo = new PDO($dsn, $root['user'], $root['pswd']);
 
 			$sql = "CREATE DATABASE IF NOT EXISTS `{$this->access['name']}` ";
 			$sql .= "CHARACTER SET {$this->access['charset']} ";
@@ -604,6 +587,17 @@ class Orm implements OrmInterface
 		} catch (PDOException $e) {
 			exit("ERROR : {$e->getMessage()}");
 		}
+	}
+
+	/**
+	 * Disable database connection.
+	 *
+	 * @access public
+	 * @return void
+	 */
+	public static function noConnect() : void
+	{
+		self::$connect = false;
 	}
 
 	/**

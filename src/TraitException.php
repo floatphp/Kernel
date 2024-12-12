@@ -3,7 +3,7 @@
  * @author     : Jakiboy
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.3.x
+ * @version    : 1.4.x
  * @copyright  : (c) 2018 - 2024 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://floatphp.com
  * @license    : MIT
@@ -31,9 +31,9 @@ trait TraitException
 	public function throwError(int $code = 404, ?string $message = null) : void
 	{
 		$render = true;
-		if ( $this->hasObject('method', $this, 'getApiBaseUrl') ) {
+		if ( $this->hasObject('method', $this, 'getApiUrl') ) {
 			$url = $this->getServer('request-uri');
-			$api = $this->getApiBaseUrl();
+			$api = $this->getApiUrl();
 			if ( $this->hasString($url, $api) ) {
 				$render = false;
 			}

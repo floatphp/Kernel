@@ -3,7 +3,7 @@
  * @author     : Jakiboy
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.3.x
+ * @version    : 1.4.x
  * @copyright  : (c) 2018 - 2024 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://floatphp.com
  * @license    : MIT
@@ -15,8 +15,9 @@ declare(strict_types=1);
 
 namespace FloatPHP\Kernel;
 
-use FloatPHP\Helpers\Framework\Validator;
 use FloatPHP\Classes\Http\Server;
+use FloatPHP\Helpers\Framework\Validator;
+use FloatPHP\Exceptions\Kernel\ConfigException;
 
 trait TraitConfiguration
 {
@@ -26,13 +27,21 @@ trait TraitConfiguration
 	/**
 	 * @access private
 	 * @var object $global
-	 * @var array $routes
+	 * @var bool $cacheable
 	 */
-	private $global = false;
-	private $routes = [];
+	private $global;
+	private $cacheable = false;
 
 	/**
-	 * Init configuration.
+	 * @access protected
+	 */
+	protected const STORAGE = 'Storage';
+	protected const PATH    = 'config';
+
+	/**
+	 * Init config.
+	 *
+	 * @access public
 	 */
 	public function __construct()
 	{
@@ -56,156 +65,285 @@ trait TraitConfiguration
 	}
 
 	/**
-	 * Set config Json file,
-	 * Allow parent config access.
+	 * Get static instance.
+	 *
+	 * @access protected
+	 * @return object
+	 */
+	protected static function getStatic() : object
+	{
+		return new static;
+	}
+
+	/**
+	 * Init global config.
 	 *
 	 * @access protected
 	 * @return void
 	 */
-	protected function initConfig()
+	protected function initConfig() : void
 	{
-		// Parse config file
-		if ( $this->isFile(($path = $this->getConfigFile())) ) {
-			Validator::checkConfig(($config = $this->parseJson($path)));
-			$this->global = $config;
+		if ( $this->global ) {
+			return;
+		}
+
+		if ( defined('FLOATCACHE') ) {
+			$this->cacheable = (bool)constant('FLOATCACHE');
+		}
+
+		if ( $this->cacheable ) {
+
+			$key = $this->slugify(self::class);
+			if ( !($this->global = $this->getTransient($key)) ) {
+				$this->global = $this->parseConfig('global');
+				$this->setTransient($key, $this->global, 0);
+			}
 
 		} else {
-			// Parse default config
-			$this->global = $this->parseJson(
-				dirname(__FILE__) . '/bin/config.default.json'
+			$this->global = $this->parseConfig('global');
+		}
+	}
+
+	/**
+	 * Parse app config file.
+	 *
+	 * @access protected
+	 * @param string $config
+	 * @param bool $validate
+	 * @return mixed
+	 * @throws ConfigException
+	 */
+	protected function parseConfig(string $config, bool $validate = true) : mixed
+	{
+		$file = $this->getConfigFile($config);
+		if ( !$this->isFile($file) ) {
+			throw new ConfigException(
+				ConfigException::invalidConfigFile($file)
 			);
 		}
 
-		// Set routes config
-		if ( $this->isFile(($path = $this->getRoutesFile())) ) {
-			Validator::checkRouteConfig(($routes = $this->parseJson($path, true)));
-			$this->routes = $routes;
+		$data = $this->parseJson($file);
+		if ( $validate ) {
+			// Validator::validate($data, $config);
 		}
+
+		return $data;
 	}
 
 	/**
-	 * Reset config.
+	 * Reset config object.
 	 *
 	 * @access protected
 	 * @return void
 	 */
-	protected function resetConfig()
+	protected function resetConfig() : void
 	{
-		unset($this->global);
-		unset($this->routes);
+		$this->global = null;
 	}
 
 	/**
-	 * Get config.
+	 * Get global config option,
+	 * Initialized.
 	 *
 	 * @access protected
-	 * @param string $var
+	 * @param ?string $key
 	 * @return mixed
 	 */
-	protected function getConfig($var = null)
+	protected function getConfig(?string $key = null) : mixed
 	{
-		if ( $var ) {
-			return $this->global->$var ?? false;
+		$this->initConfig();
+		$data = $this->global;
+		if ( $key ) {
+			$data = $data->{$key} ?? null;
 		}
-		return $this->global;
+		$this->resetConfig();
+		return $data;
 	}
 
 	/**
-	 * Update config.
+	 * Update global config options.
 	 *
 	 * @access protected
 	 * @param array $options
-	 * @param string $section
 	 * @param int $args
 	 * @return bool
 	 */
-	protected function updateConfig(array $options = [], string $section = 'options', int $args = 64 | 128 | 256) : bool
+	protected function updateConfig(array $options = [], int $args = 64 | 256) : bool
 	{
-		$config = $this->parseJson($this->getConfigFile(), true);
+		if ( $this->getEnv() == 'dev' ) {
+			return false;
+		}
+
+		if ( $this->hasDebug() ) {
+			$args = 64 | 128 | 256;
+		}
+
+		$file = $this->getConfigFile();
+		$data = $this->parseJson($file);
+
 		foreach ($options as $option => $value) {
-			if ( isset($config[$section][$option]) ) {
-				$config[$section][$option] = $value;
+			if ( isset($data['options'][$option]) ) {
+				$data['options'][$option] = $value;
 			}
 		}
-		$config = $this->formatJson($config, $args);
-		return $this->writeFile($this->getConfigFile(), $config);
+
+		// Validator::validate($data, 'global');
+
+		$data = $this->formatJson($data, $args);
+		return $this->writeFile($file, $data);
+	}
+
+	/**
+	 * Load partial config file,
+	 * Require initialization.
+	 *
+	 * @access protected
+	 * @param string $config
+	 * @param bool $validate
+	 * @return array
+	 */
+	protected function loadConfig(string $config, bool $validate = true) : array
+	{
+		$data = [];
+
+		if ( $this->cacheable ) {
+
+			// $key = $this->applyPrefix($config);
+			// if ( !($data = $this->getTransient($key)) ) {
+			// 	$data = $this->parseConfig($config, $validate);
+			// 	$this->setTransient($key, $data, 0);
+			// }
+
+		} else {
+			// $data = $this->parseConfig($config, $validate);
+		}
+
+		$data = $this->parseConfig($config, $validate);
+		return $this->toArray($data);
+	}
+
+	/**
+	 * Get app directory.
+	 *
+	 * @access protected
+	 * @return string
+	 * @throws ConfigException
+	 */
+	protected function getAppDir() : string
+	{
+		global $__APP__;
+		if ( !$__APP__ ) {
+			throw new ConfigException(
+				ConfigException::undefinedAppDir()
+			);
+		}
+		return $this->formatPath($__APP__, true);
+	}
+
+	/**
+	 * Get root path.
+	 *
+	 * @access public
+	 * @param string $sub
+	 * @return string
+	 */
+	public function getRoot(?string $sub = null) : string
+	{
+		$path = dirname($this->getAppDir());
+		if ( $sub ) {
+			$path = "{$path}/{$sub}";
+		}
+		return $this->formatPath($path, true);
+	}
+
+	/**
+	 * Get storage path.
+	 *
+	 * @access protected
+	 * @param ?string $sub
+	 * @return string
+	 */
+	protected function getStoragePath(?string $sub = null) : string
+	{
+		$path = static::STORAGE;
+		$path = "{$this->getAppDir()}/{$path}/{$sub}";
+		return $this->formatPath($path, true);
+	}
+
+	/**
+	 * Get storage URL.
+	 *
+	 * @access protected
+	 * @param ?string $sub
+	 * @return string
+	 */
+	protected function getStorageUrl(?string $sub = null) : string
+	{
+		$base = $this->basename($this->getAppDir());
+		$path = static::STORAGE;
+		$path = "{$base}/{$path}/{$sub}";
+		return $this->getBaseUrl($path);
+	}
+
+	/**
+	 * Get config directory path.
+	 *
+	 * @access protected
+	 * @param ?string $sub
+	 * @return string
+	 */
+	protected function getConfigPath(?string $sub = null) : string
+	{
+		$path = static::PATH;
+		$path = "{$path}/{$sub}";
+		return $this->getStoragePath($path);
 	}
 
 	/**
 	 * Get config file path.
 	 *
 	 * @access protected
-	 * @return string
-	 */
-	protected function getConfigFile() : string
-	{
-		return "{$this->getAppDir()}/Storage/config/global.json";
-	}
-
-	/**
-	 * Load configuration file.
-	 *
-	 * @access protected
 	 * @param string $config
-	 * @param bool $isArray
-	 * @return mixed
+	 * @return string
 	 */
-	protected function loadConfig(string $config, bool $isArray = false)
+	protected function getConfigFile(string $config = 'global') : string
 	{
-		$dir = "{$this->getAppDir()}/Storage/config";
-		if ( $this->isFile(($json = "{$dir}/{$config}.json")) ) {
-			return $this->decodeJson($this->readfile($json), $isArray);
-		}
-		return false;
+		return $this->getConfigPath("{$config}.json");
 	}
 
 	/**
-	 * Get app dir.
+	 * Get database config file.
 	 *
 	 * @access protected
 	 * @return string
 	 */
-	protected function getAppDir() : string
+	protected function getDbFile() : string
 	{
-		global $appDir;
-		return $this->formatPath($appDir, true);
+		$config = $this->getConfig('path');
+		$file = $config->db ?? '';
+		return $this->getConfigPath($file);
 	}
 
 	/**
-	 * Get dynamic root path.
+	 * Get routes base path.
 	 *
 	 * @access protected
-	 * @param string $sub
+	 * @param bool $slash
 	 * @return string
 	 */
-	protected function getRoot(?string $sub = null) : string
+	protected function getBaseRoute(bool $slash = true) : string
 	{
-		$path = dirname($this->getAppDir());
-		if ( $sub ) {
-			$path .= "/{$sub}";
-		}
-		return $this->formatPath($path);
-	}
-
-	/**
-	 * Get base routes path.
-	 *
-	 * @access protected
-	 * @param bool $trailingSlash
-	 * @return string
-	 */
-	protected function getBaseRoute($trailingSlash = true) : string
-	{
-		$path = "{$this->global->path->base}";
-		if ( !empty($path) ) {
-			$path = ltrim($path, '/');
-			$path = rtrim($path, '/');
-			if ( $trailingSlash ) {
-				$path = $this->trailingSlash($path);
+		$config = $this->getConfig('path');
+		$data = $config->base ?? '';
+		if ( $data ) {
+			$data = ltrim($data, '/');
+			$data = rtrim($data, '/');
+			if ( $slash ) {
+				$data = $this->trailingSlash($data);
 			}
-			$path = $this->formatPath($path);
+			$data = $this->formatPath($data);
 		}
-		return $path;
+		return $data;
 	}
 
 	/**
@@ -216,31 +354,27 @@ trait TraitConfiguration
 	 */
 	protected function getRoutes() : array
 	{
-		return $this->routes;
+		$this->initConfig();
+		$data = $this->loadConfig('routes');
+		$this->resetConfig();
+		return $data['routes'] ?? [];
 	}
 
 	/**
-	 * Get controller namespace.
+	 * Get namespace (Controller, Module).
 	 *
 	 * @access protected
+	 * @param string $name
 	 * @return string
+	 * @internal
 	 */
-	protected function getControllerNamespace() : string
+	protected function getNamespace(string $name) : string
 	{
-		$namespace = "{$this->global->namespace->controller}";
-		return $this->replaceString('/', '\\', $namespace);
-	}
-
-	/**
-	 * Get module namespace.
-	 *
-	 * @access protected
-	 * @return string
-	 */
-	protected function getModuleNamespace() : string
-	{
-		$namespace = "{$this->global->namespace->module}";
-		return $this->replaceString('/', '\\', $namespace);
+		$config = $this->getConfig('namespace');
+		$name = $config->{$name} ?? '';
+		$base = $this->basename($this->getAppDir());
+		$name = $this->formatPath("{$base}/{$name}");
+		return $this->replaceString('/', '\\', $name);
 	}
 
 	/**
@@ -264,7 +398,7 @@ trait TraitConfiguration
 			$data = $data[$type] ?? [];
 		}
 
-		Validator::checkDatabaseConfig($data, $type);
+		// Validator::checkDatabaseConfig($data, $type);
 		return $data;
 	}
 
@@ -280,18 +414,6 @@ trait TraitConfiguration
 	}
 
 	/**
-	 * Get cache path.
-	 *
-	 * @access protected
-	 * @return string
-	 */
-	protected function getCachePath() : string
-	{
-		$path = "{$this->getRoot()}/{$this->global->path->cache}";
-		return $this->formatPath($path, true);
-	}
-
-	/**
 	 * Get view path.
 	 *
 	 * @access protected
@@ -299,75 +421,103 @@ trait TraitConfiguration
 	 */
 	protected function getViewPath() : array
 	{
-		$path = $this->global->path->view;
-		if ( $this->isType('array', $path) ) {
-			foreach ($path as $key => $view) {
-				$path[$key] = $this->formatPath("{$this->getRoot()}/{$view}", true);
-			}
-		} else {
-			$path = "{$this->getRoot()}/{$this->global->path->view}";
-			$path = $this->formatPath($path, true);
+		$config = $this->getConfig('path');
+		$path = $config->view;
+
+		if ( $this->isType('string', $path) ) {
+			$path = [$path];
 		}
-		return (array)$path;
+
+		foreach ($path as $key => $dir) {
+			$dir = "{$this->getAppDir()}/{$dir}";
+			$path[$key] = $this->formatPath($dir, true);
+		}
+
+		return $path;
+	}
+
+	/**
+	 * Get cache path.
+	 *
+	 * @access protected
+	 * @param ?string $sub
+	 * @return string
+	 */
+	protected function getCachePath(?string $sub = null) : string
+	{
+		$config = $this->getConfig('path');
+		$path = $config->cache ?? '';
+		return $this->getStoragePath("{$path}/{$sub}");
 	}
 
 	/**
 	 * Get translation path.
 	 *
 	 * @access protected
+	 * @param ?string $sub
 	 * @return string
 	 */
-	protected function getTranslatePath() : string
+	protected function getTranslatePath(?string $sub = null) : string
 	{
-		$path = "{$this->getRoot()}/{$this->global->path->translation}";
-		return $this->formatPath($path, true);
+		$config = $this->getConfig('path');
+		$path = $config->translation ?? '';
+		return $this->getStoragePath("{$path}/{$sub}");
 	}
 
 	/**
 	 * Get logs path.
 	 *
 	 * @access protected
+	 * @param ?string $sub
 	 * @return string
 	 */
-	protected function getLoggerPath() : string
+	protected function getLoggerPath(?string $sub = null) : string
 	{
-		$path = "{$this->getRoot()}/{$this->global->path->logs}";
-		return $this->formatPath($path, true);
+		$config = $this->getConfig('path');
+		$path = $config->logs ?? '';
+		return $this->getStoragePath("{$path}/{$sub}");
 	}
 
 	/**
 	 * Get migrate path.
 	 *
 	 * @access protected
+	 * @param ?string $sub
 	 * @return string
 	 */
-	protected function getMigratePath() : string
+	protected function getMigratePath(?string $sub = null) : string
 	{
-		$path = "{$this->getRoot()}/{$this->global->path->migrate}";
-		return $this->formatPath($path, true);
+		$config = $this->getConfig('path');
+		$path = $config->migrate ?? '';
+		return $this->getStoragePath("{$path}/{$sub}");
 	}
 
 	/**
-	 * Get modules path.
+	 * Get module URL.
 	 *
 	 * @access protected
+	 * @param ?string $sub
 	 * @return string
 	 */
-	protected function getModulesPath() : string
+	protected function getModuleUrl(?string $sub = null) : string
 	{
-		$path = "{$this->getRoot()}/{$this->global->path->modules}";
-		return $this->formatPath($path, true);
+		$config = $this->getConfig('path');
+		$path = $config->modules ?? '';
+		return $this->getBaseUrl("{$path}/{$sub}");
 	}
 
 	/**
-	 * Get modules url.
+	 * Get module path.
 	 *
 	 * @access protected
+	 * @param ?string $sub
 	 * @return string
 	 */
-	protected function getModulesUrl() : string
+	protected function getModulePath(?string $sub = null) : string
 	{
-		$path = "{$this->getBaseUrl()}/{$this->global->path->modules}";
+		$config = $this->getConfig('path');
+		$path = $config->modules ?? '';
+		$path = "{$this->getAppDir()}/{$path}/{$sub}";
 		return $this->formatPath($path, true);
 	}
 
@@ -379,7 +529,7 @@ trait TraitConfiguration
 	 */
 	protected function getModules() : array
 	{
-		return glob("{$this->getModulesPath()}/*");
+		return glob("{$this->getModulePath()}/*");
 	}
 
 	/**
@@ -411,18 +561,20 @@ trait TraitConfiguration
 	 */
 	protected function getTimeout() : int
 	{
-		return $this->global->options->timeout;
+		$config = $this->getConfig('options');
+		return $config->timeout;
 	}
 
 	/**
-	 * Get expire.
+	 * Get cache TTL.
 	 *
 	 * @access protected
 	 * @return int
 	 */
 	protected function getCacheTTL() : int
 	{
-		return $this->global->options->ttl;
+		$config = $this->getConfig('options');
+		return $config->ttl;
 	}
 
 	/**
@@ -433,13 +585,15 @@ trait TraitConfiguration
 	 */
 	protected function getViewExtension() : string
 	{
-		return $this->global->options->view->extension;
+		$config = $this->getConfig('options');
+		return $config->view->extension;
 	}
 
 	/**
 	 * Get base url.
 	 *
 	 * @access protected
+	 * @param ?string $sub
 	 * @return string
 	 */
 	protected function getBaseUrl(?string $sub = null) : string
@@ -456,204 +610,182 @@ trait TraitConfiguration
 	 * Get assets url.
 	 *
 	 * @access protected
+	 * @param ?string $sub
 	 * @return string
 	 */
-	protected function getAssetUrl() : string
+	protected function getAssetUrl(?string $sub = null) : string
 	{
-		$url = "{$this->getBaseUrl()}{$this->global->path->assets}";
-		return $this->untrailingSlash($url);
+		$config = $this->getConfig('path');
+		$path = $config->assets ?? '';
+		return $this->getPublicUrl("{$path}/{$sub}");
 	}
 
 	/**
 	 * Get assets path.
 	 *
 	 * @access protected
+	 * @param ?string $sub
 	 * @return string
 	 */
-	protected function getAssetPath() : string
+	protected function getAssetPath(?string $sub = null) : string
 	{
-		$path = "{$this->getRoot()}/{$this->global->path->assets}";
-		return $this->formatPath($path, true);
+		$config = $this->getConfig('path');
+		$path = $config->assets ?? '';
+		return $this->getPublicPath("{$path}/{$sub}");
 	}
 
 	/**
-	 * Get public url.
+	 * Get upload URL.
 	 *
 	 * @access protected
-	 * @param string $path
+	 * @param string $type
+	 * @param ?string $sub
 	 * @return string
 	 */
-	protected function getPublicUrl(?string $path = null) : string
+	protected function getUploadUrl(string $type = 'admin', ?string $sub = null) : string
 	{
-		return $this->formatPath(
-			"{$this->getBaseUrl()}/public/{$path}"
-		);
+		$config = $this->getConfig('path');
+		$path = $config->upload ?? '';
+		$path = "{$path}/{$sub}";
+
+		return match ($type) {
+			'admin' => $this->getStorageUrl($path),
+			'front' => $this->getPublicUrl($path),
+			default => $this->getBaseUrl($path)
+		};
 	}
 
 	/**
-	 * Get front upload url.
+	 * Get upload path.
 	 *
 	 * @access protected
+	 * @param string $type
+	 * @param ?string $sub
 	 * @return string
 	 */
-	protected function getFrontUploadUrl() : string
+	protected function getUploadPath(string $type = 'admin', ?string $sub = null) : string
 	{
-		$url = "{$this->getBaseUrl()}{$this->global->path->upload->front}";
-		return $this->untrailingSlash($url);
+		$config = $this->getConfig('path');
+		$path = $config->upload ?? '';
+		$path = "{$path}/{$sub}";
+
+		return match ($type) {
+			'admin' => $this->getStoragePath($path),
+			'front' => $this->getPublicPath($path),
+			default => $this->formatPath($path)
+		};
 	}
 
 	/**
-	 * Get front upload path.
+	 * Get public URL.
 	 *
 	 * @access protected
+	 * @param ?string $sub
 	 * @return string
 	 */
-	protected function getFrontUploadPath() : string
+	protected function getPublicUrl(?string $sub = null) : string
 	{
-		$path = "{$this->getRoot()}/{$this->global->path->upload->front}";
-		return $this->formatPath($path, true);
-	}
-
-	/**
-	 * Get upload url.
-	 *
-	 * @access protected
-	 * @return string
-	 */
-	protected function getAdminUploadUrl() : string
-	{
-		$url = "{$this->getBaseUrl()}{$this->global->path->upload->admin}";
-		return $this->untrailingSlash($url);
-	}
-
-	/**
-	 * Get admin upload path.
-	 *
-	 * @access protected
-	 * @param string $path
-	 * @return string
-	 */
-	protected function getAdminUploadPath(?string $path = null) : string
-	{
-		$path = "{$this->getRoot()}/{$this->global->path->upload->admin}/{$path}";
-		return $this->formatPath($path, true);
-	}
-
-	/**
-	 * Get admin path.
-	 *
-	 * @access protected
-	 * @param string $path
-	 * @return string
-	 */
-	protected function getAdminPath(?string $path = null) : string
-	{
-		$path = "{$this->getAppDir()}/{$path}";
-		return $this->formatPath($path, true);
+		$config = $this->getConfig('path');
+		$path = $config->public ?? '';
+		return $this->getBaseUrl("{$path}/{$sub}");
 	}
 
 	/**
 	 * Get public path.
 	 *
 	 * @access protected
-	 * @param string $path
+	 * @param string $sub
 	 * @return string
 	 */
-	protected function getPublicPath(?string $path = null) : string
+	protected function getPublicPath(?string $sub = null) : string
 	{
-		return $this->formatPath(
-			"{$this->getRoot()}/public/{$path}"
-		);
+		$config = $this->getConfig('path');
+		$path = $config->public ?? '';
+		return $this->getRoot("{$path}/{$sub}");
 	}
 
 	/**
-	 * Get routes file path.
-	 *
-	 * @access protected
-	 * @return string
-	 */
-	protected function getRoutesFile() : string
-	{
-		$path = "{$this->getRoot()}/{$this->global->path->routes}";
-		return $this->formatPath($path, true);
-	}
-
-	/**
-	 * Get database config file.
-	 *
-	 * @access protected
-	 * @return string
-	 */
-	protected function getDbFile() : string
-	{
-		$path = "{$this->getRoot()}/{$this->global->path->db}";
-		return $this->formatPath($path, true);
-	}
-
-	/**
-	 * Get admin url.
+	 * Get admin URL.
 	 *
 	 * @access protected
 	 * @return string
 	 */
 	protected function getAdminUrl() : string
 	{
-		return "{$this->getBaseUrl()}{$this->global->url->admin}";
+		$config = $this->getConfig('url');
+		return $config->admin;
 	}
 
 	/**
-	 * Get verify url.
+	 * Get verify URL.
 	 *
 	 * @access protected
 	 * @return string
 	 */
 	protected function getVerifyUrl() : string
 	{
-		return "{$this->getBaseUrl()}{$this->global->url->verify}";
+		$config = $this->getConfig('url');
+		return $config->verify;
 	}
 
 	/**
-	 * Get login url.
+	 * Get login URL.
 	 *
 	 * @access protected
 	 * @return string
 	 */
 	protected function getLoginUrl() : string
 	{
-		return "{$this->getBaseUrl()}{$this->global->url->login}";
+		$config = $this->getConfig('url');
+		return $config->login;
 	}
 
 	/**
-	 * Get API base url.
+	 * Get API base URL.
 	 *
 	 * @access protected
 	 * @return string
 	 */
-	protected function getApiBaseUrl() : string
+	protected function getApiUrl() : string
 	{
-		return "{$this->global->url->api}";
+		$config = $this->getConfig('url');
+		return $config->api;
 	}
 
 	/**
-	 * Get API username.
+	 * Get API basic username.
 	 *
 	 * @access protected
 	 * @return string
 	 */
 	protected function getApiUsername() : string
 	{
-		return $this->global->api->username;
+		$config = $this->getConfig('api');
+		return $config->username;
 	}
 
 	/**
-	 * Get API password.
+	 * Get API basic password.
 	 *
 	 * @access protected
 	 * @return string
 	 */
 	protected function getApiPassword() : string
 	{
-		return $this->global->api->password;
+		$config = $this->getConfig('api');
+		return $config->password;
+	}
+
+	/**
+	 * Get API version.
+	 *
+	 * @access protected
+	 * @return string
+	 */
+	protected function getApiVersion() : string
+	{
+		$config = $this->getConfig('api');
+		return $config->version;
 	}
 
 	/**
@@ -664,7 +796,8 @@ trait TraitConfiguration
 	 */
 	protected function getAllowedAccess() : array
 	{
-		return $this->global->access->allowed->ip;
+		$config = $this->getConfig('access');
+		return $config->allowed->ip;
 	}
 
 	/**
@@ -675,7 +808,8 @@ trait TraitConfiguration
 	 */
 	protected function getDeniedAccess() : array
 	{
-		return $this->global->access->denied->ip;
+		$config = $this->getConfig('access');
+		return $config->denied->ip;
 	}
 
 	/**
@@ -686,7 +820,8 @@ trait TraitConfiguration
 	 */
 	protected function getSessionId() : string
 	{
-		return $this->global->access->sessionId;
+		$config = $this->getConfig('access');
+		return $config->sessionId;
 	}
 
 	/**
@@ -697,7 +832,8 @@ trait TraitConfiguration
 	 */
 	protected function getAccessExpire() : int
 	{
-		return (int)$this->global->access->expire;
+		$config = $this->getConfig('access');
+		return $config->expire;
 	}
 
 	/**
@@ -707,14 +843,16 @@ trait TraitConfiguration
 	 * @param bool $api
 	 * @return string
 	 */
-	protected function getSecret($api = false) : string
+	protected function getSecret(bool $api = false) : string
 	{
 		if ( $api ) {
-			if ( !empty($this->global->api->secret) ) {
-				return $this->global->api->secret;
+			$config = $this->getConfig('api');
+			if ( $config->secret ) {
+				return $config->secret;
 			}
 		}
-		return $this->global->access->secret;
+		$config = $this->getConfig('access');
+		return $config->secret;
 	}
 
 	/**
@@ -725,7 +863,8 @@ trait TraitConfiguration
 	 */
 	protected function isPermissions() : bool
 	{
-		return $this->global->access->permissions;
+		$config = $this->getConfig('access');
+		return $config->permissions;
 	}
 
 	/**
@@ -736,18 +875,31 @@ trait TraitConfiguration
 	 */
 	protected function isDebug() : bool
 	{
-		return $this->global->options->debug;
+		$config = $this->getConfig('options');
+		return $config->debug;
 	}
 
 	/**
-	 * Get admin status.
+	 * Get static environment.
+	 *
+	 * @access protected
+	 * @return string
+	 */
+	protected function getEnv() : string
+	{
+		$config = $this->getConfig('options');
+		return $config->environment;
+	}
+
+	/**
+	 * Check admin area.
 	 *
 	 * @access protected
 	 * @return bool
 	 */
 	protected function isAdmin() : bool
 	{
-		$url = Server::getBaseUrl();
+		$url = Server::getCurrentUrl();
 		return $this->hasString($url, '/admin/');
 	}
 
@@ -755,12 +907,29 @@ trait TraitConfiguration
 	 * Get strings.
 	 *
 	 * @access protected
+	 * @param string $type
 	 * @return array
 	 */
-	protected function getStrings() : array
+	protected function getStrings(?string $type = null) : array
 	{
-		$strings = $this->loadConfig('strings', true);
-		return ($strings) ? (array)$strings : (array)$this->global->strings;
+		$this->initConfig();
+		$data = $this->loadConfig('strings');
+		$this->resetConfig();
+		return $type ? $data[$type] ?? [] : $data;
+	}
+
+	/**
+	 * Get menu.
+	 *
+	 * @access protected
+	 * @return array
+	 */
+	protected function getMenu() : array
+	{
+		$this->initConfig();
+		$data = $this->loadConfig('menu', true);
+		$this->resetConfig();
+		return $data['menu'] ?? [];
 	}
 
 	/**
@@ -771,19 +940,9 @@ trait TraitConfiguration
 	 */
 	protected function getVars() : array
 	{
-		$vars = $this->loadConfig('vars', true);
-		return $vars ?: (array)$this->global->vars;
-	}
-
-	/**
-	 * Get menu.
-	 *
-	 * @access protected
-	 * @return array
-	 */
-	protected function getMenu() : mixed
-	{
-		$menu = $this->loadConfig('menu', true);
-		return $menu ?: (array)$this->global->menu;
+		$this->initConfig();
+		$data = $this->loadConfig('vars');
+		$this->resetConfig();
+		return $data['vars'] ?? [];
 	}
 }

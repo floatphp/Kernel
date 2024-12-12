@@ -3,7 +3,7 @@
  * @author     : Jakiboy
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.3.x
+ * @version    : 1.4.x
  * @copyright  : (c) 2018 - 2024 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://floatphp.com
  * @license    : MIT
@@ -24,7 +24,6 @@ class Module extends BaseController
 	 */
 	public function __construct()
 	{
-		$this->initConfig();
 		$this->loadModules();
 	}
 
@@ -35,12 +34,10 @@ class Module extends BaseController
 	 * @param string $role
 	 * @return bool
 	 */
-	public function hasPermissions($role = false) : bool
+	public function hasPermissions(?string $role = null) : bool
 	{
-		if ( $this->isPermissions() ) {
-			if ( $role ) {
-				return $this->hasRole($role);
-			}
+		if ( $this->isPermissions() && $role ) {
+			return $this->hasRole($role);
 		}
 		return true;
 	}
@@ -75,11 +72,11 @@ class Module extends BaseController
 	 * @param string $hook
 	 * @return void
 	 */
-	protected function addJS(string $path, string $hook = 'js') : void
+	protected function addJS(string $path, string $hook = 'add-js') : void
 	{
 		$this->addAction($hook, function () use ($path) : void {
 			$file = $this->applyFilter('module-view-js', 'system/js');
-			$this->render($file, ['js' => "{$this->getModulesUrl()}/{$path}"]);
+			$this->render($file, ['js' => "{$this->getModuleUrl()}/{$path}"]);
 		});
 	}
 
@@ -91,11 +88,11 @@ class Module extends BaseController
 	 * @param string $hook
 	 * @return void
 	 */
-	protected function addCSS(string $path, string $hook = 'css') : void
+	protected function addCSS(string $path, string $hook = 'add-css') : void
 	{
 		$this->addAction($hook, function () use ($path) : void {
 			$file = $this->applyFilter('module-view-css', 'system/css');
-			$this->render($file, ['css' => "{$this->getModulesUrl()}/{$path}"]);
+			$this->render($file, ['css' => "{$this->getModuleUrl()}/{$path}"]);
 		});
 	}
 
@@ -115,7 +112,7 @@ class Module extends BaseController
 			}
 			if ( $config->enable ) {
 				$basename = $this->basename($name);
-				$namespace = "{$this->getModuleNamespace()}{$basename}\\{$basename}";
+				$namespace = "{$this->getNamespace('module')}{$basename}\\{$basename}";
 				if ( $this->isFile("{$name}/{$basename}Module.php") ) {
 					$module = "{$namespace}Module";
 					new $module;

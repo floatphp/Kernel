@@ -3,7 +3,7 @@
  * @author     : Jakiboy
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.3.x
+ * @version    : 1.4.x
  * @copyright  : (c) 2018 - 2024 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://floatphp.com
  * @license    : MIT
@@ -27,9 +27,6 @@ class ErrorController extends FrontController
 	 */
 	public function __construct(int $code = 404, string $error = null, bool $render = true)
 	{
-		// Init configuration
-		$this->initConfig();
-
 		$message = $this->applyFilter('error-message', Response::getMessage($code));
 
 		if ( !$error ) {
@@ -55,8 +52,5 @@ class ErrorController extends FrontController
 			$args = $this->applyFilter('error-http-args', []);
 			Response::set($error, $args, 'error', $code);
 		}
-
-		// Reset configuration
-		$this->resetConfig();
 	}
 }

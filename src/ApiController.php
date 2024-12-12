@@ -3,7 +3,7 @@
  * @author     : Jakiboy
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.3.x
+ * @version    : 1.4.x
  * @copyright  : (c) 2018 - 2024 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://floatphp.com
  * @license    : MIT
@@ -22,13 +22,9 @@ class ApiController extends BaseController
 	 *
 	 * @access public
 	 * @return bool
-	 * @uses initConfig()
 	 */
 	public function isHttpAuthenticated() : bool
 	{
-		// Init configuration
-		$this->initConfig();
-
 		// Basic authentication
 		if ( $this->applyFilter('basic-auth', true) ) {
 			if ( $this->isBasicAuth() ) {

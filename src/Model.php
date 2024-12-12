@@ -3,7 +3,7 @@
  * @author     : Jakiboy
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.3.x
+ * @version    : 1.4.x
  * @copyright  : (c) 2018 - 2024 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://floatphp.com
  * @license    : MIT
@@ -17,14 +17,6 @@ namespace FloatPHP\Kernel;
 
 class Model extends Orm
 {
-    /**
-     * Init ORM.
-     */
-    public function __construct()
-    {
-        parent::__construct();
-    }
-
     /**
      * Add item.
      *

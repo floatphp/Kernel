@@ -3,7 +3,7 @@
  * @author     : Jakiboy
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.3.x
+ * @version    : 1.4.x
  * @copyright  : (c) 2018 - 2024 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://floatphp.com
  * @license    : MIT
@@ -121,91 +121,91 @@ class View extends Base implements ViewInterface
     protected function getDefaultCallables() : array
     {
         $global = [
-            'dump'              => function ($var) : void {
+            'dump'           => function ($var) : void {
                 var_dump($var);
             },
-            'isDebug'           => function () : bool {
+            'isDebug'        => function () : bool {
                 return $this->isDebug();
             },
-            'getConfig'         => function (?string $key = null) : mixed {
+            'getConfig'      => function (?string $key = null) : mixed {
                 return $this->getConfig($key);
             },
-            'getRoot'           => function (?string $sub = null) : string {
+            'getRoot'        => function (?string $sub = null) : string {
                 return $this->getRoot($sub);
             },
-            'getBaseRoute'      => function () : string {
-                return $this->getBaseRoute(trailingSlash: false);
+            'getBaseRoute'   => function () : string {
+                return $this->getBaseRoute(slash: false);
             },
-            'getFrontUploadUrl' => function () : string {
-                return $this->getFrontUploadUrl();
+            'getUploadUrl'   => function (?string $url = null) : string {
+                return $this->getUploadUrl(sub: $url);
             },
-            'getLoginUrl'       => function () : string {
+            'getLoginUrl'    => function () : string {
                 return $this->getLoginUrl();
             },
-            'getAdminUrl'       => function () : string {
+            'getAdminUrl'    => function () : string {
                 return $this->getAdminUrl();
             },
-            'getVerifyUrl'      => function () : string {
+            'getVerifyUrl'   => function () : string {
                 return $this->getVerifyUrl();
             },
-            'getBaseUrl'        => function () : string {
+            'getBaseUrl'     => function () : string {
                 return $this->getBaseUrl();
             },
-            'getAssetUrl'       => function () : string {
+            'getAssetUrl'    => function () : string {
                 return $this->getAssetUrl();
             },
-            'getTimeout'        => function () : int {
+            'getTimeout'     => function () : int {
                 return $this->getTimeout();
             },
-            'getToken'          => function (?string $source = null) : string {
+            'getToken'       => function (?string $source = null) : string {
                 return $this->getToken(action: $source);
             },
-            'getLanguage'       => function () : string {
+            'getLanguage'    => function () : string {
                 return $this->getLanguage();
             },
-            'isValidSession'    => function () : bool {
+            'isValidSession' => function () : bool {
                 return $this->isValidSession();
             },
-            'hasRole'           => function ($role = null, $userId = null) : bool {
+            'hasRole'        => function ($role = null, $userId = null) : bool {
                 return $this->hasRole($role, $userId);
             },
-            'hasCapability'     => function ($capability = null, $userId = null) {
+            'hasCapability'  => function ($capability = null, $userId = null) {
                 return $this->hasCapability($capability, $userId);
             },
-            'translate'         => function (?string $string) : string {
+            'translate'      => function (?string $string) : string {
                 return $this->translate($string);
             },
-            'translateVar'      => function (string $string, $vars = null) : string {
+            'translateVar'   => function (string $string, $vars = null) : string {
                 return $this->translateVar($string, $vars);
             },
-            'unJson'            => function (string $value, bool $isArray = false) : mixed {
+            'unJson'         => function (string $value, bool $isArray = false) : mixed {
                 return $this->decodeJson($value, $isArray);
             },
-            'toJson'            => function ($value) : string {
+            'toJson'         => function ($value) : string {
                 return $this->encodeJson($value);
             },
-            'serialize'         => function ($value) : mixed {
+            'serialize'      => function ($value) : mixed {
                 return $this->serialize($value);
             },
-            'unserialize'       => function (string $value) : mixed {
+            'unserialize'    => function (string $value) : mixed {
                 return $this->unserialize($value);
             },
-            'limitString'       => function (?string $string, int $limit) : string {
+            'limitString'    => function (?string $string, int $limit) : string {
                 return $this->limitString($string, $limit);
             },
-            'hasFilter'         => function (string $hook, $callback = false) : bool {
+            'hasFilter'      => function (string $hook, $callback = false) : bool {
                 return $this->hasFilter($hook, $callback);
             },
-            'applyFilter'       => function (string $hook, $value, ...$args) : mixed {
+            'applyFilter'    => function (string $hook, $value, ...$args) : mixed {
                 return $this->applyFilter($hook, $value, ...$args);
             },
-            'hasAction'         => function (string $hook, $callback = false) : mixed {
+            'hasAction'      => function (string $hook, $callback = false) : mixed {
                 return $this->hasAction($hook, $callback);
             },
-            'doAction'          => function (string $hook, ...$args) : void {
+            'doAction'       => function (string $hook, ...$args) : void {
                 $this->doAction($hook, ...$args);
             },
-            'doShortcode'       => function ($shortcode = '', $ignoreHTML = false) : void {
+            'doShortcode'    => function ($shortcode = '', $ignoreHTML = false) : void {
                 $this->doShortcode($shortcode, $ignoreHTML);
             }
         ];

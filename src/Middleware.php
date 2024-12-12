@@ -3,7 +3,7 @@
  * @author     : Jakiboy
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.3.x
+ * @version    : 1.4.x
  * @copyright  : (c) 2018 - 2024 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://floatphp.com
  * @license    : MIT
@@ -36,9 +36,6 @@ final class Middleware
 	 */
 	public function __construct(RouterInterface $router)
 	{
-		// Init configuration
-		$this->initConfig();
-
 		// Prepare router from config
 		$router->setBase($this->getBaseRoute());
 
@@ -136,7 +133,7 @@ final class Middleware
 		$class = $this->parseClass();
 		$method = $this->parseMethod();
 		$var = $this->parseVar();
-		$role = $this->parsePermissions();
+		$role = $this->parsePermission();
 
 		// Secure access
 		$instance = new $class();
@@ -191,7 +188,7 @@ final class Middleware
 		$class = $this->parseModuleClass();
 		$method = $this->parseMethod();
 		$var = $this->parseVar();
-		$role = $this->parsePermissions();
+		$role = $this->parsePermission();
 
 		// Secure access
 		$instance = new $class();
@@ -290,7 +287,7 @@ final class Middleware
 		if ( $this->hasObject('parent', $class, __NAMESPACE__ . '\AbstractAuthController') ) {
 			return true;
 
-		} elseif ( $this->hasAuthMiddlewareInterface($class) ) {
+		} elseif ( $this->hasAuthMiddleInterface($class) ) {
 			return true;
 		}
 		return false;
@@ -378,7 +375,7 @@ final class Middleware
 	 * @param string $class
 	 * @return bool
 	 */
-	private function hasAuthMiddlewareInterface($class) : bool
+	private function hasAuthMiddleInterface($class) : bool
 	{
 		return $this->hasObject('interface', $class, 'AuthMiddlewareInterface');
 	}
@@ -412,7 +409,7 @@ final class Middleware
 			$this->throwError(404);
 		}
 		$module = $this->removeString('Module', $class);
-		return $this->getModuleNamespace() . "{$module}\\{$class}";
+		return $this->getNamespace('module') . "{$module}\\{$class}";
 	}
 
 	/**
@@ -428,7 +425,7 @@ final class Middleware
 		if ( !$class ) {
 			$this->throwError(404);
 		}
-		return "{$this->getControllerNamespace()}{$class}";
+		return "{$this->getNamespace('controller')}{$class}";
 	}
 
 	/**
@@ -449,7 +446,7 @@ final class Middleware
 	 * @access private
 	 * @return mixed
 	 */
-	private function parsePermissions() : mixed
+	private function parsePermission() : mixed
 	{
 		return $this->match['permissions'] ?? false;
 	}

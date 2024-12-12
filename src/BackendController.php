@@ -3,7 +3,7 @@
  * @author     : Jakiboy
  * @package    : FloatPHP
  * @subpackage : Kernel Component
- * @version    : 1.3.x
+ * @version    : 1.4.x
  * @copyright  : (c) 2018 - 2024 Jihad Sinnaour <mail@jihadsinnaour.com>
  * @link       : https://floatphp.com
  * @license    : MIT
@@ -25,9 +25,6 @@ class BackendController extends BaseController
 	 */
 	public function __construct(array $content = [])
 	{
-		// Init configuration
-		$this->initConfig();
-
 		// Set view global content
 		$id = (int)$this->getSession('userId');
 		$content = $this->mergeArray([
@@ -49,10 +46,8 @@ class BackendController extends BaseController
 	 */
 	public function hasPermissions($role = false) : bool
 	{
-		if ( $this->isPermissions() ) {
-			if ( $role ) {
-				return $this->hasRole($role);
-			}
+		if ( $this->isPermissions() && $role ) {
+			return $this->hasRole($role);
 		}
 		return true;
 	}
