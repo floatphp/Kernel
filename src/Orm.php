@@ -153,7 +153,7 @@ class Orm implements OrmInterface
 		if ( $id ) $this->{$this->key} = $id;
 		$sql = "{$this->getSelectQuery()} ";
 		$sql .= "{$this->getWhereQuery(single: true)} ";
-		$sql .= "{$this->getLimitQuery(limit: 1)};";
+		$sql .= "{$this->getLimitQuery(1)};";
 		return $this->getRow($sql);
 	}
 
@@ -211,7 +211,7 @@ class Orm implements OrmInterface
 		if ( $id ) $this->{$this->key} = $id;
 		$sql = "{$this->getDeleteQuery()} ";
 		$sql .= "{$this->getWhereQuery(single: true)} ";
-		$sql .= "{$this->getLimitQuery(limit: 1)};";
+		$sql .= "{$this->getLimitQuery(1)};";
 		return (bool)$this->execute($sql);
 	}
 
@@ -271,14 +271,15 @@ class Orm implements OrmInterface
 	 * @param mixed $columns
 	 * @param array $sort
 	 * @param int $limit
+	 * @param ?int $page
 	 * @return array
 	 */
-	public function search($columns = '*', array $sort = [], ?int $limit = 0) : array
+	public function search($columns = '*', array $sort = [], int $limit = 0, ?int $page = null) : array
 	{
 		$sql = "{$this->getSelectQuery($columns)} ";
 		$sql .= "{$this->getWhereQuery()} ";
 		$sql .= "{$this->getSortQuery($sort)} ";
-		$sql .= "{$this->getLimitQuery($limit)};";
+		$sql .= "{$this->getLimitQuery($limit, $page)};";
 		return (array)$this->execute($sql);
 	}
 
@@ -296,7 +297,7 @@ class Orm implements OrmInterface
 		$sql = "{$this->getSelectQuery($columns)} ";
 		$sql .= "{$this->getWhereQuery()} ";
 		$sql .= "{$this->getSortQuery($sort)} ";
-		$sql .= "{$this->getLimitQuery(limit: 1)};";
+		$sql .= "{$this->getLimitQuery(1)};";
 		return $this->getRow($sql);
 	}
 
@@ -308,14 +309,15 @@ class Orm implements OrmInterface
 	 * @param string $column
 	 * @param array $sort
 	 * @param int $limit
+	 * @param ?int $page
 	 * @return array
 	 */
-	public function searchColumn(string $column, array $sort = [], ?int $limit = 0) : array
+	public function searchColumn(string $column, array $sort = [], int $limit = 0, ?int $page = null) : array
 	{
 		$sql = "{$this->getSelectQuery($column)} ";
 		$sql .= "{$this->getWhereQuery()} ";
 		$sql .= "{$this->getSortQuery($sort)} ";
-		$sql .= "{$this->getLimitQuery($limit)};";
+		$sql .= "{$this->getLimitQuery($limit, $page)};";
 		return $this->getColumn($sql);
 	}
 
@@ -912,13 +914,21 @@ class Orm implements OrmInterface
 	 *
 	 * @access private
 	 * @param int $limit
+	 * @param ?int $page
 	 * @return string
 	 */
-	private function getLimitQuery(?int $limit = 0) : string
+	private function getLimitQuery(int $limit = 0, ?int $page = null) : string
 	{
 		$sql = '';
 		if ( $limit ) {
-			$sql .= "LIMIT {$limit}";
+			if ( !$this->isType('null', $page) ) {
+				$page = $page ?: 1;
+				$offset = ($page - 1) * $limit;
+				$sql .= "LIMIT {$offset}, {$limit}";
+
+			} else {
+				$sql .= "LIMIT {$limit}";
+			}
 		}
 		return $sql;
 	}

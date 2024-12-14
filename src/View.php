@@ -157,8 +157,8 @@ class View extends Base implements ViewInterface
             'getTimeout'     => function () : int {
                 return $this->getTimeout();
             },
-            'getToken'       => function (?string $source = null) : string {
-                return $this->getToken(action: $source);
+            'getToken'       => function (?string $action = null) : string {
+                return $this->getToken($action);
             },
             'getLanguage'    => function () : string {
                 return $this->getLanguage();
@@ -169,7 +169,7 @@ class View extends Base implements ViewInterface
             'hasRole'        => function ($role = null, $userId = null) : bool {
                 return $this->hasRole($role, $userId);
             },
-            'hasCapability'  => function ($capability = null, $userId = null) {
+            'hasCapability'  => function ($capability = null, $userId = null) : bool {
                 return $this->hasCapability($capability, $userId);
             },
             'translate'      => function (?string $string) : string {
