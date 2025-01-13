@@ -27,11 +27,10 @@ class BackendController extends BaseController
 	{
 		// Set view global content
 		$id = (int)$this->getSession('userId');
-		$content = $this->mergeArray([
+		$this->setContent($this->mergeArray([
 			'user'      => (new User)->get($id),
 			'execution' => Debugger::getExecutionTime()
-		], $content);
-		$this->setContent($content);
+		], $content));
 
 		// Allow non-blocking requests
 		$this->closeSession();
