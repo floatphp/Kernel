@@ -892,6 +892,17 @@ trait TraitConfiguration
 	}
 
 	/**
+	 * Check static environment.
+	 *
+	 * @access protected
+	 * @return bool
+	 */
+	protected function isEnv(string $env = 'prod') : bool
+	{
+		return $this->getEnv() == $env;
+	}
+
+	/**
 	 * Check admin area.
 	 *
 	 * @access protected
