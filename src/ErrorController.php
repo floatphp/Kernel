@@ -22,10 +22,10 @@ class ErrorController extends FrontController
 	/**
 	 * @accees public
 	 * @param int $code
-	 * @param string $error
+	 * @param ?string $error
 	 * @param bool $render, Render error message
 	 */
-	public function __construct(int $code = 404, string $error = null, bool $render = true)
+	public function __construct(int $code = 404, ?string $error = null, bool $render = true)
 	{
 		$message = $this->applyFilter('error-message', Response::getMessage($code));
 
