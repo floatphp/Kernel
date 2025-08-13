@@ -1,15 +1,23 @@
 {
   "name": "floatphp/kernel",
-  "version" : "1.4.3",
+  "version": "1.5.0",
   "type": "library",
   "description": "FloatPHP Kernel Components",
-  "keywords": ["php","micro-framework","framework","PSR","ORM","jakiboy","composer"],
+  "keywords": [
+    "php",
+    "micro-framework",
+    "framework",
+    "PSR",
+    "ORM",
+    "jakiboy",
+    "composer"
+  ],
   "homepage": "https://floatphp.com",
   "license": "MIT",
   "authors": [
     {
       "name": "Jihad Sinnaour",
-      "email": "mail@jihadsinnaour.com",
+      "email": "me@jihadsinnaour.com",
       "role": "Founder"
     }
   ],
@@ -26,8 +34,8 @@
     "floatphp/cli": "^1.4.0"
   },
   "autoload": {
-    "psr-4" : {
-      "FloatPHP\\Kernel\\" : "src/"
+    "psr-4": {
+      "FloatPHP\\Kernel\\": "src/"
     }
   }
 }
