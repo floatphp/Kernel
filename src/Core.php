@@ -35,9 +35,9 @@ final class Core
 		$config = (new Installer())->default($config);
 
 		// Setup
-		if ( $config['--disable-setup'] !== true ) {
+		if ( $config['--enable-setup'] === true ) {
 			if ( !Installer::isInstalled() ) {
-				$db = ($config['--disable-database'] === true) ? false : true;
+				$db = ($config['--enable-database'] === true) ?: false;
 				(new Installer())->setup($db);
 			}
 		}
