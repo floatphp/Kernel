@@ -27,11 +27,11 @@
     "ext-intl": "*",
     "twig/twig": "^3.14.2",
     "justinrainbow/json-schema": "^6.0.0",
-    "floatphp/classes": "^1.4.0",
-    "floatphp/helpers": "^1.4.0",
-    "floatphp/interfaces": "^1.4.0",
-    "floatphp/exceptions": "^1.4.0",
-    "floatphp/cli": "^1.4.0"
+    "floatphp/classes": "^1.5.0",
+    "floatphp/helpers": "^1.5.0",
+    "floatphp/interfaces": "^1.5.0",
+    "floatphp/exceptions": "^1.5.0",
+    "floatphp/cli": "^1.5.0"
   },
   "autoload": {
     "psr-4": {
