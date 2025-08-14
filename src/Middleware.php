@@ -166,7 +166,7 @@ final class Middleware
 				$instance->$method($var);
 			}
 
-		} elseif ( $this->isApiController($class) ) {
+		} elseif ( $this->isWebserviceController($class) ) {
 			if ( $instance->isHttpAuthenticated() ) {
 				$instance->$method($var);
 
@@ -200,7 +200,7 @@ final class Middleware
 		if ( $this->isFrontController($class) ) {
 			$instance->$method($var);
 
-		} elseif ( $this->isApiController($class) ) {
+		} elseif ( $this->isWebserviceController($class) ) {
 			if ( $instance->isHttpAuthenticated() ) {
 				$instance->$method($var);
 
@@ -264,10 +264,10 @@ final class Middleware
 	 * @param string $class
 	 * @return void
 	 */
-	private function isApiController($class) : bool
+	private function isWebserviceController($class) : bool
 	{
 		if ( !$this->isAuthController($class) ) {
-			if ( $this->isApiClass($class) || $this->hasApiInterface($class) ) {
+			if ( $this->isWebserviceClass($class) || $this->hasApiInterface($class) ) {
 				return true;
 			}
 		}
@@ -324,9 +324,9 @@ final class Middleware
 	 * @param string $class
 	 * @return bool
 	 */
-	private function isApiClass($class) : bool
+	private function isWebserviceClass($class) : bool
 	{
-		return $this->hasObject('parent', $class, __NAMESPACE__ . '\ApiController');
+		return $this->hasObject('parent', $class, __NAMESPACE__ . '\Webservice');
 	}
 
 	/**

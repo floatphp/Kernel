@@ -15,7 +15,7 @@ declare(strict_types=1);
 
 namespace FloatPHP\Kernel;
 
-class ApiController extends BaseController
+class Webservice extends BaseController
 {
 	/**
 	 * Is HTTP authenticated (Basic).
