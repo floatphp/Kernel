@@ -284,7 +284,7 @@ final class Middleware
 	 */
 	private function isAuthController($class) : bool
 	{
-		if ( $this->hasObject('parent', $class, __NAMESPACE__ . '\AbstractAuthController') ) {
+		if ( $this->hasObject('parent', $class, __NAMESPACE__ . '\AbstractAuth') ) {
 			return true;
 
 		} elseif ( $this->hasAuthMiddleInterface($class) ) {

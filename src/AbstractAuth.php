@@ -17,7 +17,7 @@ namespace FloatPHP\Kernel;
 
 use FloatPHP\Interfaces\Kernel\AuthenticationInterface;
 
-abstract class AbstractAuthController extends BaseController
+abstract class AbstractAuth extends BaseController
 {
 	/**
 	 * Login.
